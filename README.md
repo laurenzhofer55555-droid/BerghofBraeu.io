@@ -19,7 +19,8 @@ Dann http://localhost:5173 öffnen.
 - `js/main.js` – kleiner Starter: lädt die Scroll-Sequenz erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase);
   bei „Bewegung reduzieren“ bleibt das Standbild
 - `js/sequenz.js` – Scroll-Sequenz: zeichnet die vorgerenderten Bilder aus `assets/sequenz/` auf ein Canvas,
-  6 Scroll-Stufen mit Einrasten (zum Einstellen lokal kurz `markers: true` setzen, so nicht veröffentlichen).
+  7 Scroll-Stufen mit Einrasten; Stufe 7 („das Bier wird leer“: Schaumkrone, Perlen, Schaumränder) sind
+  HTML-Ebenen über dem letzten Bild (`.beer` in `index.html`) (zum Einstellen lokal kurz `markers: true` setzen, so nicht veröffentlichen).
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
 - Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
   `js/stage.js` – Studio, Boden, Schatten · `js/config.js` – Licht, Glas, Farben · `js/scene.js` – frühere Live-3D-Szene
@@ -35,6 +36,10 @@ Licht und Material in `js/config.js`.
    und neue Standbilder `assets/img/flasche-berghof-hell*.webp`.
 3. Die ausgegebenen Werte (top, height, aspect-ratio) bei `.poster picture` in `index.html` und `css/style.css`
    eintragen, sonst springt die Flasche beim Übergang vom Standbild zur Sequenz.
+
+Schaum-Texturen für Stufe 7 (`assets/sequenz/schaum.webp`, `schaumrand.webp`, `perlen.webp`): `tools/schaum-rendern.html`
+über denselben Server öffnen, „Rendern“ klicken, dann wieder `python3 tools/sequenz.py …`. Die Bieroberfläche liegt in
+der Schaumtextur bei 75 % der Höhe (`SURFACE` in `js/sequenz.js`).
 
 Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnellerer Seitenaufbau).
 Änderungen am Startbereich also an beiden Stellen machen.

@@ -149,6 +149,41 @@ main { position: relative; z-index: 2; }
   will-change: transform, opacity;
 }
 .cap-title em { font-style: italic; font-weight: 400; }
+
+/* ── Stufe 7: das Bier wird leer (js/sequenz.js) ──
+   Gold (Canvas) und Perlen rutschen nach unten, die Schaumkrone schwimmt obenauf, Schaumränder bleiben kurz zurück.
+   Texturen aus tools/schaum-rendern.html; sie laden erst, wenn die Sequenz läuft (.is-ready). */
+#sequenz { will-change: transform; }
+.beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+.beer__liquid { position: absolute; inset: 0; overflow: hidden; will-change: transform; }
+.beer__bubbles {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: calc(100% + 512px);                 /* eine Kachel Überstand → nahtlose Endlosschleife */
+  opacity: 0;
+  background: 0 0 / 512px 512px repeat;
+  animation: perlen 7s linear infinite paused;
+}
+.is-draining .beer__bubbles { animation-play-state: running; }
+@keyframes perlen { to { transform: translate3d(0, -512px, 0); } }
+.beer__ring {
+  position: absolute; left: 0; right: 0;
+  height: clamp(60px, 12vh, 130px);
+  opacity: 0;
+  background: 0 0 / auto 100% repeat-x;
+}
+.beer__ring--1 { top: 24%; }
+.beer__ring--2 { top: 49%; background-position: -37vw 0; }
+.beer__ring--3 { top: 71%; background-position: -71vw 0; }
+.beer__foam {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: clamp(150px, 26vh, 300px);
+  background: 0 0 / auto 100% repeat-x;
+  transform-origin: 50% 75%;                  /* Bieroberfläche in der Textur */
+  will-change: transform, opacity;
+}
+.is-ready .beer__bubbles { background-image: url('../assets/sequenz/perlen.webp'); }
+.is-ready .beer__ring { background-image: url('../assets/sequenz/schaumrand.webp'); }
+.is-ready .beer__foam { background-image: url('../assets/sequenz/schaum.webp'); }
 .hero__title {
   display: block;
   font-family: var(--font-display);
