@@ -376,6 +376,49 @@ html.snap-sections { scroll-snap-type: y proximity; }
   .ingredients { grid-template-columns: 1fr; gap: 44px; }
 }
 
+/* ── Handy (bis 768 px): kürzer, Geschichte als seitlich wischbare Timeline ── */
+.timeline__hint { display: none; }
+@media (max-width: 768px) {
+  .ingredient p { display: none; }                 /* Texte bleiben im HTML (Google, Desktop) */
+  #standort { display: none; }                     /* Adresse und Kontakt stehen im Fußbereich und im Impressum */
+
+  .timeline {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+    margin: 0 -24px; padding: 0 10vw; border-left: 0;
+    scrollbar-width: none;
+  }
+  .timeline::-webkit-scrollbar { display: none; }
+  .timeline:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 4px; }
+  .timeline li {
+    flex: 0 0 80vw; scroll-snap-align: center;
+    padding: 40px 14px 4px; text-align: center;
+  }
+  .timeline li:last-child { padding-bottom: 4px; }
+  /* durchgehende feine Linie in Tannengrün, Punkt je Station */
+  .timeline li::after { content: ''; position: absolute; top: 12px; left: 0; right: 0; height: 1px; background: var(--green); }
+  .timeline li:first-child::after { left: 50%; }
+  .timeline li:last-child::after { right: 50%; }
+  .timeline li::before {
+    left: 50%; top: 6px; z-index: 1;
+    width: 13px; height: 13px; border-radius: 50%; transform: translateX(-50%);
+    background: var(--cream); border: 1.5px solid var(--green);
+  }
+  .timeline__year { display: block; font-size: 34px; line-height: 1.1; }
+  .timeline p { margin-top: 6px; }
+  /* aktive Station hervorheben (nur wenn das Skript läuft, sonst alles voll sichtbar) */
+  .timeline--live li { opacity: .45; transition: opacity .3s ease; }
+  .timeline--live li.is-active { opacity: 1; }
+  .timeline li.is-active::before { background: var(--green); }
+
+  .timeline__hint {
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin: 18px 0 0; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--green-soft);
+  }
+  .timeline__hint i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--green); }
+  .timeline__hint i.is-active { background: var(--green); }
+  .timeline__hint span { margin-left: 8px; }
+}
+
 /* ── Reduzierte Bewegung ────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }

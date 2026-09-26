@@ -78,27 +78,6 @@
           ],
           "founder": { "@type": "Person", "name": "Laurenz Hofer" },
           "employee": { "@type": "Person", "name": "Laurenz Hofer", "jobTitle": "Ansprechpartner" }
-        },
-        {
-          "@type": "Product",
-          "@id": "https://berghof-hell.de/#bier",
-          "name": "Berghof Hell",
-          "description": "Bayerisches Vollbier Hell: goldgelb, mild und süffig. Gebraut aus Wasser, Gerstenmalz und Hopfen von der Brauerei Silbernagl in Hausham.",
-          "image": "https://berghof-hell.de/assets/img/flasche-berghof-hell-701.webp",
-          "category": "Bier",
-          "brand": { "@type": "Brand", "name": "Berghof Hell" },
-          "manufacturer": {
-            "@type": "Brewery",
-            "name": "Brauerei & Brennerei Silbernagl",
-            "address": { "@type": "PostalAddress", "addressLocality": "Hausham", "postalCode": "83734", "addressCountry": "DE" }
-          },
-          "seller": { "@id": "https://berghof-hell.de/#brauerei" },
-          "additionalProperty": [
-            { "@type": "PropertyValue", "name": "Biersorte", "value": "Vollbier Hell" },
-            { "@type": "PropertyValue", "name": "Alkoholgehalt", "value": "4,9 % vol" },
-            { "@type": "PropertyValue", "name": "Füllmenge", "value": "0,5 l" },
-            { "@type": "PropertyValue", "name": "Zutaten", "value": "Wasser, Gerstenmalz, Hopfen" }
-          ]
         }
       ]
     }
@@ -430,7 +409,7 @@
         </div>
 
         <div class="berghof">
-          <ol class="timeline">
+          <ol class="timeline" tabindex="0" aria-label="Geschichte des Berghofs in vier Stationen">
             <li>
               <time class="timeline__year" datetime="1556">1556</time>
               <p>Erste Erwähnung als „halbe Schwaige zu Pergen“ im Besitz des Klosters Schliersee.</p>
@@ -448,6 +427,8 @@
               <p>Jugend- und Gruppenhaus, geführt von Familie Hofer in vierter Generation.</p>
             </li>
           </ol>
+          <!-- nur am Handy: Punktanzeige zur seitlich wischbaren Timeline (js/timeline.js) -->
+          <p class="timeline__hint" aria-hidden="true"><i></i><i></i><i></i><i></i><span>wischen</span></p>
 
           <figure class="painting">
             <img

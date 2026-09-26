@@ -5,6 +5,7 @@
 // Bei „Bewegung reduzieren“ bleibt es beim Standbild, die Inhalte folgen direkt darunter.
 
 import { gated, confirmed } from './altersabfrage.js';
+import './timeline.js';                              // Geschichte am Handy: aktive Station hervorheben
 
 const START_DELAY = 1200;   // ms nach dem Laden, falls der Besucher nichts tut
 
