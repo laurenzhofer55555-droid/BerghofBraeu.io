@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://berghof-hell.de/sitemap.xml
