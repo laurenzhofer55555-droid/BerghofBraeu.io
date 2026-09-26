@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied: 3D-Flasche mit Three.js, GSAP ScrollTrigger und Lenis.
 
-Live: https://laurenzhofer55555-droid.github.io/
+Live: https://laurenzhofer55555-droid.github.io/BerghofBraeu.io/
 
 ## Lokal starten
 
