@@ -1,80 +1,78 @@
 // ─────────────────────────────────────────────────────────────
-//  ZENTRALE STELLSCHRAUBEN – Kamera, Licht, Material, Effekte
+//  ZENTRALE STELLSCHRAUBEN – Farben, Kamera, Licht, Material
 //  Alle Werte hier ändern, der Rest des Codes liest nur aus.
 //  Einheiten: 1 Einheit ≈ 10 cm (Flasche ist ca. 2,2 hoch)
 // ─────────────────────────────────────────────────────────────
 
 export const CONFIG = {
   colors: {
-    green: '#038244',      // Etikett-Grün
-    cream: '#f4efe4',      // Etikett-Creme
-    bgCenter: '#3a2010',   // warmer Lichtfleck hinter der Flasche
-    bgEdge: '#070504',     // dunkler Rand
+    background: '#F7F4EC', // Creme – identisch mit CSS, damit Canvas und Seite nahtlos sind
+    green: '#1F4D2B',      // Tannengrün (Druck auf dem Kronkorken)
+    gold: '#B8913A',
   },
 
   camera: {
-    fov: 30,
-    position: [0, 0.1, 6.6],    // Startposition
-    target: [0, -0.5, 0],        // Blickpunkt (tiefer = Flasche wirkt höher im Bild)
-    portraitDistance: 7.8,       // Abstand auf Hochformat-Screens (Handy)
-    parallax: 0.18,              // Maus-Parallaxe (0 = aus)
+    fov: 28,
+    position: [0, 0.35, 7.0],   // Startposition
+    target: [0, -0.42, 0],       // Blickpunkt (tiefer = Flasche steht höher im Bild)
+    portraitDistance: 7.6,       // Abstand auf Hochformat-Screens (Handy)
+    portraitTargetY: -0.2,       // Blickpunkt auf dem Handy (höher = Flasche rückt nach unten, näher an den Titel)
+    parallax: 0.12,              // Maus-Parallaxe (0 = aus)
   },
 
   bottle: {
     glbUrl: null,            // später z. B. 'assets/models/bottle.glb' → ersetzt die prozedurale Flasche
-    idleSpeed: 0.18,         // Idle-Rotation in rad/s
-    startRotation: -0.35,    // leicht gedreht, damit das Etikett nicht flach wirkt
+    idleSpeed: 0.16,         // Idle-Rotation in rad/s
+    startRotation: -0.3,     // leicht gedreht, damit das Etikett plastisch wirkt
   },
 
+  // Bernsteinglas, mit Bier gefüllt (unterer Teil) bzw. leer (Hals über dem Füllstand)
   glass: {
-    color: '#ffffff',
-    roughness: 0.06,
+    roughness: 0.04,
     ior: 1.5,
-    thickness: 0.35,
-    attenuationColor: '#e0a458', // Braunglas-Tönung
-    attenuationDistance: 0.35,   // kleiner = dunkleres Glas
-    envMapIntensity: 1.6,
-    dropletStrength: 0.55,       // Kondenswasser Normal-Map-Stärke
-    dropletCount: 2600,
-    edgeDarken: 0.04,            // Helligkeit am Glasrand (echtes Braunglas ist am Rand dunkler)
-    edgePower: 4.0,              // Breite des dunklen Randes
-  },
-
-  beer: {
-    color: '#140802',       // Grundfarbe (fast schwarz, nur Glanz sichtbar)
-    core: '#ff8c14',        // Leuchten in der Mitte (Gegenlicht durchs Bier)
-    edge: '#2a0e02',        // dunkle Ränder
-    glowIntensity: 1.0, 
-    falloff: 7.0,           // höher = dunklere, breitere Ränder
-    fillHeight: 0.88,       // Füllhöhe relativ zur Flaschenhöhe
+    envMapIntensity: 1.0,
+    filled: {
+      thickness: 0.36,               // Lichtweg durch Glas + Bier (höher = stärkere Lichtbrechung)
+      attenuationColor: '#CC7C2C',   // Bernstein-Tönung
+      attenuationDistance: 0.36,     // kleiner = dunkler
+    },
+    empty: {
+      thickness: 0.12,               // nur die beiden Glaswände
+      attenuationColor: '#B86E2A',
+      attenuationDistance: 0.09,
+    },
+    edgeDarken: 0.04,        // Helligkeit am Rand (längerer Lichtweg → dunkler)
+    edgePower: 3.5,          // Breite des dunklen Randes (höher = schmalerer heller Kern)
+    fillHeight: 0.875,       // Füllhöhe relativ zur Flaschenhöhe
   },
 
   cap: {
-    color: '#d7ad4f',
-    roughness: 0.26,
-    metalness: 1.0,
+    color: '#C9A24C',        // Gold
+    roughness: 0.3,
+    printColor: '#1F4D2B',   // Aufdruck in Tannengrün
   },
 
   lights: {
-    ambient: 0.12,
-    key:  { color: '#fff1dc', intensity: 2.6, position: [-3.5, 5, 4] },     // Studiolicht schräg oben
-    rimL: { color: '#ffb466', intensity: 14, position: [-2.6, 1.6, -3.2] }, // Rimlight links hinten
-    rimR: { color: '#ffd29a', intensity: 12, position: [2.8, 2.2, -3.0] },  // Rimlight rechts hinten
-    fill: { color: '#ffe3c0', intensity: 0.5, position: [3, -1, 5] },
+    exposure: 1.0,
     envIntensity: 1.0,
+    key:  { color: '#fff6e8', intensity: 1.25, position: [-4, 6, 5] },  // Softbox schräg oben links
+    fill: { color: '#ffffff', intensity: 0.45, position: [5, 2, 4] },
+    ambient: 0.2,
   },
 
-  post: {
-    exposure: 1.05,
-    bloom: { strength: 0.28, radius: 0.5, threshold: 0.95 }, // nur Glanzlichter blühen
-    dof: { enabled: true, focus: 6.6, aperture: 0.0009, maxblur: 0.006 }, // sanfte Tiefenunschärfe
-    grain: 0.055,      // Filmkorn
-    vignette: 0.9,
+  shadow: {
+    size: 2.4,          // Fläche des Kontaktschattens
+    height: 0.9,        // wie hoch über dem Boden Teile noch Schatten werfen
+    opacity: 0.9,
+    blur: 2.6,
+    darkness: 2.2,
+    color: '#3a2412',   // warmes Dunkelbraun
+    tint: '#c8781e',    // Bernstein-Schimmer im weichen Schattenbereich (Licht durchs Glas)
   },
 
   perf: {
     maxDprDesktop: 2,
     maxDprMobile: 1.5,
-    autoDowngradeFps: 42,  // fällt die FPS darunter → DOF/Bloom aus, DPR runter
+    autoDowngradeFps: 45,  // fällt die FPS darunter → Auflösung runter
   },
 };

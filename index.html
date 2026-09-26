@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell – Vollbier Hell aus Agatharied</title>
   <meta name="description" content="Berghof Hell – Vollbier Hell, 4,9 % vol. Erhältlich direkt am Berghof in Agatharied." />
-  <meta name="theme-color" content="#070504" />
+  <meta name="theme-color" content="#F7F4EC" />
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="canonical" href="https://berghof-hell.de/" />
 
@@ -43,7 +43,8 @@
   </script>
 
   <!-- Schriften lokal (kein Google-Fonts-Aufruf → keine IP-Übertragung an Dritte) -->
-  <link rel="preload" href="vendor/fonts/oswald-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="vendor/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="vendor/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/style.css" />
 
   <!-- Alle Bibliotheken liegen lokal in /vendor -->
@@ -58,12 +59,10 @@
   <script src="vendor/gsap.min.js" defer></script>
   <script src="vendor/ScrollTrigger.min.js" defer></script>
   <script src="vendor/lenis.min.js" defer></script>
-  <script type="module" src="js/content.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
-  <div class="scene-dim" aria-hidden="true"></div>
 
   <!-- Fallback ohne WebGL -->
   <div class="fallback" aria-hidden="true">
@@ -73,75 +72,24 @@
   <main>
     <!-- ── Start ─────────────────────────────── -->
     <section class="hero" id="start">
-      <h1 class="hero__title">
-        <span class="hero__line">Berghof</span>
-        <span class="hero__line hero__line--sub">Hell</span>
-      </h1>
-      <p class="hero__meta">Vollbier Hell · 4,9 % vol · Agatharied</p>
-      <a class="hero__scroll" href="#bier" aria-label="Weiter zum Bier"><span></span></a>
-    </section>
-
-    <!-- ── Das Bier ──────────────────────────── -->
-    <section class="section" id="bier">
-      <div class="panel">
-        <p class="eyebrow">Das Bier</p>
-        <h2>Ein ehrliches Helles.</h2>
-        <p class="lead">
-          Goldgelb, mild und süffig: Das Berghof Hell ist ein klassisches bayerisches Vollbier.
-          Weiches Malz, eine feine Hopfennote und ein sauberer Abgang.
-        </p>
-        <dl class="facts">
-          <div><dt>Sorte</dt><dd>Vollbier Hell</dd></div>
-          <div><dt>Alkohol</dt><dd>4,9 % vol</dd></div>
-          <div><dt>Gebinde</dt><dd>0,5 l Flasche</dd></div>
-          <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
-        </dl>
-        <p class="small">Kühl und dunkel lagern. Enthält Gluten.</p>
+      <!-- feiner Doppelrahmen wie beim Etikett -->
+      <div class="frame" aria-hidden="true">
+        <i class="frame__corner frame__corner--tl"></i>
+        <i class="frame__corner frame__corner--tr"></i>
+        <i class="frame__corner frame__corner--bl"></i>
+        <i class="frame__corner frame__corner--br"></i>
       </div>
-    </section>
 
-    <!-- ── Geschichte ────────────────────────── -->
-    <section class="section" id="geschichte">
-      <div class="panel">
-        <p class="eyebrow">Geschichte</p>
-        <h2>Der Berghof in Agatharied.</h2>
-        <p class="lead">
-          Viele kennen den Berghof in Agatharied als Jugend- und Gruppenhaus.
-          Heute steht sein Name auf unserem Bier.
-        </p>
-        <!-- Stationen kommen aus data/geschichte.json -->
-        <ol class="timeline" id="timeline" hidden></ol>
-      </div>
-    </section>
+      <p class="hero__brand"><span>Hofer Bräu</span></p>
 
-    <!-- ── Hier gibt's das Bier ──────────────── -->
-    <section class="section" id="bezug">
-      <div class="panel">
-        <p class="eyebrow">Hier gibt's das Bier</p>
-        <h2>Direkt ab Hof.</h2>
-        <!-- Standorte kommen aus data/standorte.json; dieser Block ist der Fallback -->
-        <ul class="locations" id="locations">
-          <li class="location">
-            <h3>Berghof Agatharied</h3>
-            <p>Berg 112<br />83734 Hausham</p>
-            <p>Ansprechpartner: Laurenz Hofer</p>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- ── Kontakt ───────────────────────────── -->
-    <section class="section" id="kontakt">
-      <div class="panel">
-        <p class="eyebrow">Kontakt</p>
-        <h2>Fragen, Bestellungen, Feste?</h2>
-        <p class="lead">Melde dich direkt bei uns.</p>
-        <address class="contact">
-          <strong>Hofer Bräu</strong><br />
-          Laurenz Hofer<br />
-          Berg 112, 83734 Hausham<br />
-          <span class="todo">E-Mail folgt</span>
-        </address>
+      <div class="hero__text">
+        <h1 class="hero__title">Berghof <em>Hell</em></h1>
+        <svg class="ornament" viewBox="0 0 240 14" aria-hidden="true">
+          <path d="M0 7H96M144 7H240" />
+          <path d="M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z" />
+          <path class="ornament__fill" d="M115 7l5-5 5 5-5 5z" />
+        </svg>
+        <p class="hero__meta">Vollbier Hell · 4,9 % vol · Agatharied</p>
       </div>
     </section>
   </main>
@@ -152,7 +100,6 @@
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
-    <p class="footer__copy">© <span id="year">2026</span> Hofer Bräu</p>
   </footer>
 
   <div class="loader" aria-hidden="true"></div>

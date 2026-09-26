@@ -1,125 +1,124 @@
-// Prozedurale Texturen (Canvas) – keine externen Dateien nötig.
+// Prozedurale Texturen (Canvas) für den Kronkorken.
 import * as THREE from 'three';
+import { CONFIG } from './config.js';
 
-// Kondenswassertropfen als kachelbare Normal Map.
-// Jeder Tropfen = kleine Halbkugel, leicht nach unten gezogen (Schwerkraft).
-export function createDropletNormalMap(count = 2600, size = 1024) {
-  const data = new Uint8ClampedArray(size * size * 4);
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = 128; data[i + 1] = 128; data[i + 2] = 255; data[i + 3] = 255;
+const SIZE = 2048;
+const TAU = Math.PI * 2;
+
+// Kronkorken-Oberseite: goldenes Metall mit grünem Aufdruck (Ring-Schrift + Berghof-Zeichnung).
+// Liefert drei Texturen:
+//  map  – Farbe (Gold bzw. Druckfarbe)
+//  orm  – G = Rauheit, B = Metall (Druckfarbe ist matt und nicht metallisch)
+//  bump – leicht erhabener Rand
+export function createCapTopTextures(drawing) {
+  const m = SIZE / 2;
+  const color = canvas(), orm = canvas(), bump = canvas();
+  const c = color.getContext('2d'), o = orm.getContext('2d'), b = bump.getContext('2d');
+
+  // ── Grundmetall ──────────────────────────────
+  const gold = CONFIG.cap.color;
+  c.fillStyle = gold;
+  c.fillRect(0, 0, SIZE, SIZE);
+  // feine konzentrische Drehrillen (Stanzteil) – nur in der Rauheit sichtbar
+  o.fillStyle = `rgb(255, ${Math.round((CONFIG.cap.roughness + 0.08) * 255)}, 255)`;   // Deckfläche minimal matter als der Rand
+  o.fillRect(0, 0, SIZE, SIZE);
+  for (let r = 8; r < m; r += 5) {
+    o.strokeStyle = `rgba(255, ${Math.round((CONFIG.cap.roughness + (Math.random() - 0.5) * 0.12) * 255)}, 255, 0.5)`;
+    o.lineWidth = 2;
+    o.beginPath(); o.arc(m, m, r, 0, TAU); o.stroke();
   }
-  const rand = mulberry32(7);
+  // Bump: flache Mitte, erhabener Wulst am Rand
+  b.fillStyle = '#808080';
+  b.fillRect(0, 0, SIZE, SIZE);
+  const rim = b.createRadialGradient(m, m, m * 0.86, m, m, m);
+  rim.addColorStop(0, '#808080');
+  rim.addColorStop(0.45, '#d0d0d0');
+  rim.addColorStop(1, '#707070');
+  b.fillStyle = rim;
+  b.beginPath(); b.arc(m, m, m, 0, TAU); b.fill();
 
-  for (let n = 0; n < count; n++) {
-    // viele kleine, wenige große Tropfen
-    const t = rand();
-    const r = t < 0.85 ? 1.2 + rand() * 3.5 : 5 + rand() * 9;
-    const rx = r, ry = r * (1.05 + rand() * 0.35);
-    const cx = rand() * size, cy = rand() * size;
-    const x0 = Math.floor(cx - rx - 1), x1 = Math.ceil(cx + rx + 1);
-    const y0 = Math.floor(cy - ry - 1), y1 = Math.ceil(cy + ry + 1);
+  // ── Aufdruck (in color = Grün, in orm = matt/nicht metallisch) ───
+  const ink = CONFIG.cap.printColor;
+  const inkOrm = `rgb(255, ${Math.round(0.55 * 255)}, 0)`;
+  const print = (fn) => { fn(c, ink); fn(o, inkOrm); };
 
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        const dx = (x - cx) / rx;
-        // Unterseite etwas bauchiger → Tropfen "hängt"
-        let dy = (y - cy) / ry;
-        dy = dy > 0 ? dy * 0.85 : dy * 1.1;
-        const d2 = dx * dx + dy * dy;
-        if (d2 >= 1) continue;
-        const nz = Math.sqrt(1 - d2);
-        const px = ((x % size) + size) % size;
-        const py = ((y % size) + size) % size;
-        const idx = (py * size + px) * 4;
-        data[idx] = (dx * 0.5 + 0.5) * 255;
-        data[idx + 1] = (-dy * 0.5 + 0.5) * 255; // Canvas-Y zeigt nach unten
-        data[idx + 2] = (nz * 0.5 + 0.5) * 255;
-      }
-    }
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  canvas.getContext('2d').putImageData(new ImageData(data, size, size), 0, 0);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.NoColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
-// Kronkorken-Oberseite: Bump Map mit geprägtem Ring-Schriftzug.
-// Wird in Schritt 3 zur "Bühne" für die Inhalte.
-export function createCapBumpMap(size = 1024) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d');
-  const m = size / 2;
-  g.fillStyle = '#808080';
-  g.fillRect(0, 0, size, size);
-
-  // leicht gewölbte Mitte
-  const grad = g.createRadialGradient(m, m, 0, m, m, m);
-  grad.addColorStop(0, '#9a9a9a');
-  grad.addColorStop(0.85, '#808080');
-  grad.addColorStop(1, '#6a6a6a');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, size, size);
-
-  // geprägte Ringe
-  g.strokeStyle = '#c8c8c8';
-  g.lineWidth = size * 0.012;
-  g.beginPath(); g.arc(m, m, size * 0.43, 0, Math.PI * 2); g.stroke();
-  g.lineWidth = size * 0.005;
-  g.beginPath(); g.arc(m, m, size * 0.30, 0, Math.PI * 2); g.stroke();
-
-  // Ring-Schriftzug
-  g.fillStyle = '#d0d0d0';
-  g.font = `600 ${size * 0.062}px Oswald, "Arial Narrow", sans-serif`;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  const text = 'BERGHOF · HELL · AGATHARIED · ';
-  const chars = [...text];
-  const step = (Math.PI * 2) / chars.length;
-  chars.forEach((ch, i) => {
-    const a = i * step - Math.PI / 2;
-    g.save();
-    g.translate(m + Math.cos(a) * size * 0.365, m + Math.sin(a) * size * 0.365);
-    g.rotate(a + Math.PI / 2);
-    g.fillText(ch, 0, 0);
-    g.restore();
+  // doppelte Ringlinie
+  print((g, col) => {
+    g.strokeStyle = col;
+    g.lineWidth = SIZE * 0.006;
+    g.beginPath(); g.arc(m, m, m * 0.8, 0, TAU); g.stroke();
+    g.lineWidth = SIZE * 0.0025;
+    g.beginPath(); g.arc(m, m, m * 0.76, 0, TAU); g.stroke();
+    g.beginPath(); g.arc(m, m, m * 0.5, 0, TAU); g.stroke();
   });
 
-  // Monogramm Mitte
-  g.font = `700 ${size * 0.2}px Oswald, "Arial Narrow", sans-serif`;
-  g.fillText('BH', m, m + size * 0.01);
+  // Ring-Schriftzug zwischen den Linien
+  const ringText = 'BERGHOF HELL ◆ VOLLBIER ◆ AGATHARIED ◆ ';
+  print((g, col) => {
+    g.fillStyle = col;
+    g.font = `600 ${SIZE * 0.05}px "Playfair Display", Georgia, serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const chars = [...ringText];
+    const step = TAU / chars.length;
+    chars.forEach((ch, i) => {
+      const a = i * step - Math.PI / 2;
+      g.save();
+      g.translate(m + Math.cos(a) * m * 0.63, m + Math.sin(a) * m * 0.63);
+      g.rotate(a + Math.PI / 2);
+      g.fillText(ch, 0, 0);
+      g.restore();
+    });
+  });
 
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.NoColorSpace;
-  tex.anisotropy = 8;
-  return tex;
+  // Mitte: Berghof-Zeichnung (nur die Gebäude) + Schriftzug
+  if (drawing) {
+    const sx = drawing.width * 0.27, sw = drawing.width * 0.6;   // Ausschnitt Gebäude
+    const sh = drawing.height;
+    const dw = m * 0.84, dh = dw * (sh / sw);
+    const tinted = tintImage(drawing, sx, 0, sw, sh, dw, dh);
+    c.drawImage(tinted.color(ink), m - dw / 2, m - dh * 0.78);
+    o.drawImage(tinted.color(inkOrm), m - dw / 2, m - dh * 0.78);
+  }
+  print((g, col) => {
+    g.fillStyle = col;
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    g.font = `italic 600 ${SIZE * 0.07}px "Playfair Display", Georgia, serif`;
+    g.fillText('Berghof', m, m + m * 0.3);
+  });
+
+  const map = toTexture(color, THREE.SRGBColorSpace);
+  const ormTex = toTexture(orm, THREE.NoColorSpace);
+  const bumpTex = toTexture(bump, THREE.NoColorSpace);
+  return { map, orm: ormTex, bump: bumpTex };
 }
 
-// Weicher Kontaktschatten unter der Flasche
-export function createShadowTexture(size = 256) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d');
-  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  grad.addColorStop(0, 'rgba(0,0,0,0.85)');
-  grad.addColorStop(0.35, 'rgba(0,0,0,0.45)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, size, size);
-  return new THREE.CanvasTexture(c);
+function canvas() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = SIZE;
+  return cv;
 }
 
-// deterministischer Zufall → Tropfenbild bei jedem Laden gleich
-function mulberry32(a) {
-  return function () {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+function toTexture(cv, colorSpace) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = colorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+// Schwarz-transparente Zeichnung in eine Farbe umfärben (für den Druck)
+function tintImage(img, sx, sy, sw, sh, dw, dh) {
+  return {
+    color(col) {
+      const cv = document.createElement('canvas');
+      cv.width = Math.ceil(dw); cv.height = Math.ceil(dh);
+      const g = cv.getContext('2d');
+      g.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = col;
+      g.fillRect(0, 0, dw, dh);
+      return cv;
+    },
   };
 }
