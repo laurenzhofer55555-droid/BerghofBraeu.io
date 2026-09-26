@@ -44,6 +44,12 @@ der Schaumtextur bei 75 % der Höhe (`SURFACE` in `js/sequenz.js`).
 Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnellerer Seitenaufbau).
 Änderungen am Startbereich also an beiden Stellen machen.
 
+## Altersabfrage 16+
+
+Beim ersten Besuch fragt `index.html` „Bist du 16 Jahre oder älter?“ (Markup ganz oben im `<body>`, Stil im Start-CSS,
+Verhalten in `js/altersabfrage.js`). „Ja“ wird 30 Tage im Browser gespeichert (`localStorage`, Schlüssel `berghof-ab16`),
+erst danach startet die Scroll-Sequenz. Impressum und Datenschutz sind ohne Abfrage erreichbar.
+
 ## Inhalte pflegen
 
 - **Standorte:** in `data/standorte.json` eintragen, dann `python3 tools/standorte.py` ausführen –

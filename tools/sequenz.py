@@ -53,13 +53,20 @@ def main():
         sys.exit('Aufruf: python3 tools/sequenz.py <Ordner mit sequenz-roh-*>')
     raw = pathlib.Path(sys.argv[1])
     seq = json.loads((ROOT / 'tools' / 'sequenz.json').read_text(encoding='utf-8'))
-    stations = [s['frame'] for s in seq['stations']]
+    # Die Seite beginnt bei der Startstation (sequenz.json → start); Bilder davor werden nicht ausgeliefert
+    names = [s['name'] for s in seq['stations']]
+    first = names.index(seq.get('start', names[0]))
+    stations = [s['frame'] for s in seq['stations']][first:]
     manifest = {'frames': seq['frames'], 'stations': stations, 'sets': {}}
 
     for name, cfg in SETS.items():
         src = raw / f'sequenz-roh-{name}'
         total = 0
-        for i in range(seq['frames']):
+        for old in (OUT / name).glob('*.webp'):                        # nicht mehr benötigte Bilder entfernen
+            k = int(old.stem.replace('still-', '')) - 1
+            if k < stations[0] or (old.stem.startswith('still-') and k not in stations):
+                old.unlink()
+        for i in range(stations[0], seq['frames']):
             png = src / f'{i + 1:03d}.png'
             targets = [(OUT / name / f'{i + 1:03d}.webp', cfg['motion'], cfg['quality'])]
             if i in stations:
@@ -72,7 +79,7 @@ def main():
                 im = im or Image.open(png).convert('RGB')
                 total += save(im.resize(size, Image.LANCZOS), out, quality)
         manifest['sets'][name] = {'motion': list(cfg['motion']), 'still': list(cfg['still'])}
-        print(f'{name}: {seq["frames"]} Bilder + {len(stations)} Ruhebilder, {total / 1e6:.1f} MB')
+        print(f'{name}: {seq["frames"] - stations[0]} Bilder + {len(stations)} Ruhebilder, {total / 1e6:.1f} MB')
 
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 

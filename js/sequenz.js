@@ -2,10 +2,9 @@
 // Die Bilder werden vorab aus der 3D-Szene gerendert (tools/sequenz-rendern.html + tools/sequenz.py);
 // hier wird beim Scrollen nur noch das passende Bild auf ein <canvas> gezeichnet → flüssig auch auf alten Handys.
 //
-// Ablauf in 7 Scroll-Stufen (Einrastpunkte; Stationen 0–6 aus assets/sequenz/manifest.json):
-//   1–2 Flasche dreht sich (Rückseite, wieder Vorderseite) · 3 Blick hebt sich · 4–5 Vogelperspektive
-//   6 Zoom auf den goldenen Kronkorken, darauf erscheint „Berghof Hell“
-//   7 das Bier wird leer: Schaumkrone wandert nach unten und gibt das Beige frei → danach folgen die Inhalte.
+// Start: etikettierte Flasche in Frontansicht. Scroll-Stufen (Einrastpunkte = Stationen aus assets/sequenz/manifest.json):
+//   Blick hebt sich · Vogelperspektive (2 Stufen) · Zoom auf den goldenen Kronkorken mit „Berghof Hell“
+//   · zuletzt das Bier wird leer: Schaumkrone wandert nach unten und gibt das Beige frei → danach folgen die Inhalte.
 // Im DOM werden nur transform und opacity animiert. Zum Einstellen lokal kurz `markers: true` setzen – nicht so veröffentlichen.
 
 const BASE = 'assets/sequenz/';
@@ -20,7 +19,7 @@ const portrait = window.matchMedia('(max-aspect-ratio: 4/5)');
 const saveData = navigator.connection?.saveData === true;
 
 const manifest = await (await fetch(BASE + 'manifest.json')).json();
-const ST = manifest.stations;              // Bildnummer je Station, z. B. [0, 24, 48, 68, 86, 104, 128]
+const ST = manifest.stations;              // Bildnummer je Station, z. B. [48, 68, 86, 104, 128]
 const UNITS = ST.length - 1;               // Scroll-Stufen mit Renderbildern
 const DRAIN = 1;                           // + Stufe 7 „das Bier wird leer“ (nur DOM-Ebenen über dem letzten Bild)
 const TOTAL = UNITS + DRAIN;
@@ -29,13 +28,13 @@ let set, frames = [], stills = [], current = 0, lastDrawn = null, loadRun = 0;
 
 // ── Laden: erst das Ruhebild der Startstation, dann jedes 8., 4., 2. Bild, dann alle ──
 function loadOrder() {
-  const n = manifest.frames, order = [], seen = new Set();
+  const n = manifest.frames, a = ST[0], order = [], seen = new Set();
   const add = (job) => { const key = job.join(); if (!seen.has(key)) { seen.add(key); order.push(job); } };
   add(['still', 0]);
-  for (const step of [8, 4]) for (let i = 0; i < n; i += step) add(['frame', i]);
+  for (const step of [8, 4]) for (let i = a; i < n; i += step) add(['frame', i]);
   add(['frame', n - 1]);
   if (!saveData) for (let s = 1; s <= UNITS; s++) add(['still', s]);
-  for (const step of [2, 1]) for (let i = 0; i < n; i += step) add(['frame', i]);
+  for (const step of [2, 1]) for (let i = a; i < n; i += step) add(['frame', i]);
   return order;
 }
 

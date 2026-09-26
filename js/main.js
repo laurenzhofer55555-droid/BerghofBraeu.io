@@ -1,7 +1,10 @@
 // Starter: Die Seite (Text, Rahmen, Standbild der Flasche) erscheint sofort.
 // Die Scroll-Sequenz ist Zugabe und wird geladen, sobald die Seite fertig ist:
 // bei der ersten Interaktion (Maus, Scrollen, Tippen, Tastatur) oder nach einer kurzen Ruhephase.
-// Bei „Bewegung reduzieren“ bleibt es beim Standbild – die Inhalte folgen direkt darunter.
+// Beim ersten Besuch wartet sie auf die Altersabfrage (js/altersabfrage.js) und startet direkt nach „Ja“.
+// Bei „Bewegung reduzieren“ bleibt es beim Standbild, die Inhalte folgen direkt darunter.
+
+import { gated, confirmed } from './altersabfrage.js';
 
 const START_DELAY = 1200;   // ms nach dem Laden, falls der Besucher nichts tut
 
@@ -23,15 +26,19 @@ async function start() {
     await loadScript('vendor/ScrollTrigger.min.js');
     await import('./sequenz.js');
   } catch (e) {
-    console.warn('Scroll-Sequenz konnte nicht geladen werden – das Standbild bleibt stehen', e);
+    console.warn('Scroll-Sequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
   }
 }
 
 const events = ['pointerdown', 'pointermove', 'wheel', 'touchstart', 'keydown', 'scroll'];
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+function arm() {
   events.forEach((type) => window.addEventListener(type, start, { passive: true }));
   const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1));
   const afterLoad = () => setTimeout(() => idle(start, { timeout: 1500 }), START_DELAY);
   if (document.readyState === 'complete') afterLoad();
   else window.addEventListener('load', afterLoad, { once: true });
+}
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (gated) confirmed.then(start);   // erster Besuch: Sequenz startet direkt nach „Ja“
+  else arm();
 }

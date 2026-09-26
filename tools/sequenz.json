@@ -1,5 +1,7 @@
 {
   "_hinweis": "Kamerapfad der Scroll-Sequenz. Jede Station = ein Einrastpunkt (eine Scroll-Stufe). frame = Bildnummer, rot = Drehung der Flasche (rad), cam = Kamera Querformat, camPortrait = Kamera Hochformat (Handy). Nach Änderungen: tools/sequenz-rendern.html neu ausführen und python3 tools/sequenz.py.",
+  "_start": "Station, mit der die Seite beginnt. Frühere Stationen (Drehung) werden gerendert, aber nicht ausgeliefert.",
+  "start": "vorderseite",
   "frames": 129,
   "stations": [
     {

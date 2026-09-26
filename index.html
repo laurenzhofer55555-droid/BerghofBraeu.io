@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
-  <meta name="description" content="Berghof Hell – bayerisches Helles vom Berghof in Agatharied bei Hausham im Oberland. Mild, süffig, 4,9 % vol. Erhältlich direkt am Berghof, Berg 112." />
+  <meta name="description" content="Berghof Hell: bayerisches Helles vom Berghof in Agatharied bei Hausham im Oberland. Mild, süffig, 4,9 % vol. Erhältlich direkt am Berghof, Berg 112." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://berghof-hell.de/" />
   <meta name="theme-color" content="#F7F4EC" />
-  <link rel="icon" href="/favicon.ico" sizes="48x48" />
-  <link rel="icon" href="assets/img/favicon-96.png" sizes="96x96" type="image/png" />
-  <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+  <link rel="icon" href="assets/img/favicon-96.png?v=2" sizes="96x96" type="image/png" />
+  <link rel="icon" href="assets/img/favicon-32.png?v=2" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="manifest" href="site.webmanifest" />
 
@@ -19,18 +19,18 @@
   <meta property="og:locale" content="de_DE" />
   <meta property="og:site_name" content="Berghof Hell" />
   <meta property="og:title" content="Berghof Hell | Bayerisches Helles vom Berghof Agatharied" />
-  <meta property="og:description" content="Mildes, süffiges Helles vom Berghof in Agatharied bei Hausham im Oberland – direkt am Berghof erhältlich." />
+  <meta property="og:description" content="Mildes, süffiges Helles vom Berghof in Agatharied bei Hausham im Oberland. Direkt am Berghof erhältlich." />
   <meta property="og:url" content="https://berghof-hell.de/" />
   <meta property="og:image" content="https://berghof-hell.de/assets/img/og.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Etikett des Berghof Hell mit Gemälde einer Oberland-Landschaft und dem Schriftzug Berghof Hell" />
+  <meta property="og:image:alt" content="Gemälde von J. Stallhofer: Blick über Agatharied im Oberland mit Kirche, Bergen und grasenden Schafen" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Berghof Hell | Bayerisches Helles vom Berghof Agatharied" />
-  <meta name="twitter:description" content="Mildes, süffiges Helles vom Berghof in Agatharied bei Hausham im Oberland – direkt am Berghof erhältlich." />
+  <meta name="twitter:description" content="Mildes, süffiges Helles vom Berghof in Agatharied bei Hausham im Oberland. Direkt am Berghof erhältlich." />
   <meta name="twitter:image" content="https://berghof-hell.de/assets/img/og.jpg" />
-  <meta name="twitter:image:alt" content="Etikett des Berghof Hell mit Gemälde einer Oberland-Landschaft" />
+  <meta name="twitter:image:alt" content="Gemälde von J. Stallhofer: Blick über Agatharied im Oberland mit Kirche, Bergen und grasenden Schafen" />
 
   <!-- Ortsangaben (von Bing & Co. genutzt) -->
   <meta name="geo.region" content="DE-BY" />
@@ -58,7 +58,7 @@
           "description": "Bayerisches Helles vom Berghof in Agatharied bei Hausham im Oberland. Erhältlich direkt am Berghof.",
           "url": "https://berghof-hell.de/",
           "logo": { "@type": "ImageObject", "url": "https://berghof-hell.de/assets/img/logo.png", "width": 512, "height": 512 },
-          "image": ["https://berghof-hell.de/assets/img/og.jpg", "https://berghof-hell.de/assets/img/berghof-gemaelde-1030.webp"],
+          "image": ["https://berghof-hell.de/assets/img/og-quadrat.jpg", "https://berghof-hell.de/assets/img/og.jpg"],
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "Berg 112",
@@ -84,7 +84,7 @@
           "@id": "https://berghof-hell.de/#bier",
           "name": "Berghof Hell",
           "description": "Bayerisches Vollbier Hell: goldgelb, mild und süffig. Gebraut aus Wasser, Gerstenmalz und Hopfen von der Brauerei Silbernagl in Hausham.",
-          "image": "https://berghof-hell.de/assets/img/og.jpg",
+          "image": "https://berghof-hell.de/assets/img/flasche-berghof-hell-701.webp",
           "category": "Bier",
           "brand": { "@type": "Brand", "name": "Berghof Hell" },
           "manufacturer": {
@@ -102,6 +102,15 @@
         }
       ]
     }
+  </script>
+
+  <!-- Altersabfrage: ohne gültige Bestätigung (30 Tage) erscheint das Overlay, bevor etwas von der Seite zu sehen ist -->
+  <script>
+    (function () {
+      var ok = false;
+      try { ok = Number(localStorage.getItem('berghof-ab16')) > Date.now(); } catch (e) {}
+      if (!ok) document.documentElement.classList.add('age-gate');
+    })();
   </script>
 
   <!-- Start-CSS direkt im HTML (schnellster erster Bildaufbau). Kopie der Startbereich-Regeln aus css/style.css –
@@ -122,6 +131,35 @@
     #sequenz { display: block; z-index: 0; opacity: 0; }
     .cap-title { position: absolute; left: 0; right: 0; top: 50%; margin: 0; transform: translateY(-50%); opacity: 0; }
     .beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+    /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss */
+    .age { display: none; position: fixed; inset: 0; z-index: 40; background: var(--cream); align-items: center; justify-content: center;
+      padding: 24px; text-align: center; transition: opacity .6s ease; }
+    .age-gate, .age-gate body { overflow: hidden; }
+    .age-gate .age { display: flex; }
+    .age-leaving .age { opacity: 0; pointer-events: none; }
+    .age:focus { outline: none; }
+    .age__vine { position: absolute; top: 50%; left: clamp(6px, 7vw, 120px); height: min(72vh, 540px); width: auto; transform: translateY(-50%); }
+    .age__vine--right { left: auto; right: clamp(6px, 7vw, 120px); transform: translateY(-50%) scaleX(-1); }
+    .age__card { position: relative; max-width: 30rem; }
+    .age__logo { display: block; width: 84px; height: auto; margin: 0 auto 18px; opacity: .9; }
+    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4.4vw, 46px); line-height: 1.15; color: var(--green); }
+    .age__actions { display: flex; gap: 14px; justify-content: center; margin: clamp(22px, 4vh, 34px) 0 0; }
+    .age__btn { min-width: 124px; padding: 13px 30px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
+      font: 500 14px/1 var(--font-text); letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }
+    .age__btn:hover { background: #173b21; }
+    .age__btn--no { background: transparent; color: var(--green); }
+    .age__btn--no:hover { background: rgba(31, 77, 43, .07); }
+    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #7A5C1C; outline-offset: 3px; }
+    .age__note { margin: clamp(20px, 3.5vh, 30px) 0 0; font-size: 14px; line-height: 1.5; color: var(--green-soft); }
+    .age__note a { color: var(--green); }
+    .age__no { display: none; }
+    .age-denied .age__ask { display: none; }
+    .age-denied .age__no { display: block; }
+    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.6; color: var(--ink); }
+    @media (max-width: 640px) { .age__vine { height: min(30vh, 250px); left: 4px; } .age__vine--right { left: auto; right: 4px; } .age__card { max-width: 15rem; }
+      .age__title { font-size: 26px; }
+      .age__actions { gap: 10px; } .age__btn { min-width: 104px; padding: 12px 20px; } }
+    @media (prefers-reduced-motion: reduce) { .age { transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
     .poster picture { position: absolute; left: 50%; top: 5.16%; height: 66.8%; aspect-ratio: 600 / 1670; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
@@ -155,6 +193,66 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
+  <!-- Altersabfrage 16+: liegt nur über der Seite, alle Inhalte bleiben im HTML (js/altersabfrage.js) -->
+  <div class="age" id="altersabfrage" role="dialog" aria-modal="true" aria-labelledby="age-title" tabindex="-1" data-nosnippet>
+    <div class="frame" aria-hidden="true">
+      <i class="frame__corner frame__corner--tl"></i>
+      <i class="frame__corner frame__corner--tr"></i>
+      <i class="frame__corner frame__corner--bl"></i>
+      <i class="frame__corner frame__corner--br"></i>
+    </div>
+    <svg class="age__vine" viewBox="0 0 120 460" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
+      <path d="M60 310C74 300 90 302 92 316C94 328 82 332 76 324C72 318 78 312 83 316"/>
+      <path d="M62 182C46 172 30 176 28 190C27 202 40 204 44 196C47 190 40 185 36 189"/>
+      <path d="M58 58C72 54 84 60 82 72C80 81 70 80 70 73"/>
+      <path d="M52 404C40 390 22 388 10 396C18 400 22 408 18 416C30 414 40 410 46 404C42 416 44 426 52 432C56 420 56 412 52 404Z" fill="#F7F4EC"/>
+      <path d="M52 404L20 402M36 403L26 394M38 406L30 414" stroke-width=".9"/>
+      <path d="M64 254C78 242 96 242 108 250C100 254 96 262 100 270C88 268 78 264 72 258C76 270 74 280 66 286C62 274 62 264 64 254Z" fill="#F7F4EC"/>
+      <path d="M64 254L98 256M82 255L92 246M80 258L88 266" stroke-width=".9"/>
+      <path d="M64 124C52 112 36 112 26 118C33 122 36 128 33 135C43 133 51 130 57 125C54 135 56 143 62 148C65 138 66 130 64 124Z" fill="#F7F4EC"/>
+      <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
+      <path d="M78 322C82 328 86 332 86 338"/>
+      <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
+      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M40 196C38 202 36 206 36 212"/>
+      <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
+      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
+    </svg>
+    <svg class="age__vine age__vine--right" viewBox="0 0 120 460" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
+      <path d="M60 310C74 300 90 302 92 316C94 328 82 332 76 324C72 318 78 312 83 316"/>
+      <path d="M62 182C46 172 30 176 28 190C27 202 40 204 44 196C47 190 40 185 36 189"/>
+      <path d="M58 58C72 54 84 60 82 72C80 81 70 80 70 73"/>
+      <path d="M52 404C40 390 22 388 10 396C18 400 22 408 18 416C30 414 40 410 46 404C42 416 44 426 52 432C56 420 56 412 52 404Z" fill="#F7F4EC"/>
+      <path d="M52 404L20 402M36 403L26 394M38 406L30 414" stroke-width=".9"/>
+      <path d="M64 254C78 242 96 242 108 250C100 254 96 262 100 270C88 268 78 264 72 258C76 270 74 280 66 286C62 274 62 264 64 254Z" fill="#F7F4EC"/>
+      <path d="M64 254L98 256M82 255L92 246M80 258L88 266" stroke-width=".9"/>
+      <path d="M64 124C52 112 36 112 26 118C33 122 36 128 33 135C43 133 51 130 57 125C54 135 56 143 62 148C65 138 66 130 64 124Z" fill="#F7F4EC"/>
+      <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
+      <path d="M78 322C82 328 86 332 86 338"/>
+      <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
+      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M40 196C38 202 36 206 36 212"/>
+      <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
+      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
+    </svg>
+    <div class="age__card">
+      <img class="age__logo" src="assets/img/logo-192.webp" width="192" height="155" alt="Logo Berghof Hell" />
+      <div class="age__ask">
+        <h2 class="age__title" id="age-title">Bist du 16 Jahre oder älter?</h2>
+        <div class="age__actions">
+          <button class="age__btn" type="button" data-age="ja">Ja</button>
+          <button class="age__btn age__btn--no" type="button" data-age="nein">Nein</button>
+        </div>
+      </div>
+      <div class="age__no" tabindex="-1" aria-live="polite">
+        <h2 class="age__title">Schade!</h2>
+        <p>Berghof Hell gibt es erst ab 16 Jahren. Schau gern wieder vorbei, wenn es so weit ist.</p>
+      </div>
+      <p class="age__note">Bitte genieße verantwortungsvoll.<br /><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+    </div>
+  </div>
   <canvas id="sequenz" aria-hidden="true"></canvas>
 
   <!-- Standbild der Flasche: sofort sichtbar (schnell, von Google lesbar), liegt pixelgenau unter dem
@@ -165,7 +263,7 @@
               srcset="assets/img/flasche-berghof-hell-hoch-285.webp 285w, assets/img/flasche-berghof-hell-hoch.webp 419w, assets/img/flasche-berghof-hell-hoch-586.webp 586w" />
       <img src="assets/img/flasche-berghof-hell.webp" sizes="24vh" width="474" height="1319" fetchpriority="high"
            srcset="assets/img/flasche-berghof-hell-322.webp 322w, assets/img/flasche-berghof-hell.webp 474w, assets/img/flasche-berghof-hell-701.webp 701w"
-           alt="Flasche Berghof Hell – bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
+           alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
   </div>
 
@@ -196,7 +294,7 @@
       <div class="hero__text">
         <h1 class="hero__heading" id="hero-title">
           <span class="hero__title">Berghof <em>Hell</em></span>
-          <span class="visually-hidden"> – </span>
+          <span class="visually-hidden">, </span>
           <span class="hero__claim">Helles aus Agatharied</span>
         </h1>
       </div>
@@ -212,7 +310,7 @@
           <p class="eyebrow">Das Bier</p>
           <h2 id="zutaten-title">Hopfen, Malz, Wasser</h2>
           <p class="lead">
-            Berghof Hell ist ein bayerisches Vollbier Hell: goldgelb, mild und süffig –
+            Berghof Hell ist ein bayerisches Vollbier Hell: goldgelb, mild und süffig,
             gebraut aus nur drei Zutaten.
           </p>
         </div>
@@ -285,7 +383,7 @@
             <circle cx="67" cy="73" r="2" fill="#B8913A" stroke="none"/>
             </svg>
             <h3>Wasser</h3>
-            <p>Weiches, klares Wasser – die Grundlage für ein süffiges bayerisches Helles.</p>
+            <p>Weiches, klares Wasser: die Grundlage für ein süffiges bayerisches Helles.</p>
           </li>
         </ul>
 
@@ -296,7 +394,7 @@
           <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
         </dl>
         <p class="brewer">
-          Gebraut in kleinen Mengen von der Brauerei &amp; Brennerei Silbernagl in Hausham – einem Familienbetrieb
+          Gebraut in kleinen Mengen von der Brauerei &amp; Brennerei Silbernagl in Hausham, einem Familienbetrieb
           in fünfter Generation mit eigenem Getränkeladen und Schnapsbrennerei, gleich beim Förderturm,
           knapp einen Kilometer Luftlinie vom Berghof entfernt.
         </p>
@@ -311,7 +409,7 @@
           <h2 id="berghof-title">Der Berghof in Agatharied</h2>
           <p class="lead">
             Seit 1556 ist der Berghof in Agatharied urkundlich belegt. Heute ist er Jugend- und
-            Gruppenhaus im bayerischen Oberland – und die Heimat des Berghof Hell.
+            Gruppenhaus im bayerischen Oberland und die Heimat des Berghof Hell.
           </p>
         </div>
 
@@ -344,7 +442,7 @@
               loading="lazy" decoding="async"
               alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge"
             />
-            <figcaption>Gemälde von J. Stallhofer (1978) – das Motiv des Etiketts.</figcaption>
+            <figcaption>Gemälde von J. Stallhofer (1978), das Motiv des Etiketts.</figcaption>
           </figure>
         </div>
 
@@ -365,7 +463,7 @@
           <p class="eyebrow">Standort</p>
           <h2 id="standort-title">Hier gibt's das Bier</h2>
           <p class="lead">
-            Berghof Hell bekommst du direkt am Berghof in Agatharied – im Oberland zwischen
+            Berghof Hell bekommst du direkt am Berghof in Agatharied im Oberland zwischen
             Hausham, Miesbach und Schliersee.
           </p>
         </div>
