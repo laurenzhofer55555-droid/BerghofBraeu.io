@@ -47,7 +47,8 @@ const camBase = new THREE.Vector3(...cam.position);
 
 // ── Szene aufbauen ───────────────────────────────────────────
 scene.add(createBackdrop());
-scene.add(createContactShadow());
+const shadow = createContactShadow();
+scene.add(shadow);
 const lights = createLights(scene);
 
 let bottle = createBottle(renderer);
@@ -95,10 +96,23 @@ const { gsap, ScrollTrigger, Lenis } = window;
 gsap.registerPlugin(ScrollTrigger);
 let lenis = null;
 if (!reducedMotion) {
-  lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+  lenis = new Lenis({ lerp: 0.09, smoothWheel: true, anchors: true });
   lenis.on('scroll', ScrollTrigger.update);
 }
 gsap.ticker.lagSmoothing(0);
+
+// ── Scroll: Flasche wandert nach rechts, Szene wird hinter den Inhalten abgedunkelt ──
+// (Schritt 2/3 ersetzt das später durch Kopfstand + Kronkorken-Bühne)
+const scrollState = { x: 0, dim: 0 };
+const mm = gsap.matchMedia();
+mm.add({ desktop: '(min-width: 768px)', mobile: '(max-width: 767px)' }, (ctx) => {
+  const { desktop } = ctx.conditions;
+  gsap.timeline({
+    scrollTrigger: { trigger: '#bier', start: 'top bottom', end: 'top 25%', scrub: 0.6 },
+  })
+    .to(scrollState, { x: desktop ? 1.25 : 0, dim: 1, ease: 'none' }, 0)
+    .to('.hero__title, .hero__meta, .hero__scroll', { opacity: 0, y: -40, ease: 'none' }, 0);
+});
 
 // ── Adaptive Qualität: bei schwacher FPS Effekte reduzieren ───
 let fpsFrames = 0, fpsTime = 0, downgraded = false;
@@ -127,6 +141,11 @@ gsap.ticker.add((time) => {
   last = now;
   lenis?.raf(now);
 
+  // Scroll-Position anwenden
+  bottle.pivot.position.x = scrollState.x;
+  shadow.position.x = scrollState.x;
+  document.documentElement.style.setProperty('--dim', scrollState.dim.toFixed(3));
+
   // Idle-Rotation um die Y-Achse
   if (!reducedMotion) bottle.pivot.rotation.y += CONFIG.bottle.idleSpeed * dt;
 
@@ -145,6 +164,8 @@ gsap.ticker.add((time) => {
 });
 
 document.documentElement.classList.add('is-ready');
+// nach dem Intro CSS-Transitions abschalten, damit das Scroll-Ausblenden direkt reagiert
+setTimeout(() => document.documentElement.classList.add('intro-done'), 2600);
 
 // Für Feintuning in der Konsole: window.__bh.lights.key.intensity = 3 …
-window.__bh = { scene, camera, renderer, bottle, lights, post, CONFIG };
+window.__bh = { scene, camera, renderer, bottle, lights, post, lenis, CONFIG };

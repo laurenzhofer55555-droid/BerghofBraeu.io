@@ -1,3 +1,15 @@
+/* Schriften lokal eingebunden (DSGVO: kein Abruf bei Google) */
+@font-face {
+  font-family: 'Oswald';
+  src: url('../vendor/fonts/oswald-latin-wght.woff2') format('woff2');
+  font-weight: 200 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../vendor/fonts/inter-latin-wght.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+}
+
 :root {
   --green: #038244;
   --green-deep: #02552d;
@@ -23,8 +35,8 @@ body {
   display: block; z-index: 0;
 }
 
-main { position: relative; z-index: 1; pointer-events: none; }
-main a, main button { pointer-events: auto; }
+main { position: relative; z-index: 2; }
+a { color: inherit; }
 
 /* ── Hero ───────────────────────────── */
 .hero {
@@ -60,6 +72,7 @@ main a, main button { pointer-events: auto; }
   color: rgba(244, 239, 228, 0.62);
 }
 .hero__scroll {
+  display: block;
   width: 1px; height: 44px; margin-top: 2.2vh;
   background: rgba(244, 239, 228, 0.18);
   position: relative; overflow: hidden;
@@ -80,6 +93,7 @@ main a, main button { pointer-events: auto; }
 .is-ready .hero__title { opacity: 1; transform: none; transition-delay: .25s; }
 .is-ready .hero__meta { opacity: 1; transform: none; transition-delay: .55s; }
 .is-ready .hero__scroll { opacity: 1; transform: none; transition-delay: .8s; }
+.intro-done .hero__title, .intro-done .hero__meta, .intro-done .hero__scroll { transition: none; }
 
 .loader {
   position: fixed; inset: 0; z-index: 5; background: var(--ink);
@@ -93,7 +107,7 @@ main a, main button { pointer-events: auto; }
 .no-webgl #scene { display: none; }
 .no-webgl .fallback {
   display: flex; justify-content: center;
-  position: fixed; inset: 0 0 auto; height: 72vh; padding-top: 4vh;
+  position: absolute; inset: 0 0 auto; height: 72vh; padding-top: 4vh;
   background: radial-gradient(ellipse at 50% 45%, #3a2010 0%, var(--ink) 70%);
 }
 .no-webgl .fallback img { height: 100%; width: auto; mix-blend-mode: multiply; filter: contrast(1.05); }
@@ -102,4 +116,82 @@ main a, main button { pointer-events: auto; }
 /* ── Reduzierte Bewegung ────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+}
+
+/* Abdunklung der 3D-Szene hinter den Inhalten (per JS über --dim gesteuert) */
+.scene-dim {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(7,5,4,.92) 0%, rgba(7,5,4,.75) 45%, rgba(7,5,4,.15) 75%);
+  opacity: var(--dim, 0);
+}
+
+/* ── Inhaltsabschnitte ──────────────── */
+.section {
+  min-height: 100vh; min-height: 100svh;
+  display: flex; align-items: center;
+  padding: 12vh max(16px, 7vw);
+}
+.panel { max-width: 560px; }
+.eyebrow {
+  margin: 0 0 1rem;
+  font-family: var(--font-head); font-weight: 500;
+  font-size: 14px; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--gold);
+}
+h2 {
+  margin: 0 0 1.4rem;
+  font-family: var(--font-head); font-weight: 600;
+  font-size: clamp(38px, 5.2vw, 72px); line-height: 1; text-transform: uppercase;
+  color: var(--cream);
+}
+h3 { font-family: var(--font-head); font-weight: 500; font-size: 22px; letter-spacing: .04em; margin: 0 0 .6rem; text-transform: uppercase; }
+.lead { font-size: clamp(17px, 1.35vw, 20px); line-height: 1.6; color: rgba(244,239,228,.85); margin: 0 0 1.8rem; }
+.small { font-size: 14px; color: rgba(244,239,228,.55); }
+
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0 0 1.4rem; background: rgba(244,239,228,.12); border: 1px solid rgba(244,239,228,.12); }
+.facts div { background: rgba(7,5,4,.85); padding: 14px 16px; }
+.facts dt { font-family: var(--font-head); font-size: 12px; letter-spacing: .25em; text-transform: uppercase; color: rgba(244,239,228,.5); margin-bottom: 4px; }
+.facts dd { margin: 0; font-size: 16px; }
+
+.timeline { list-style: none; margin: 0; padding: 0 0 0 22px; border-left: 1px solid rgba(215,173,79,.4); }
+.timeline li { position: relative; margin: 0 0 1.6rem; }
+.timeline li::before { content: ''; position: absolute; left: -27px; top: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+.timeline .year { font-family: var(--font-head); color: var(--gold); letter-spacing: .1em; font-size: 18px; }
+.timeline p { margin: .3rem 0 0; color: rgba(244,239,228,.8); line-height: 1.55; }
+
+.locations { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.location { padding: 22px 24px; border: 1px solid rgba(244,239,228,.14); background: rgba(7,5,4,.6); }
+.location p { margin: 0 0 .6rem; line-height: 1.55; color: rgba(244,239,228,.85); }
+.location .route { display: inline-block; margin-top: .4rem; font-family: var(--font-head); letter-spacing: .15em; text-transform: uppercase; font-size: 14px; color: var(--gold); text-decoration: none; border-bottom: 1px solid currentColor; }
+
+.contact { font-style: normal; font-size: 18px; line-height: 1.7; }
+.contact a { color: var(--gold); }
+
+/* Platzhalter, die noch ausgefüllt werden müssen */
+.todo { color: #ff9b73; border-bottom: 1px dashed currentColor; }
+
+/* ── Footer ─────────────────────────── */
+.footer {
+  position: relative; z-index: 2;
+  padding: 40px max(16px, 7vw) calc(40px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(244,239,228,.12);
+  background: var(--ink);
+  display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: center; justify-content: space-between;
+  font-size: 14px; color: rgba(244,239,228,.6);
+}
+.footer p { margin: 0; }
+.footer__nav { display: flex; gap: 24px; }
+.footer__nav a { color: var(--cream); text-decoration: none; font-family: var(--font-head); letter-spacing: .15em; text-transform: uppercase; }
+.footer__nav a:hover { color: var(--gold); }
+
+/* ── Rechtstexte (Impressum/Datenschutz) ── */
+.legal { max-width: 760px; margin: 0 auto; padding: 10vh 16px 8vh; line-height: 1.65; }
+.legal h1 { font-family: var(--font-head); text-transform: uppercase; font-size: clamp(40px, 6vw, 64px); margin: 0 0 2rem; }
+.legal h2 { font-size: clamp(22px, 2.4vw, 28px); margin: 2.4rem 0 .8rem; }
+.legal a { color: var(--gold); }
+.legal .back { font-family: var(--font-head); letter-spacing: .15em; text-transform: uppercase; text-decoration: none; font-size: 14px; }
+
+@media (max-width: 767px) {
+  .scene-dim { background: rgba(7,5,4,.82); }
+  .facts { grid-template-columns: 1fr; }
 }

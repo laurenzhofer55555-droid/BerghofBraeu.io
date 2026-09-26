@@ -15,3 +15,11 @@ Dann http://localhost:5173 öffnen.
 ## Anpassen
 
 Kamera, Licht, Material und Effekte stellst du in `js/config.js` ein.
+
+## Inhalte pflegen
+
+- Standorte: `data/standorte.json` (weitere Standorte als neuer Eintrag im Array)
+- Geschichte: `data/geschichte.json` (Einträge mit `"entwurf": true` werden nicht angezeigt)
+- Impressum / Datenschutz: `impressum.html`, `datenschutz.html`
+
+Alle Schriften und Bibliotheken liegen lokal in `vendor/`, es werden keine externen Dienste geladen.

@@ -3,47 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Berghof Hell – Vollbier aus Agatharied</title>
-  <meta name="description" content="Berghof Hell – Vollbier Hell, gebraut am Berghof Agatharied." />
+  <title>Berghof Hell – Vollbier Hell aus Agatharied</title>
+  <meta name="description" content="Berghof Hell – Vollbier Hell, 4,9 % vol. Erhältlich direkt am Berghof in Agatharied." />
   <meta name="theme-color" content="#070504" />
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Schriften lokal (kein Google-Fonts-Aufruf → keine IP-Übertragung an Dritte) -->
+  <link rel="preload" href="vendor/fonts/oswald-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Three.js als ES-Module über Import-Map -->
+  <!-- Alle Bibliotheken liegen lokal in /vendor -->
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three": "./vendor/three/build/three.module.min.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
       }
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script src="vendor/gsap.min.js" defer></script>
+  <script src="vendor/ScrollTrigger.min.js" defer></script>
+  <script src="vendor/lenis.min.js" defer></script>
+  <script type="module" src="js/content.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="scene-dim" aria-hidden="true"></div>
 
   <!-- Fallback ohne WebGL -->
-  <div class="fallback">
-    <img src="assets/img/bottle.webp" alt="Flasche Berghof Hell, Vollbier Hell 0,5 l" />
+  <div class="fallback" aria-hidden="true">
+    <img src="assets/img/bottle.webp" alt="" />
   </div>
 
   <main>
-    <section class="hero" id="hero">
+    <!-- ── Start ─────────────────────────────── -->
+    <section class="hero" id="start">
       <h1 class="hero__title">
         <span class="hero__line">Berghof</span>
         <span class="hero__line hero__line--sub">Hell</span>
       </h1>
       <p class="hero__meta">Vollbier Hell · 4,9 % vol · Agatharied</p>
-      <div class="hero__scroll" aria-hidden="true"><span></span></div>
+      <a class="hero__scroll" href="#bier" aria-label="Weiter zum Bier"><span></span></a>
+    </section>
+
+    <!-- ── Das Bier ──────────────────────────── -->
+    <section class="section" id="bier">
+      <div class="panel">
+        <p class="eyebrow">Das Bier</p>
+        <h2>Ein ehrliches Helles.</h2>
+        <p class="lead">
+          Goldgelb, mild und süffig: Das Berghof Hell ist ein klassisches bayerisches Vollbier.
+          Weiches Malz, eine feine Hopfennote und ein sauberer Abgang.
+        </p>
+        <dl class="facts">
+          <div><dt>Sorte</dt><dd>Vollbier Hell</dd></div>
+          <div><dt>Alkohol</dt><dd>4,9 % vol</dd></div>
+          <div><dt>Gebinde</dt><dd>0,5 l Flasche</dd></div>
+          <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
+        </dl>
+        <p class="small">Kühl und dunkel lagern. Enthält Gluten.</p>
+      </div>
+    </section>
+
+    <!-- ── Geschichte ────────────────────────── -->
+    <section class="section" id="geschichte">
+      <div class="panel">
+        <p class="eyebrow">Geschichte</p>
+        <h2>Der Berghof in Agatharied.</h2>
+        <p class="lead">
+          Viele kennen den Berghof in Agatharied als Jugend- und Gruppenhaus.
+          Heute steht sein Name auf unserem Bier.
+        </p>
+        <!-- Stationen kommen aus data/geschichte.json -->
+        <ol class="timeline" id="timeline" hidden></ol>
+      </div>
+    </section>
+
+    <!-- ── Hier gibt's das Bier ──────────────── -->
+    <section class="section" id="bezug">
+      <div class="panel">
+        <p class="eyebrow">Hier gibt's das Bier</p>
+        <h2>Direkt ab Hof.</h2>
+        <!-- Standorte kommen aus data/standorte.json; dieser Block ist der Fallback -->
+        <ul class="locations" id="locations">
+          <li class="location">
+            <h3>Berghof Agatharied</h3>
+            <p>Berg 112<br />83734 Hausham</p>
+            <p>Ansprechpartner: Laurenz Hofer</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── Kontakt ───────────────────────────── -->
+    <section class="section" id="kontakt">
+      <div class="panel">
+        <p class="eyebrow">Kontakt</p>
+        <h2>Fragen, Bestellungen, Feste?</h2>
+        <p class="lead">Melde dich direkt bei uns.</p>
+        <address class="contact">
+          <strong>Hofer Bräu</strong><br />
+          Laurenz Hofer<br />
+          Berg 112, 83734 Hausham<br />
+          <span class="todo">E-Mail folgt</span>
+        </address>
+      </div>
     </section>
   </main>
+
+  <footer class="footer">
+    <p class="footer__note">Abgabe von Bier nur an Personen ab 16 Jahren. Bitte genieße verantwortungsvoll.</p>
+    <nav class="footer__nav" aria-label="Rechtliches">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </nav>
+    <p class="footer__copy">© <span id="year">2026</span> Hofer Bräu</p>
+  </footer>
 
   <div class="loader" aria-hidden="true"></div>
 </body>
