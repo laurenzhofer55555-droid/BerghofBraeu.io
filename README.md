@@ -12,14 +12,36 @@ python3 -m http.server 5173
 
 Dann http://localhost:5173 öffnen.
 
+## Aufbau
+
+- `index.html` – alle Inhalte als echter HTML-Text (für Google lesbar), Meta-Tags, strukturierte Daten (JSON-LD)
+- `js/main.js` – kleiner Starter: lädt die 3D-Szene erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase)
+- `js/scene.js` – Renderer, Licht, Loop · `js/bottle.js` – Flasche, Etiketten, Kronkorken · `js/stage.js` – Studio, Schatten
+- `js/config.js` – Kamera, Licht, Glas, Farben
+- `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter der 3D-Flasche
+
 ## Anpassen
 
-Kamera, Licht, Material und Effekte stellst du in `js/config.js` ein.
+Kamera, Licht, Material stellst du in `js/config.js` ein.
+**Wichtig:** Änderst du Kamera oder Flaschenposition, müssen die Standbilder neu gerendert und ihre Position
+(`.poster picture` in `index.html` und `css/style.css`) angepasst werden, sonst springt die Flasche beim Übergang ins 3D.
+
+Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnellerer Seitenaufbau).
+Änderungen am Startbereich also an beiden Stellen machen.
 
 ## Inhalte pflegen
 
-- Standorte: `data/standorte.json` (weitere Standorte als neuer Eintrag im Array)
-- Geschichte: `data/geschichte.json` (Einträge mit `"entwurf": true` werden nicht angezeigt)
-- Impressum / Datenschutz: `impressum.html`, `datenschutz.html`
+- **Standorte:** in `data/standorte.json` eintragen, dann `python3 tools/standorte.py` ausführen –
+  das schreibt die Standorte als statisches HTML in `index.html`.
+- **Kronkorken-Aufdruck:** `tools/kronkorken-backen.html` über den lokalen Server öffnen, Bilder erzeugen,
+  mit `cwebp` nach `assets/textures/kronkorken-*.webp` umwandeln.
+- **Impressum / Datenschutz:** `impressum.html`, `datenschutz.html`
+- **Neue Seite:** in `sitemap.xml` eintragen.
 
-Alle Schriften und Bibliotheken liegen lokal in `vendor/`, es werden keine externen Dienste geladen.
+## Google
+
+- `robots.txt` erlaubt alles und verweist auf `sitemap.xml`.
+- Strukturierte Daten: Website, Brauerei (Adresse, Koordinaten, Ansprechpartner, Logo) und Produkt.
+- Vorschaubild für WhatsApp & Co.: `assets/img/og.jpg` (1200 × 630).
+
+Alle Schriften und Bibliotheken liegen lokal in `vendor/`. Externe Dienste (OpenStreetMap-Karte) laden nur nach Klick.

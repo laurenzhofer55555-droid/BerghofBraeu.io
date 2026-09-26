@@ -2,7 +2,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 
-const SIZE = 2048;
 const TAU = Math.PI * 2;
 
 // Kronkorken-Oberseite: goldenes Metall mit grünem Aufdruck (Ring-Schrift + Berghof-Zeichnung).
@@ -10,8 +9,9 @@ const TAU = Math.PI * 2;
 //  map  – Farbe (Gold bzw. Druckfarbe)
 //  orm  – G = Rauheit, B = Metall (Druckfarbe ist matt und nicht metallisch)
 //  bump – leicht erhabener Rand
-export function createCapTopTextures(drawing) {
+export function createCapTopTextures(drawing, SIZE = 2048) {
   const m = SIZE / 2;
+  const canvas = () => { const cv = document.createElement('canvas'); cv.width = cv.height = SIZE; return cv; };
   const color = canvas(), orm = canvas(), bump = canvas();
   const c = color.getContext('2d'), o = orm.getContext('2d'), b = bump.getContext('2d');
 
@@ -19,14 +19,9 @@ export function createCapTopTextures(drawing) {
   const gold = CONFIG.cap.color;
   c.fillStyle = gold;
   c.fillRect(0, 0, SIZE, SIZE);
-  // feine konzentrische Drehrillen (Stanzteil) – nur in der Rauheit sichtbar
-  o.fillStyle = `rgb(255, ${Math.round((CONFIG.cap.roughness + 0.08) * 255)}, 255)`;   // Deckfläche minimal matter als der Rand
+  // Rauheit/Metall der Deckfläche (minimal matter als der Rand)
+  o.fillStyle = `rgb(255, ${Math.round((CONFIG.cap.roughness + 0.08) * 255)}, 255)`;
   o.fillRect(0, 0, SIZE, SIZE);
-  for (let r = 8; r < m; r += 5) {
-    o.strokeStyle = `rgba(255, ${Math.round((CONFIG.cap.roughness + (Math.random() - 0.5) * 0.12) * 255)}, 255, 0.5)`;
-    o.lineWidth = 2;
-    o.beginPath(); o.arc(m, m, r, 0, TAU); o.stroke();
-  }
   // Bump: flache Mitte, erhabener Wulst am Rand
   b.fillStyle = '#808080';
   b.fillRect(0, 0, SIZE, SIZE);
@@ -92,12 +87,6 @@ export function createCapTopTextures(drawing) {
   const ormTex = toTexture(orm, THREE.NoColorSpace);
   const bumpTex = toTexture(bump, THREE.NoColorSpace);
   return { map, orm: ormTex, bump: bumpTex };
-}
-
-function canvas() {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = SIZE;
-  return cv;
 }
 
 function toTexture(cv, colorSpace) {

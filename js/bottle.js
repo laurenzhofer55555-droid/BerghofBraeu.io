@@ -1,9 +1,7 @@
 // Prozedurale Bierflasche (LatheGeometry) nach dem Foto vermessen.
 // Später austauschbar gegen ein GLB: CONFIG.bottle.glbUrl setzen.
 import * as THREE from 'three';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CONFIG } from './config.js';
-import { createCapTopTextures } from './textures.js';
 
 // Umrechnung Foto-Pixel → Szene-Einheiten (Bauchdurchmesser 470 px = 0,7)
 const K = 0.7 / 470;
@@ -28,7 +26,7 @@ const LABELS = {
   neck:  { url: 'assets/textures/label-neck.webp',  y0: 995, y1: 1197, width: 440, phi: 0, cutout: true },
 };
 
-export function createBottle(renderer, manager) {
+export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
   // pivot = Drehpunkt in Flaschenmitte (für Schritt 2: auf den Kopf drehen)
   const pivot = new THREE.Group();
   pivot.name = 'BottlePivot';
@@ -55,8 +53,8 @@ export function createBottle(renderer, manager) {
 
   const filledMat = createGlassMaterial(g.filled);
   const emptyMat = createGlassMaterial(g.empty);
-  const glassFilled = new THREE.Mesh(new THREE.LatheGeometry(lower, 128), filledMat);
-  const glassEmpty = new THREE.Mesh(new THREE.LatheGeometry(upper, 128), emptyMat);
+  const glassFilled = new THREE.Mesh(new THREE.LatheGeometry(lower, radialSegments), filledMat);
+  const glassEmpty = new THREE.Mesh(new THREE.LatheGeometry(upper, radialSegments), emptyMat);
   glassFilled.name = 'GlassFilled';
   glassEmpty.name = 'GlassEmpty';
   body.add(glassFilled, glassEmpty);
@@ -88,7 +86,7 @@ export function createBottle(renderer, manager) {
   }
 
   // ── Kronkorken ──────────────────────────────────────
-  const cap = createCap(manager);
+  const cap = createCap(loader);
   cap.position.y = CAP_BASE_PX * K;
   body.add(cap);
 
@@ -129,7 +127,7 @@ function createGlassMaterial(v) {
 }
 
 // Kronkorken: gerippter Rand (21 Zacken wie beim echten Kronkorken) + gewölbte Deckfläche mit Aufdruck
-function createCap(manager) {
+function createCap(loader) {
   const group = new THREE.Group();
   group.name = 'Cap';
   const c = CONFIG.cap;
@@ -140,7 +138,7 @@ function createCap(manager) {
     [97.8, 43], [96.5, 48], [93.5, 51.6], [89, 53.6], [86, 54],
   ].map(([r, y]) => new THREE.Vector3(r * K, y * K, 0)), false, 'centripetal');
   const pts = capCurve.getPoints(48).map((p) => new THREE.Vector2(p.x, p.y));
-  let geo = new THREE.LatheGeometry(pts, 21 * 14);
+  const geo = new THREE.LatheGeometry(pts, 21 * 14);
 
   // Riffelung: Radius wellt sich um 21 Falten, unten am stärksten, zur Kante hin abgerundet
   const pos = geo.attributes.position;
@@ -156,11 +154,8 @@ function createCap(manager) {
     pos.setX(i, x * s);
     pos.setZ(i, z * s);
   }
-  // Naht schließen, damit die Normalen rundum glatt sind
-  geo.deleteAttribute('uv');
-  geo.deleteAttribute('normal');
-  geo = mergeVertices(geo, 1e-6);
   geo.computeVertexNormals();
+  smoothLatheSeam(geo, pts.length);   // Naht bei 0°/360° glätten
 
   const metal = new THREE.MeshPhysicalMaterial({
     color: c.color, metalness: 1, roughness: c.roughness, side: THREE.DoubleSide,
@@ -190,22 +185,33 @@ function createCap(manager) {
   group.add(top);
   group.userData.top = top;
 
-  // Aufdruck erst zeichnen, wenn Zeichnung + Schrift geladen sind
-  manager?.itemStart('cap-print');
-  const img = new Image();
-  img.onload = img.onerror = async () => {
-    try { await document.fonts.load('600 64px "Playfair Display"'); } catch { /* Fallback-Schrift */ }
-    const t = createCapTopTextures(img.naturalWidth ? img : null);
-    topMat.map = t.map;
-    topMat.roughnessMap = t.orm;
-    topMat.metalnessMap = t.orm;
-    topMat.bumpMap = t.bump;
-    topMat.bumpScale = 2.5;
-    topMat.needsUpdate = true;
-    manager?.itemEnd('cap-print');
+  // Aufdruck: fertig gebackene Texturen (erzeugt mit tools/kronkorken-backen.html)
+  const tex = (url, colorSpace) => {
+    const t = loader.load(url);
+    t.colorSpace = colorSpace;
+    t.anisotropy = 8;
+    return t;
   };
-  img.src = 'assets/textures/berghof-zeichnung-mask.webp';
+  topMat.map = tex('assets/textures/kronkorken-farbe.webp', THREE.SRGBColorSpace);
+  topMat.roughnessMap = topMat.metalnessMap = tex('assets/textures/kronkorken-material.webp', THREE.NoColorSpace);
+  topMat.bumpMap = tex('assets/textures/kronkorken-relief.webp', THREE.NoColorSpace);
+  topMat.bumpScale = 2.5;
   return group;
+}
+
+// LatheGeometry hat an der Naht (0°/360°) doppelte Punkte mit leicht verschiedenen Normalen →
+// Mittelwert setzen, damit keine Kante sichtbar ist (schneller als mergeVertices)
+function smoothLatheSeam(geo, rows) {
+  const n = geo.attributes.normal;
+  const cols = n.count / rows;
+  const v = new THREE.Vector3();
+  for (let j = 0; j < rows; j++) {
+    const a = j, b = (cols - 1) * rows + j;   // erste und letzte Spalte
+    v.set(n.getX(a) + n.getX(b), n.getY(a) + n.getY(b), n.getZ(a) + n.getZ(b)).normalize();
+    n.setXYZ(a, v.x, v.y, v.z);
+    n.setXYZ(b, v.x, v.y, v.z);
+  }
+  n.needsUpdate = true;
 }
 
 // Etikett auf beliebige Rotationsfläche wickeln (Papierbreite bleibt konstant,

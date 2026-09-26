@@ -1,12 +1,14 @@
 [
   {
     "name": "Berghof Agatharied",
-    "info": "Das Berghof Hell direkt ab Hof.",
+    "info": "Berghof Hell direkt ab Hof.",
     "strasse": "Berg 112",
-    "ort": "83734 Hausham",
+    "ort": "83734 Hausham (Agatharied)",
     "ansprechpartner": "Laurenz Hofer",
     "zeiten": "Verkauf nach Absprache",
     "telefon": "",
-    "email": ""
+    "email": "",
+    "lat": 47.76875,
+    "lon": 11.83482
   }
 ]

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Kronkorken-Texturen backen</title>
+  <!-- Nur für die Entwicklung: erzeugt den Kronkorken-Aufdruck als Bilder.
+       Aufruf über einen lokalen Server im Projektordner:  python3 -m http.server  →  http://localhost:8000/tools/kronkorken-backen.html
+       Danach die drei PNG-Dateien herunterladen und mit cwebp nach assets/textures/kronkorken-*.webp umwandeln. -->
+  <link rel="stylesheet" href="../css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "../vendor/three/build/three.module.min.js" } }
+  </script>
+  <style>body { padding: 24px; } canvas { width: 256px; height: 256px; margin: 8px; border: 1px solid #ccc; }</style>
+</head>
+<body>
+  <h1>Kronkorken-Texturen</h1>
+  <p>Größe: <select id="size"><option>1024</option><option>2048</option></select> <button id="go" class="button">Erzeugen</button></p>
+  <div id="out"></div>
+  <script type="module">
+    import { createCapTopTextures } from '../js/textures.js';
+    document.getElementById('go').addEventListener('click', async () => {
+      await document.fonts.load('600 64px "Playfair Display"');
+      await document.fonts.load('italic 600 64px "Playfair Display"');
+      const img = new Image();
+      img.src = '../assets/textures/berghof-zeichnung-mask.webp';
+      await img.decode();
+      const t = createCapTopTextures(img, +document.getElementById('size').value);
+      const out = document.getElementById('out');
+      out.replaceChildren();
+      for (const [name, tex] of Object.entries({ 'kronkorken-farbe': t.map, 'kronkorken-material': t.orm, 'kronkorken-relief': t.bump })) {
+        const a = document.createElement('a');
+        a.download = name + '.png';
+        a.href = tex.image.toDataURL('image/png');
+        a.append(tex.image);
+        out.append(a);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -11,6 +11,8 @@ export const CONFIG = {
     gold: '#B8913A',
   },
 
+  // Achtung: Kamera-Änderungen verschieben die Flasche → Standbilder (assets/img/flasche-berghof-hell*.webp)
+  // und ihre Position in index.html/css neu erzeugen, sonst springt die Flasche beim Übergang ins 3D.
   camera: {
     fov: 28,
     position: [0, 0.35, 7.0],   // Startposition
