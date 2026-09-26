@@ -21,6 +21,7 @@ export function createBeer(hero) {
   let scrollV = 0, smoothV = 0;      // Scrollgeschwindigkeit (px/s), geglättet
   let tilt = 0, tiltV = 0;           // Schwappen: Neigung der Oberfläche (px) und ihre Geschwindigkeit
   let foamTilt = 0, foamAmp = 9;     // Schaum folgt verzögert
+  let foamFirst = true;              // Desktop: Schaum ist beim Start oben zu sehen; Handy: reines Gold, Schaum kommt von oben
 
   function measure() {
     W = hero.clientWidth;
@@ -33,10 +34,10 @@ export function createBeer(hero) {
     draw();
   }
 
-  // Pegel 0 (voll, Schaum oben sichtbar) … 1 (leer, alles unter dem unteren Rand)
+  // Pegel 0 (voll) … 1 (leer, alles unter dem unteren Rand)
   function setLevel(p) {
     level = p;
-    const from = foamH + 24, to = H + foamH + 70;
+    const from = foamFirst ? foamH + 24 : -70, to = H + foamH + 70;
     liquid.style.transform = `translate3d(0, ${from + (to - from) * p - PAD}px, 0)`;
   }
 
@@ -102,5 +103,7 @@ export function createBeer(hero) {
       if (still) draw();
     },
     velocity(v) { scrollV = v; },
+    // false: beim Start ist nur Gold zu sehen, die Schaumkrone kommt beim Scrollen von oben ins Bild (Handy)
+    foamAtStart(on) { foamFirst = on; setLevel(level); draw(); },
   };
 }

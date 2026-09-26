@@ -151,6 +151,10 @@ main { position: relative; z-index: 2; }
 }
 .cap-title em { font-style: italic; font-weight: 400; }
 
+/* Handy: Gold-Phase am Kronkorken (Klasse aus js/sequenz.js) – ganze Seite in Gold, „Hofer Bräu“ ohne beige Fläche */
+html.gold-page, html.gold-page body { background: var(--gold-beer); }
+html.gold-page .site-header__brand { background: transparent; }
+
 /* Handy (Hochformat, gleiche Bedingung wie die Handy-Bildfolge): Start ohne Titel, Pfeil nach unten;
    der Titel erscheint erst am Ende der Sequenz (Klasse .seq aus dem Head-Skript). Desktop bleibt mit Titel am Start. */
 .scroll-cue { display: none; }
@@ -173,7 +177,7 @@ main { position: relative; z-index: 2; }
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
-.beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+.beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
 .beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 170px); will-change: transform; }
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }

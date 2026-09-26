@@ -145,13 +145,30 @@ const imageStations = Array.from({ length: UNITS + 1 }, (_, i) => i / TOTAL);
 const snapImages = ScrollTrigger.snapDirectional(imageStations);
 const snapTo = (v, self) => (v > UNITS / TOTAL + 0.002 ? v : snapImages(v, self.direction));
 const drain = { p: 0 };
+const gold = { v: 0 };
 const beerLayer = hero.querySelector('.beer');
+
+// Handy: in der Gold-Phase taucht die ganze Seite ins Gold, auch hinter Statusleiste und Adressleiste
+// (Seitenhintergrund + Browserfarbe). Oben wird es wieder beige, sobald die Schaumkrone von oben kommt,
+// unten erst, wenn das Bier den unteren Rand verlassen hat.
+const themeColor = document.querySelector('meta[name="theme-color"]');
+const CREAM = themeColor.content, GOLD = '#C5A149';           // GOLD = --gold-beer
+function setGold(top, page) {
+  themeColor.content = top ? GOLD : CREAM;
+  root.classList.toggle('gold-page', page);
+}
 
 // Zeitleiste je Format (gsap.matchMedia): beim Drehen des Handys wird sie sauber zurückgesetzt und neu gebaut
 gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) => {
   const { phone } = context.conditions;
+  beer.foamAtStart(!phone);
   const tl = gsap.timeline({
     defaults: { ease: 'none' },
+    // Handy: Gold-Phase nach der sichtbaren Zeitleiste (mit Glättung) steuern, nicht nach der Scrollposition
+    onUpdate: phone ? function () {
+      const u = this.time();
+      setGold(u >= UNITS - 0.08 && u < UNITS + 0.07, u >= UNITS - 0.08 && u < UNITS + 0.9);
+    } : undefined,
     scrollTrigger: {
       trigger: hero,
       start: 'top top',
@@ -183,6 +200,13 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
     tl.fromTo('.scroll-cue', { opacity: 1 }, { opacity: 0, duration: 0.15 }, 0);
     tl.fromTo('#start > .frame', { opacity: 1 }, { opacity: 0, duration: 0.3 }, UNITS - 0.3);
     tl.fromTo('.hero__text', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35 }, UNITS - 0.35);
+    // Kronkorken-Bild wird schon am Ende des Zooms zum flachen Bier-Gold (ohne dunklen Rand, nahtlos ins Bier)
+    tl.fromTo(gold, { v: 0 }, {
+      v: 1, duration: 0.2, onUpdate: () => {
+        beerLayer.style.opacity = gold.v;
+        canvas.style.opacity = gold.v > 0 ? 1 - gold.v : '';
+      },
+    }, UNITS - 0.25);
   } else {
     // Desktop: Titel unten blendet beim Zoom aus, Schriftzug erscheint auf dem goldenen Kronkorken
     tl.fromTo('.hero__text', { opacity: 1, y: 0 }, { opacity: 0, y: -24, duration: 0.45 }, UNITS - 1);
@@ -195,13 +219,22 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
   // darüber wird der beige Hintergrund frei.
   tl.fromTo(drain, { p: 0 }, {
     p: 1, duration: DRAIN, onUpdate: () => {
-      // Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe
-      const fade = Math.min(1, drain.p / 0.05);
-      beerLayer.style.opacity = fade;
-      canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
+      // Desktop: Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe (Handy: schon beim Zoom)
+      if (!phone) {
+        const fade = Math.min(1, drain.p / 0.05);
+        beerLayer.style.opacity = fade;
+        canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
+      }
       beer.level(drain.p);
     },
   }, UNITS);
+
+  // beim Drehen (Wechsel Handy ↔ Desktop) Gold-Phase und Übergänge zurücksetzen
+  return () => {
+    setGold(false, false);
+    beerLayer.style.opacity = '';
+    canvas.style.opacity = '';
+  };
 });
 
 window.addEventListener('resize', () => requestAnimationFrame(resize), { passive: true });
