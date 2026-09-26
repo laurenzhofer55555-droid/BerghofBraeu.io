@@ -70,6 +70,15 @@ export function createBackdrop() {
   return plane;
 }
 
+// Boden in exakt derselben Cremefarbe – nötig, sobald die Kamera von oben schaut
+export function createFloor(floorY) {
+  const floor = createBackdrop();
+  floor.geometry = new THREE.PlaneGeometry(60, 60);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, floorY - 0.001, 0);
+  return floor;
+}
+
 // Weicher Kontaktschatten (Technik aus dem three.js-Beispiel „contact shadows“):
 // Die Flasche wird von unten als Tiefenbild gerendert, weichgezeichnet und auf den Boden gelegt.
 // Da die Flasche rotationssymmetrisch ist, reicht ein Neuberechnen bei Positionsänderung.

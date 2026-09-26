@@ -1,6 +1,7 @@
 # Berghof Hell
 
-Markenwebseite für das Berghof Hell aus Agatharied: 3D-Flasche mit Three.js, GSAP ScrollTrigger und Lenis.
+Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Scroll-Sequenz (Canvas + GSAP ScrollTrigger):
+Flasche dreht sich, Blick geht nach oben in die Vogelperspektive, Zoom auf den goldenen Kronkorken.
 
 Live: https://berghof-hell.de
 
@@ -15,16 +16,25 @@ Dann http://localhost:5173 öffnen.
 ## Aufbau
 
 - `index.html` – alle Inhalte als echter HTML-Text (für Google lesbar), Meta-Tags, strukturierte Daten (JSON-LD)
-- `js/main.js` – kleiner Starter: lädt die 3D-Szene erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase)
-- `js/scene.js` – Renderer, Licht, Loop · `js/bottle.js` – Flasche, Etiketten, Kronkorken · `js/stage.js` – Studio, Schatten
-- `js/config.js` – Kamera, Licht, Glas, Farben
-- `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter der 3D-Flasche
+- `js/main.js` – kleiner Starter: lädt die Scroll-Sequenz erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase);
+  bei „Bewegung reduzieren“ bleibt das Standbild
+- `js/sequenz.js` – Scroll-Sequenz: zeichnet die vorgerenderten Bilder aus `assets/sequenz/` auf ein Canvas,
+  6 Scroll-Stufen mit Einrasten (zum Einstellen lokal kurz `markers: true` setzen, so nicht veröffentlichen).
+- `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
+- Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
+  `js/stage.js` – Studio, Boden, Schatten · `js/config.js` – Licht, Glas, Farben · `js/scene.js` – frühere Live-3D-Szene
 
-## Anpassen
+## Sequenz neu rendern
 
-Kamera, Licht, Material stellst du in `js/config.js` ein.
-**Wichtig:** Änderst du Kamera oder Flaschenposition, müssen die Standbilder neu gerendert und ihre Position
-(`.poster picture` in `index.html` und `css/style.css`) angepasst werden, sonst springt die Flasche beim Übergang ins 3D.
+Kamerafahrt und Stationen stehen in `tools/sequenz.json` (je Station: Bildnummer, Drehung, Kamera quer/hoch),
+Licht und Material in `js/config.js`.
+
+1. Lokalen Aufnahme-Server starten, der `POST /__shot?dir=…&name=…` als PNG speichert, und
+   `tools/sequenz-rendern.html` darüber öffnen, „Rendern“ klicken (dauert einige Minuten).
+2. `python3 tools/sequenz.py <Ordner mit sequenz-roh-*>` → WebP-Bilder in `assets/sequenz/`, `manifest.json`
+   und neue Standbilder `assets/img/flasche-berghof-hell*.webp`.
+3. Die ausgegebenen Werte (top, height, aspect-ratio) bei `.poster picture` in `index.html` und `css/style.css`
+   eintragen, sonst springt die Flasche beim Übergang vom Standbild zur Sequenz.
 
 Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnellerer Seitenaufbau).
 Änderungen am Startbereich also an beiden Stellen machen.

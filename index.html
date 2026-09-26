@@ -118,12 +118,13 @@
     body { font-family: var(--font-text); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-    #scene, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
-    #scene { display: block; z-index: 0; opacity: 0; }
+    #sequenz, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
+    #sequenz { display: block; z-index: 0; opacity: 0; }
+    .cap-title { position: absolute; left: 0; right: 0; top: 50%; margin: 0; transform: translateY(-50%); opacity: 0; }
     .poster { z-index: 1; pointer-events: none; }
-    .poster picture { position: absolute; left: 50%; top: 3.32%; height: 70.64%; aspect-ratio: 728 / 1766; transform: translateX(-50%); display: block; }
+    .poster picture { position: absolute; left: 50%; top: 5.16%; height: 66.8%; aspect-ratio: 600 / 1670; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
-    @media (max-aspect-ratio: 4/5) { .poster picture { top: 12.92%; height: 65%; aspect-ratio: 754 / 1801; } }
+    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14.76%; height: 61.17%; aspect-ratio: 616 / 1695; } }
     main { position: relative; z-index: 2; }
     .site-header { position: absolute; inset: 0 0 auto; z-index: 3; pointer-events: none; }
     .site-header__brand { position: absolute; top: var(--frame-inset); left: 50%; transform: translate(-50%, -50%); margin: 0; padding: 0 18px;
@@ -149,27 +150,19 @@
   <link rel="preload" href="css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="css/style.css" /></noscript>
 
-  <!-- Three.js wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "./vendor/three/build/three.module.min.js",
-        "three/addons/": "./vendor/three/examples/jsm/"
-      }
-    }
-  </script>
+  <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <canvas id="scene" aria-hidden="true"></canvas>
+  <canvas id="sequenz" aria-hidden="true"></canvas>
 
-  <!-- Standbild der Flasche: sofort sichtbar (schnell, von Google lesbar), liegt pixelgenau
-       unter der 3D-Flasche und wird ausgeblendet, sobald die 3D-Szene läuft. Ohne WebGL bleibt es stehen. -->
+  <!-- Standbild der Flasche: sofort sichtbar (schnell, von Google lesbar), liegt pixelgenau unter dem
+       ersten Bild der Scroll-Sequenz und wird ausgeblendet, sobald diese läuft. Ohne JavaScript bleibt es stehen. -->
   <div class="poster">
     <picture>
-      <source media="(max-aspect-ratio: 4/5)" sizes="28vh" width="419" height="1000"
+      <source media="(max-aspect-ratio: 4/5)" sizes="23vh" width="419" height="1153"
               srcset="assets/img/flasche-berghof-hell-hoch-285.webp 285w, assets/img/flasche-berghof-hell-hoch.webp 419w, assets/img/flasche-berghof-hell-hoch-586.webp 586w" />
-      <img src="assets/img/flasche-berghof-hell.webp" sizes="29vh" width="474" height="1150" fetchpriority="high"
+      <img src="assets/img/flasche-berghof-hell.webp" sizes="24vh" width="474" height="1319" fetchpriority="high"
            srcset="assets/img/flasche-berghof-hell-322.webp 322w, assets/img/flasche-berghof-hell.webp 474w, assets/img/flasche-berghof-hell-701.webp 701w"
            alt="Flasche Berghof Hell – bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
@@ -197,6 +190,9 @@
           <span class="hero__claim">Helles aus Agatharied</span>
         </h1>
       </div>
+
+      <!-- Schriftzug auf dem goldenen Kronkorken am Ende der Sequenz (nur Dekoration, die Überschrift steht oben) -->
+      <p class="cap-title" aria-hidden="true">Berghof <em>Hell</em></p>
     </section>
 
     <!-- ── Zutaten ───────────────────────────── -->

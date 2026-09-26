@@ -34,7 +34,7 @@ const LABELS = {
   neck:  { url: 'assets/textures/label-neck.webp',  y0: 152, y1: 184, width: 66, phi: 0, cutout: true },
 };
 
-export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
+export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false } = {}) {
   // pivot = Drehpunkt in Flaschenmitte (für Schritt 2: auf den Kopf drehen)
   const pivot = new THREE.Group();
   pivot.name = 'BottlePivot';
@@ -94,7 +94,7 @@ export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
   }
 
   // ── Kronkorken ──────────────────────────────────────
-  const cap = createCap(loader);
+  const cap = createCap(loader, plainCap);
   cap.position.y = CAP_BASE_MM * MM;
   body.add(cap);
 
@@ -135,7 +135,7 @@ function createGlassMaterial(v) {
 }
 
 // Kronkorken: gerippter Rand (21 Zacken wie beim echten Kronkorken) + gewölbte Deckfläche mit Aufdruck
-function createCap(loader) {
+function createCap(loader, plain = false) {
   const group = new THREE.Group();
   group.name = 'Cap';
   const c = CONFIG.cap;
@@ -192,6 +192,14 @@ function createCap(loader) {
   top.name = 'CapTop';
   group.add(top);
   group.userData.top = top;
+
+  // schlichter goldener Kronkorken ohne Aufdruck (Scroll-Sequenz)
+  if (plain) {
+    topMat.color.set(c.color);
+    topMat.roughness = 0.34;          // etwas matter → sattes Gold statt Spiegelung der Softbox
+    topMat.envMapIntensity = 1.1;
+    return group;
+  }
 
   // Aufdruck: fertig gebackene Texturen (erzeugt mit tools/kronkorken-backen.html)
   const tex = (url, colorSpace) => {

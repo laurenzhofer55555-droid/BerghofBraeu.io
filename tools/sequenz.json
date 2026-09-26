@@ -1,0 +1,210 @@
+{
+  "_hinweis": "Kamerapfad der Scroll-Sequenz. Jede Station = ein Einrastpunkt (eine Scroll-Stufe). frame = Bildnummer, rot = Drehung der Flasche (rad), cam = Kamera Querformat, camPortrait = Kamera Hochformat (Handy). Nach Änderungen: tools/sequenz-rendern.html neu ausführen und python3 tools/sequenz.py.",
+  "frames": 129,
+  "stations": [
+    {
+      "name": "start",
+      "frame": 0,
+      "rot": -0.3,
+      "cam": {
+        "pos": [
+          0,
+          0.35,
+          7.25
+        ],
+        "target": [
+          0,
+          -0.435,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          0.35,
+          7.87
+        ],
+        "target": [
+          0,
+          -0.207,
+          0
+        ]
+      }
+    },
+    {
+      "name": "rueckseite",
+      "frame": 24,
+      "rot": 2.8416,
+      "cam": {
+        "pos": [
+          0,
+          0.35,
+          7.25
+        ],
+        "target": [
+          0,
+          -0.435,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          0.35,
+          7.87
+        ],
+        "target": [
+          0,
+          -0.207,
+          0
+        ]
+      }
+    },
+    {
+      "name": "vorderseite",
+      "frame": 48,
+      "rot": 5.9832,
+      "cam": {
+        "pos": [
+          0,
+          0.35,
+          7.25
+        ],
+        "target": [
+          0,
+          -0.435,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          0.35,
+          7.87
+        ],
+        "target": [
+          0,
+          -0.207,
+          0
+        ]
+      }
+    },
+    {
+      "name": "blick-oben",
+      "frame": 68,
+      "rot": 6.28,
+      "cam": {
+        "pos": [
+          0,
+          2.55,
+          6.85
+        ],
+        "target": [
+          0,
+          -0.45,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          2.8,
+          7.5
+        ],
+        "target": [
+          0,
+          -0.05,
+          0
+        ]
+      }
+    },
+    {
+      "name": "halb-oben",
+      "frame": 86,
+      "rot": 6.45,
+      "cam": {
+        "pos": [
+          0,
+          5.3,
+          4.5
+        ],
+        "target": [
+          0,
+          -0.3,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          5.6,
+          4.8
+        ],
+        "target": [
+          0,
+          -0.15,
+          0
+        ]
+      }
+    },
+    {
+      "name": "vogel",
+      "frame": 104,
+      "rot": 6.55,
+      "cam": {
+        "pos": [
+          0,
+          3.0,
+          0.4
+        ],
+        "target": [
+          0,
+          1.1,
+          0.2
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          3.75,
+          0.36
+        ],
+        "target": [
+          0,
+          1.1,
+          0.14
+        ]
+      }
+    },
+    {
+      "name": "kronkorken",
+      "frame": 128,
+      "rot": 6.55,
+      "cam": {
+        "pos": [
+          0,
+          1.33,
+          0.07
+        ],
+        "target": [
+          0,
+          1.14,
+          0
+        ]
+      },
+      "camPortrait": {
+        "pos": [
+          0,
+          1.33,
+          0.07
+        ],
+        "target": [
+          0,
+          1.14,
+          0
+        ]
+      },
+      "zoom": true
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Scroll-Sequenz rendern</title>
+  <!-- Nur für die Entwicklung (wird nicht verlinkt): rendert die Bildsequenz der Startseite aus der 3D-Szene.
+       Ablauf: lokalen Aufnahme-Server starten (nimmt POST /__shot an), diese Seite öffnen, „Rendern“ klicken,
+       danach python3 tools/sequenz.py → WebP-Bilder in assets/sequenz/ und neue Standbilder. -->
+  <script type="importmap">
+    { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+  </script>
+  <style>body { font: 15px system-ui; padding: 20px; } canvas { width: 480px; height: auto; border: 1px solid #ccc; }</style>
+</head>
+<body>
+  <p><button id="go">Rendern</button> <span id="status">bereit</span></p>
+  <canvas id="c"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { CONFIG } from '../js/config.js';
+    import { createBottle, BOTTLE_HEIGHT } from '../js/bottle.js';
+    import { createStudioEnvironment, createLights, createBackdrop, createFloor, ContactShadow } from '../js/stage.js';
+
+    // Ausgabeformate: Querformat 2:1 (deckt alle Desktop-Seitenverhältnisse ab), Hochformat 0,62 (Handys)
+    const FORMATS = [
+      { name: 'desktop', w: 3600, h: 1800, portrait: false },
+      { name: 'mobil', w: 1600, h: 2580, portrait: true },
+    ];
+    // Standbild vor dem Laden der Sequenz (gleiche Kamera wie Bild 1, Seitenverhältnis wie bisher)
+    const POSTERS = [
+      { name: 'poster-quer', w: 4000, h: 2500, portrait: false },
+      { name: 'poster-hoch', w: 1280, h: 2771, portrait: true },
+    ];
+
+    const seq = await (await fetch('sequenz.json', { cache: 'no-store' })).json();
+    const status = (t) => { document.getElementById('status').textContent = t; window.__status = t; };
+
+    // ── Szene wie auf der Seite ─────────────────────────
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = CONFIG.lights.exposure;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(CONFIG.colors.background);
+    scene.environment = createStudioEnvironment(renderer);
+    scene.environmentIntensity = CONFIG.lights.envIntensity;
+    scene.add(createBackdrop(), createFloor(-BOTTLE_HEIGHT / 2));
+    createLights(scene);
+
+    const manager = new THREE.LoadingManager();
+    manager.setURLModifier((url) => (url.startsWith('assets/') ? '../' + url : url));   // Pfade relativ zur Startseite
+    const loaded = new Promise((resolve) => { manager.onLoad = resolve; });
+    const bottle = createBottle(renderer, manager, { radialSegments: 256, plainCap: true });
+    scene.add(bottle.pivot);
+    const shadow = new ContactShadow(renderer, scene, -BOTTLE_HEIGHT / 2);
+    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 2, 0.01, 60);
+    await loaded;
+    shadow.update();
+
+    // ── Interpolation zwischen den Stationen ───────────
+    const V = (a) => new THREE.Vector3(...a);
+    const st = seq.stations;
+    const same = (a, b) => a.distanceToSquared(b) < 1e-10;
+
+    // Hermite-Kurve mit Tangente 0 an Ruhepunkten → weich, kein Überschwingen
+    function hermite(values, f) {
+      let i = 0;
+      while (i < st.length - 2 && f > st[i + 1].frame) i++;
+      const f0 = st[i].frame, f1 = st[i + 1].frame, t = Math.min(1, Math.max(0, (f - f0) / (f1 - f0)));
+      const tangent = (k) => {
+        if (k === 0 || k === st.length - 1) return values[k].clone().multiplyScalar(0);
+        const prev = values[k - 1], cur = values[k], next = values[k + 1];
+        if (same(prev, cur) || same(cur, next)) return cur.clone().multiplyScalar(0);
+        return next.clone().sub(prev).divideScalar(st[k + 1].frame - st[k - 1].frame);
+      };
+      const span = f1 - f0, t2 = t * t, t3 = t2 * t;
+      const h00 = 2 * t3 - 3 * t2 + 1, h10 = t3 - 2 * t2 + t, h01 = -2 * t3 + 3 * t2, h11 = t3 - t2;
+      return values[i].clone().multiplyScalar(h00)
+        .add(tangent(i).multiplyScalar(h10 * span))
+        .add(values[i + 1].clone().multiplyScalar(h01))
+        .add(tangent(i + 1).multiplyScalar(h11 * span));
+    }
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    function pose(f, portrait) {
+      const key = portrait ? 'camPortrait' : 'cam';
+      const pos = st.map((s) => V(s[key].pos)), target = st.map((s) => V(s[key].target));
+      const rot = st.map((s) => new THREE.Vector3(s.rot, 0, 0));
+      const last = st.length - 1;
+      let p, tg;
+      if (st[last].zoom && f > st[last - 1].frame) {
+        // Zoom: Abstand geometrisch (gleichmäßiges Heranfahren), Richtung und Ziel weich
+        const t = ease((f - st[last - 1].frame) / (st[last].frame - st[last - 1].frame));
+        tg = target[last - 1].clone().lerp(target[last], t);
+        const dA = pos[last - 1].distanceTo(target[last - 1]), dB = pos[last].distanceTo(target[last]);
+        const dirA = pos[last - 1].clone().sub(target[last - 1]).normalize();
+        const dirB = pos[last].clone().sub(target[last]).normalize();
+        const dir = dirA.lerp(dirB, t).normalize();
+        p = tg.clone().add(dir.multiplyScalar(dA * Math.pow(dB / dA, t)));
+      } else {
+        p = hermite(pos, f); tg = hermite(target, f);
+      }
+      return { pos: p, target: tg, rot: hermite(rot, f).x };
+    }
+
+    async function shoot(name, dir, w, h, f, portrait) {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      const { pos, target, rot } = pose(f, portrait);
+      bottle.pivot.rotation.y = rot;
+      camera.position.copy(pos);
+      camera.lookAt(target);
+      renderer.render(scene, camera);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const res = await fetch(`/__shot?dir=${dir}&name=${name}`, { method: 'POST', body: blob });
+      if (!res.ok) throw new Error('Upload fehlgeschlagen: ' + res.status);
+    }
+
+    // __render() rendert alles; __render(null, 69, 128) nur einen Bildbereich (z. B. nach Änderung einer Station)
+    window.__render = async (only, from = 0, to = seq.frames - 1) => {
+      if (from === 0) for (const P of POSTERS) await shoot(P.name, 'sequenz-roh', P.w, P.h, 0, P.portrait);
+      for (const F of FORMATS) {
+        if (only && only !== F.name) continue;
+        for (let i = from; i <= to; i++) {
+          status(`${F.name} ${i + 1}/${seq.frames}`);
+          await shoot(String(i + 1).padStart(3, '0'), 'sequenz-roh-' + F.name, F.w, F.h, i, F.portrait);
+        }
+      }
+      status('fertig');
+    };
+    document.getElementById('go').addEventListener('click', () => window.__render());
+    window.__pose = pose;
+    window.__shoot = shoot;   // für Testbilder aus der Konsole
+    status('bereit');
+  </script>
+</body>
+</html>

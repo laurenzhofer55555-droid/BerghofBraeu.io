@@ -65,22 +65,22 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* WebGL-Canvas liegt fix hinter dem Inhalt. Standbild und Canvas teilen sich exakt denselben Rahmen,
+/* Sequenz-Canvas liegt fix hinter dem Inhalt. Standbild und Canvas teilen sich exakt denselben Rahmen,
    damit die Flasche beim Übergang deckungsgleich liegt. */
-#scene, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
-#scene { display: block; z-index: 0; opacity: 0; }
-.is-ready #scene { opacity: 1; }
+#sequenz, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
+#sequenz { display: block; z-index: 0; opacity: 0; }
+.is-ready #sequenz { opacity: 1; }
 
 .poster { z-index: 1; pointer-events: none; transition: opacity .9s ease .2s; }
 .poster picture {
-  position: absolute; left: 50%; top: 3.32%;
-  display: block; height: 70.64%;
-  aspect-ratio: 728 / 1766;          /* feste Proportion → kein Springen beim Laden */
+  position: absolute; left: 50%; top: 5.16%;
+  display: block; height: 66.8%;
+  aspect-ratio: 600 / 1670;          /* feste Proportion → kein Springen beim Laden */
   transform: translateX(-50%);
 }
 .poster img { display: block; width: 100%; height: 100%; max-width: none; }
 @media (max-aspect-ratio: 4/5) {
-  .poster picture { top: 12.92%; height: 65%; aspect-ratio: 754 / 1801; }   /* Hochformat: Kamera wie in config.js (portrait…) */
+  .poster picture { top: 14.76%; height: 61.17%; aspect-ratio: 616 / 1695; }   /* Hochformat: Kamera wie tools/sequenz.json (camPortrait) */
 }
 .is-ready .poster { opacity: 0; }
 main { position: relative; z-index: 2; }
@@ -132,6 +132,23 @@ main { position: relative; z-index: 2; }
 .frame__corner--br { bottom: 1px; right: 1px; }
 
 .hero__heading { margin: 0; font-weight: 400; }
+.hero__text { will-change: transform, opacity; }
+
+/* Schriftzug auf dem goldenen Kronkorken (Ende der Sequenz) – wie eingeprägt */
+.cap-title {
+  position: absolute; left: 0; right: 0; top: 50%;
+  margin: 0; padding: 0 24px;
+  transform: translateY(-50%);
+  opacity: 0;
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(52px, min(12vw, 16vh), 176px); line-height: 1;
+  color: var(--green);
+  text-align: center; white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, .55), 0 -1px 0 rgba(90, 60, 10, .25);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.cap-title em { font-style: italic; font-weight: 400; }
 .hero__title {
   display: block;
   font-family: var(--font-display);
@@ -164,7 +181,7 @@ main { position: relative; z-index: 2; }
 /* ── Inhaltsabschnitte ───────────────── */
 .section {
   position: relative; z-index: 2;
-  background: var(--cream);           /* deckt die fixierte 3D-Szene ab */
+  background: var(--cream);           /* deckt die fixierte Sequenz ab */
   padding: clamp(80px, 13vh, 150px) 24px;
 }
 .section + .section { border-top: 1px solid rgba(184, 145, 58, .35); }
@@ -316,8 +333,9 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
 /* Platzhalter, die noch ausgefüllt werden müssen */
 .todo { color: #a33a1f; border-bottom: 1px dashed currentColor; }
 
-/* ── Ohne WebGL / JavaScript bleibt einfach das Standbild stehen ── */
-.no-webgl #scene { display: none; }
+/* Inhaltsabschnitte nach der Sequenz rasten sanft ein (Klasse setzt js/sequenz.js am Ende der Sequenz) */
+html.snap-sections { scroll-snap-type: y proximity; }
+.section { scroll-snap-align: start; }
 
 /* ── Tablet & Handy ─────────────────── */
 @media (max-width: 900px) {
