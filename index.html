@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Berghof Hell – Vollbier aus Agatharied</title>
+  <meta name="description" content="Berghof Hell – Vollbier Hell, gebraut am Berghof Agatharied." />
+  <meta name="theme-color" content="#070504" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Three.js als ES-Module über Import-Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+
+  <!-- Fallback ohne WebGL -->
+  <div class="fallback">
+    <img src="assets/img/bottle.webp" alt="Flasche Berghof Hell, Vollbier Hell 0,5 l" />
+  </div>
+
+  <main>
+    <section class="hero" id="hero">
+      <h1 class="hero__title">
+        <span class="hero__line">Berghof</span>
+        <span class="hero__line hero__line--sub">Hell</span>
+      </h1>
+      <p class="hero__meta">Vollbier Hell · 4,9 % vol · Agatharied</p>
+      <div class="hero__scroll" aria-hidden="true"><span></span></div>
+    </section>
+  </main>
+
+  <div class="loader" aria-hidden="true"></div>
+</body>
+</html>

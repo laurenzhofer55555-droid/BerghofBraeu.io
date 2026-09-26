@@ -1,0 +1,105 @@
+:root {
+  --green: #038244;
+  --green-deep: #02552d;
+  --cream: #f4efe4;
+  --ink: #070504;
+  --gold: #d7ad4f;
+  --font-head: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--cream); }
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* WebGL-Canvas liegt fix hinter dem Inhalt */
+#scene {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh; height: 100lvh;
+  display: block; z-index: 0;
+}
+
+main { position: relative; z-index: 1; pointer-events: none; }
+main a, main button { pointer-events: auto; }
+
+/* ── Hero ───────────────────────────── */
+.hero {
+  height: 100vh; height: 100svh;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  padding: 0 16px calc(3.5vh + env(safe-area-inset-bottom));
+  text-align: center;
+}
+.hero__title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+  color: var(--cream);
+  text-shadow: 0 0.04em 0.4em rgba(0, 0, 0, 0.55);
+}
+.hero__line { display: block; font-size: clamp(56px, min(13vw, 14vh), 200px); }
+.hero__line--sub {
+  font-size: clamp(26px, min(5.4vw, 6vh), 84px);
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  margin-right: -0.32em; /* optischer Ausgleich für letter-spacing */
+  color: var(--gold);
+}
+.hero__meta {
+  margin: 1.1em 0 0;
+  font-family: var(--font-head);
+  font-size: clamp(12px, 1.1vw, 15px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 228, 0.62);
+}
+.hero__scroll {
+  width: 1px; height: 44px; margin-top: 2.2vh;
+  background: rgba(244, 239, 228, 0.18);
+  position: relative; overflow: hidden;
+}
+.hero__scroll span {
+  position: absolute; left: 0; top: -40%;
+  width: 100%; height: 40%;
+  background: var(--cream);
+  animation: scrollHint 2.2s cubic-bezier(.6, 0, .3, 1) infinite;
+}
+@keyframes scrollHint { to { top: 100%; } }
+
+/* Einblenden, sobald Szene bereit */
+.hero__title, .hero__meta, .hero__scroll {
+  opacity: 0; transform: translateY(18px);
+  transition: opacity 1.4s ease, transform 1.4s cubic-bezier(.2, .7, .2, 1);
+}
+.is-ready .hero__title { opacity: 1; transform: none; transition-delay: .25s; }
+.is-ready .hero__meta { opacity: 1; transform: none; transition-delay: .55s; }
+.is-ready .hero__scroll { opacity: 1; transform: none; transition-delay: .8s; }
+
+.loader {
+  position: fixed; inset: 0; z-index: 5; background: var(--ink);
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.is-ready .loader, .no-webgl .loader { opacity: 0; }
+
+/* ── Fallback ohne WebGL ────────────── */
+.fallback { display: none; }
+.no-webgl #scene { display: none; }
+.no-webgl .fallback {
+  display: flex; justify-content: center;
+  position: fixed; inset: 0 0 auto; height: 72vh; padding-top: 4vh;
+  background: radial-gradient(ellipse at 50% 45%, #3a2010 0%, var(--ink) 70%);
+}
+.no-webgl .fallback img { height: 100%; width: auto; mix-blend-mode: multiply; filter: contrast(1.05); }
+.no-webgl .hero__title, .no-webgl .hero__meta, .no-webgl .hero__scroll { opacity: 1; transform: none; }
+
+/* ── Reduzierte Bewegung ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+}
