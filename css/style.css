@@ -74,9 +74,9 @@ body::after {
 
 .poster { z-index: 1; pointer-events: none; transition: opacity .9s ease .2s; }
 .poster picture {
-  position: absolute; left: 50%; top: 14.28%;
-  display: block; height: 73.16%;
-  aspect-ratio: 670 / 1829;          /* feste Proportion → kein Springen beim Laden */
+  position: absolute; left: 50%; top: 16.72%;
+  display: block; height: 56.44%;
+  aspect-ratio: 564 / 1411;          /* feste Proportion → kein Springen beim Laden */
   transform: translateX(-50%);
 }
 .poster img { display: block; width: 100%; height: 100%; max-width: none; }
@@ -135,15 +135,34 @@ main { position: relative; z-index: 2; }
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { will-change: transform, opacity; }
 
-/* Start: Hinweis zum Scrollen; Titel erscheint erst am Ende der Sequenz (Klasse .seq aus dem Head-Skript) */
+/* Schriftzug auf dem goldenen Kronkorken (Desktop, Ende der Sequenz) – wie eingeprägt */
+.cap-title {
+  position: absolute; left: 0; right: 0; top: 50%;
+  margin: 0; padding: 0 24px;
+  transform: translateY(-50%);
+  opacity: 0;
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(52px, min(12vw, 16vh), 176px); line-height: 1;
+  color: var(--green);
+  text-align: center; white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, .55), 0 -1px 0 rgba(90, 60, 10, .25);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.cap-title em { font-style: italic; font-weight: 400; }
+
+/* Handy (Hochformat, gleiche Bedingung wie die Handy-Bildfolge): Start ohne Titel, Pfeil nach unten;
+   der Titel erscheint erst am Ende der Sequenz (Klasse .seq aus dem Head-Skript). Desktop bleibt mit Titel am Start. */
 .scroll-cue { display: none; }
-.seq .hero__text { opacity: 0; }
-.seq .scroll-cue {
-  display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  flex-direction: column; align-items: center; gap: 6px;
-  font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
-      text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream);
+@media (max-aspect-ratio: 4/5) {
+  .seq .hero__text { opacity: 0; }
+  .seq .scroll-cue {
+    display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    flex-direction: column; align-items: center; gap: 6px;
+    font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
+    text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream);
+  }
 }
 .scroll-cue svg { width: 64px; height: 64px; animation: cue 2.4s ease-in-out infinite;
       filter: drop-shadow(0 0 4px var(--cream)); }

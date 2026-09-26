@@ -28,12 +28,13 @@ Dann http://localhost:5173 öffnen.
 
 ## Sequenz neu rendern
 
-Kamerafahrt und Stationen stehen in `tools/sequenz.json` (je Station: Bildnummer, Drehung, Kamera quer/hoch),
+Kamerafahrt und Stationen stehen in `tools/sequenz.json`, getrennt für Desktop (`sets.desktop`, Querformat) und Handy
+(`sets.mobil`, Hochformat), je Station: Bildnummer, Drehung, Kamera. Beide brauchen gleich viele Stationen.
 Licht und Material in `js/config.js`.
 
 1. Lokalen Aufnahme-Server starten, der `POST /__shot?dir=…&name=…` als PNG speichert, und
    `tools/sequenz-rendern.html` darüber öffnen, „Rendern“ klicken (dauert einige Minuten).
-2. `python3 tools/sequenz.py <Ordner mit sequenz-roh-*>` → WebP-Bilder in `assets/sequenz/`, `manifest.json`
+2. `python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]` (ohne Angabe beide Formate) → WebP-Bilder in `assets/sequenz/`, `manifest.json`
    und neue Standbilder `assets/img/flasche-berghof-hell*.webp`.
 3. Die ausgegebenen Werte (top, height, aspect-ratio) bei `.poster picture` in `index.html` und `css/style.css`
    eintragen, sonst springt die Flasche beim Übergang vom Standbild zur Sequenz.

@@ -2,9 +2,11 @@
 // Die Bilder werden vorab aus der 3D-Szene gerendert (tools/sequenz-rendern.html + tools/sequenz.py);
 // hier wird beim Scrollen nur noch das passende Bild auf ein <canvas> gezeichnet → flüssig auch auf alten Handys.
 //
-// Start: etikettierte Flasche in Frontansicht. Scroll-Stufen (Einrastpunkte = Stationen aus assets/sequenz/manifest.json):
-//   Flasche frontal · Vogelperspektive · Zoom auf den goldenen Kronkorken, dann erscheint der Titel
-//   · zuletzt das Bier wird leer: Schaumkrone wandert nach unten und gibt das Beige frei → danach folgen die Inhalte.
+// Desktop und Handy haben eigene Bildfolgen (assets/sequenz/manifest.json → sets), gleich viele Scroll-Stufen:
+//   Desktop: Blick von oben · Vogelperspektive · Zoom auf den Kronkorken, Titel steht am Start und blendet beim Zoom aus,
+//            „Berghof Hell“ erscheint auf dem goldenen Kronkorken.
+//   Handy:   Flasche frontal (ohne Titel, Pfeil nach unten) · Vogelperspektive · Zoom, danach erscheint der Titel.
+//   Zuletzt leert sich das Bier (js/bier-leeren.js) → danach folgen die Inhalte.
 // Im DOM werden nur transform und opacity animiert. Zum Einstellen lokal kurz `markers: true` setzen – nicht so veröffentlichen.
 
 import { createBeer } from './bier-leeren.js';
@@ -17,20 +19,22 @@ const root = document.documentElement;
 const canvas = document.getElementById('sequenz');
 const ctx = canvas.getContext('2d', { alpha: false });
 const hero = document.getElementById('start');
-const portrait = window.matchMedia('(max-aspect-ratio: 4/5)');
+const PHONE = '(max-aspect-ratio: 4/5)';   // Hochformat: Handy-Bildfolge, Handy-Standbild und Handy-Ablauf
+const portrait = window.matchMedia(PHONE);
 const saveData = navigator.connection?.saveData === true;
 
 const manifest = await (await fetch(BASE + 'manifest.json')).json();
-const ST = manifest.stations;              // Bildnummer je Station, z. B. [0, 18, 42]
-const UNITS = ST.length - 1;               // Scroll-Stufen mit Renderbildern
+let set = portrait.matches ? 'mobil' : 'desktop';
+let ST = manifest.sets[set].stations;      // Bildnummer je Station, z. B. [0, 18, 42]
+const UNITS = ST.length - 1;               // Scroll-Stufen mit Renderbildern (bei beiden Formaten gleich)
 const DRAIN = 1;                           // + letzte Stufe „das Bier leert sich“ (js/bier-leeren.js, kein Bild)
 const TOTAL = UNITS + DRAIN;
 
-let set, frames = [], stills = [], current = 0, lastDrawn = null, loadRun = 0;
+let frames = [], stills = [], current = 0, lastDrawn = null, loadRun = 0;
 
 // ── Laden: erst das Ruhebild der Startstation, dann jedes 8., 4., 2. Bild, dann alle ──
 function loadOrder() {
-  const n = manifest.frames, a = ST[0], order = [], seen = new Set();
+  const n = manifest.sets[set].frames, a = ST[0], order = [], seen = new Set();
   const add = (job) => { const key = job.join(); if (!seen.has(key)) { seen.add(key); order.push(job); } };
   add(['still', 0]);
   for (const step of [8, 4]) for (let i = a; i < n; i += step) add(['frame', i]);
@@ -50,7 +54,8 @@ function loadImage(src) {
 async function loadSet() {
   const run = ++loadRun;
   set = portrait.matches ? 'mobil' : 'desktop';
-  frames = new Array(manifest.frames);
+  ST = manifest.sets[set].stations;
+  frames = new Array(manifest.sets[set].frames);
   stills = new Array(ST.length);
   lastDrawn = null;
   const queue = loadOrder();
@@ -77,7 +82,7 @@ function frameAt(u) {
 }
 
 function nearestFrame(f) {
-  for (let d = 0; d < manifest.frames; d++) {
+  for (let d = 0; d < frames.length; d++) {
     if (frames[f - d]) return frames[f - d];
     if (frames[f + d]) return frames[f + d];
   }
@@ -139,52 +144,65 @@ const beer = createBeer(hero);
 const imageStations = Array.from({ length: UNITS + 1 }, (_, i) => i / TOTAL);
 const snapImages = ScrollTrigger.snapDirectional(imageStations);
 const snapTo = (v, self) => (v > UNITS / TOTAL + 0.002 ? v : snapImages(v, self.direction));
-const tl = gsap.timeline({
-  defaults: { ease: 'none' },
-  scrollTrigger: {
-    trigger: hero,
-    start: 'top top',
-    end: () => '+=' + window.innerHeight * TOTAL,
-    pin: true,
-    scrub: 0.5,
-    // inertia aus: sonst rechnet der Schwung eine Station zu weit (0,9 Stufen gescrollt → Station 2 statt 1)
-    snap: { snapTo, inertia: false, duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' },
-    invalidateOnRefresh: true,
-    onUpdate: (self) => {
-      placeHeader(self);
-      beer.velocity(self.getVelocity());                        // schnelles Scrollen lässt das Bier stärker schwappen
-      // Bläschen steigen nur, solange das Bier zu sehen ist
-      root.classList.toggle('is-draining', self.progress > UNITS / TOTAL + 1e-4 && self.progress < 1 - 1e-4);
-    },
-    onRefresh: placeHeader,
-    // Inhaltsabschnitte danach rasten per CSS-Scroll-Snap ein (nur außerhalb der Sequenz)
-    onLeave: () => root.classList.add('snap-sections'),
-    onEnterBack: () => root.classList.remove('snap-sections'),
-  },
-});
-for (let i = 0; i <= TOTAL; i++) tl.addLabel('station-' + i, i);
-tl.to(state, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; draw(); } }, 0);
-// Start ohne Titel: Pfeil nach unten blendet beim ersten Scrollen aus. Nach dem Zoom auf den Kronkorken
-// blendet der Rahmen aus und Titel, Trennstrich und „Helles aus Agatharied“ erscheinen wie früher am Start.
-// Rückwärts läuft alles genau umgekehrt.
-tl.to('.scroll-cue', { opacity: 0, duration: 0.15 }, 0);
-tl.to('#start > .frame', { opacity: 0, duration: 0.3 }, UNITS - 0.3);
-tl.fromTo('.hero__text', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, immediateRender: false }, UNITS - 0.35);
-
-// ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
-// Flache Goldfläche mit Welle und Schaumkrone ersetzt das Kronkorken-Bild, der Pegel sinkt mit dem Scrollen,
-// darüber wird der beige Hintergrund frei. „Berghof Hell“ bleibt stehen.
 const drain = { p: 0 };
 const beerLayer = hero.querySelector('.beer');
-tl.to(drain, {
-  p: 1, duration: DRAIN, onUpdate: () => {
-    // Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe
-    const fade = Math.min(1, drain.p / 0.05);
-    beerLayer.style.opacity = fade;
-    canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
-    beer.level(drain.p);
-  },
-}, UNITS);
+
+// Zeitleiste je Format (gsap.matchMedia): beim Drehen des Handys wird sie sauber zurückgesetzt und neu gebaut
+gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) => {
+  const { phone } = context.conditions;
+  const tl = gsap.timeline({
+    defaults: { ease: 'none' },
+    scrollTrigger: {
+      trigger: hero,
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * TOTAL,
+      pin: true,
+      scrub: 0.5,
+      // inertia aus: sonst rechnet der Schwung eine Station zu weit (0,9 Stufen gescrollt → Station 2 statt 1)
+      snap: { snapTo, inertia: false, duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' },
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        placeHeader(self);
+        beer.velocity(self.getVelocity());                      // schnelles Scrollen lässt das Bier stärker schwappen
+        // Bläschen steigen nur, solange das Bier zu sehen ist
+        root.classList.toggle('is-draining', self.progress > UNITS / TOTAL + 1e-4 && self.progress < 1 - 1e-4);
+      },
+      onRefresh: placeHeader,
+      // Inhaltsabschnitte danach rasten per CSS-Scroll-Snap ein (nur außerhalb der Sequenz)
+      onLeave: () => root.classList.add('snap-sections'),
+      onEnterBack: () => root.classList.remove('snap-sections'),
+    },
+  });
+  for (let i = 0; i <= TOTAL; i++) tl.addLabel('station-' + i, i);
+  tl.fromTo(state, { u: 0 }, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; draw(); } }, 0);
+
+  if (phone) {
+    // Handy: Start ohne Titel, Pfeil nach unten blendet beim ersten Scrollen aus. Nach dem Zoom auf den Kronkorken
+    // blendet der Rahmen aus und Titel, Trennstrich und „Helles aus Agatharied“ erscheinen. Rückwärts genau umgekehrt.
+    // Startwerte immer ausdrücklich setzen (fromTo): nach dem Drehen des Handys dürfen keine Werte der anderen Ansicht bleiben
+    tl.fromTo('.scroll-cue', { opacity: 1 }, { opacity: 0, duration: 0.15 }, 0);
+    tl.fromTo('#start > .frame', { opacity: 1 }, { opacity: 0, duration: 0.3 }, UNITS - 0.3);
+    tl.fromTo('.hero__text', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35 }, UNITS - 0.35);
+  } else {
+    // Desktop: Titel unten blendet beim Zoom aus, Schriftzug erscheint auf dem goldenen Kronkorken
+    tl.fromTo('.hero__text', { opacity: 1, y: 0 }, { opacity: 0, y: -24, duration: 0.45 }, UNITS - 1);
+    tl.set('#start > .frame', { opacity: 1 }, 0);
+    tl.fromTo('.cap-title', { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.5 }, UNITS - 0.5);
+  }
+
+  // ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
+  // Flache Goldfläche mit Welle und Schaumkrone ersetzt das Kronkorken-Bild, der Pegel sinkt mit dem Scrollen,
+  // darüber wird der beige Hintergrund frei.
+  tl.fromTo(drain, { p: 0 }, {
+    p: 1, duration: DRAIN, onUpdate: () => {
+      // Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe
+      const fade = Math.min(1, drain.p / 0.05);
+      beerLayer.style.opacity = fade;
+      canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
+      beer.level(drain.p);
+    },
+  }, UNITS);
+});
 
 window.addEventListener('resize', () => requestAnimationFrame(resize), { passive: true });
 portrait.addEventListener('change', () => { loadSet(); });

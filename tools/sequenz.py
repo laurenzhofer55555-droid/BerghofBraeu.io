@@ -4,7 +4,7 @@
 Ablauf (siehe README, „Sequenz neu rendern“):
   1. tools/sequenz-rendern.html im lokalen Aufnahme-Server öffnen und „Rendern“ klicken
      → PNGs in <roh>/sequenz-roh-desktop, <roh>/sequenz-roh-mobil, <roh>/sequenz-roh (Standbilder)
-  2. python3 tools/sequenz.py <roh>
+  2. python3 tools/sequenz.py <roh> [desktop|mobil]
      → assets/sequenz/desktop/001.webp …, assets/sequenz/mobil/001.webp …,
        Ruhebilder in voller Schärfe (still-001.webp …), assets/sequenz/manifest.json,
        neue Standbilder der Flasche (assets/img/flasche-berghof-hell*.webp)
@@ -47,23 +47,30 @@ def bottle_box(img):
 
 def main():
     if len(sys.argv) < 2:
-        sys.exit('Aufruf: python3 tools/sequenz.py <Ordner mit sequenz-roh-*>')
+        sys.exit('Aufruf: python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]')
     raw = pathlib.Path(sys.argv[1])
+    only = sys.argv[2] if len(sys.argv) > 2 else None           # nur ein Format umwandeln (das andere bleibt)
     seq = json.loads((ROOT / 'tools' / 'sequenz.json').read_text(encoding='utf-8'))
-    # Die Seite beginnt bei der Startstation (sequenz.json → start); Bilder davor werden nicht ausgeliefert
-    names = [s['name'] for s in seq['stations']]
-    first = names.index(seq.get('start', names[0]))
-    stations = [s['frame'] for s in seq['stations']][first:]
-    manifest = {'frames': seq['frames'], 'stations': stations, 'sets': {}}
+    manifest_path = OUT / 'manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
+    manifest.setdefault('sets', {})
+    manifest.pop('frames', None)
+    manifest.pop('stations', None)
 
+    # Desktop und Handy haben eigene Stationen und Bildzahlen (tools/sequenz.json → sets)
     for name, cfg in SETS.items():
+        if only and only != name:
+            continue
+        spec = seq['sets'][name]
+        stations = [st['frame'] for st in spec['stations']]
+        frames = spec['frames']
         src = raw / f'sequenz-roh-{name}'
         total = 0
         for old in (OUT / name).glob('*.webp'):                        # nicht mehr benötigte Bilder entfernen
             k = int(old.stem.replace('still-', '')) - 1
-            if k < stations[0] or k >= seq['frames'] or (old.stem.startswith('still-') and k not in stations):
+            if k < stations[0] or k >= frames or (old.stem.startswith('still-') and k not in stations):
                 old.unlink()
-        for i in range(stations[0], seq['frames']):
+        for i in range(stations[0], frames):
             png = src / f'{i + 1:03d}.png'
             targets = [(OUT / name / f'{i + 1:03d}.webp', cfg['motion'], cfg['quality'])]
             if i in stations:
@@ -75,12 +82,15 @@ def main():
                     continue
                 im = im or Image.open(png).convert('RGB')
                 total += save(im.resize(size, Image.LANCZOS), out, quality)
-        manifest['sets'][name] = {'motion': list(cfg['motion']), 'still': list(cfg['still'])}
-        print(f'{name}: {seq["frames"] - stations[0]} Bilder + {len(stations)} Ruhebilder, {total / 1e6:.1f} MB')
+        manifest['sets'][name] = {'motion': list(cfg['motion']), 'still': list(cfg['still']),
+                                  'frames': frames, 'stations': stations}
+        print(f'{name}: {frames - stations[0]} Bilder + {len(stations)} Ruhebilder, {total / 1e6:.1f} MB')
 
-    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
     for poster, (base, widths) in POSTERS.items():
+        if only and only != ('desktop' if poster == 'poster-quer' else 'mobil'):
+            continue
         im = Image.open(raw / 'sequenz-roh' / f'{poster}.png').convert('RGB')
         x0, y0, x1, y1 = bottle_box(im)
         cx = im.width / 2                    # Kamera schaut mittig → Flasche waagrecht zentriert

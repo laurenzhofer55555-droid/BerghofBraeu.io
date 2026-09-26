@@ -1,10 +1,4 @@
 {
-  "frames": 55,
-  "stations": [
-    0,
-    30,
-    54
-  ],
   "sets": {
     "desktop": {
       "motion": [
@@ -14,6 +8,12 @@
       "still": [
         2880,
         1440
+      ],
+      "frames": 43,
+      "stations": [
+        0,
+        18,
+        42
       ]
     },
     "mobil": {
@@ -24,6 +24,12 @@
       "still": [
         1200,
         1935
+      ],
+      "frames": 55,
+      "stations": [
+        0,
+        30,
+        54
       ]
     }
   }
