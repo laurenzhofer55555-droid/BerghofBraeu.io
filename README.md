@@ -44,4 +44,4 @@ Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnelle
 - Strukturierte Daten: Website, Brauerei (Adresse, Koordinaten, Ansprechpartner, Logo) und Produkt.
 - Vorschaubild für WhatsApp & Co.: `assets/img/og.jpg` (1200 × 630).
 
-Alle Schriften und Bibliotheken liegen lokal in `vendor/`. Externe Dienste (OpenStreetMap-Karte) laden nur nach Klick.
+Alle Schriften und Bibliotheken liegen lokal in `vendor/`. Es werden keine externen Dienste eingebunden; die Karte ist ein eigenes Bild mit Link zu Google Maps.

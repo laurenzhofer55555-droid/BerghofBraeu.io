@@ -30,7 +30,7 @@ const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 let maxDpr = isMobile ? CONFIG.perf.maxDprMobile : CONFIG.perf.maxDprDesktop;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDpr));
-renderer.toneMapping = THREE.NeutralToneMapping;   // farbtreu: Etikett und Creme bleiben, wie sie sind
+renderer.toneMapping = THREE.ACESFilmicToneMapping;  // filmischer Kontrast; der Creme-Hintergrund ist davon ausgenommen
 renderer.toneMappingExposure = CONFIG.lights.exposure;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -53,7 +53,7 @@ const assetsLoaded = new Promise((resolve) => { manager.onLoad = resolve; });
 scene.add(createBackdrop());
 const lights = createLights(scene);
 
-let bottle = createBottle(renderer, manager, { radialSegments: isMobile ? 96 : 128 });
+let bottle = createBottle(renderer, manager, { radialSegments: isMobile ? 128 : 192 });
 scene.add(bottle.pivot);
 bottle.pivot.rotation.y = CONFIG.bottle.startRotation;
 
@@ -119,7 +119,7 @@ let fpsFrames = 0, fpsTime = 0, downgrades = 0;
 document.addEventListener('visibilitychange', () => { fpsFrames = 0; fpsTime = 0; });
 function checkPerf(dt) {
   // nicht messen, wenn der Tab im Hintergrund liegt oder ein einzelner Frame hängt (Laden, Tabwechsel)
-  if (downgrades >= 2 || document.hidden || dt > 0.25) return;
+  if (downgrades >= 1 || document.hidden || dt > 0.25) return;   // höchstens eine Stufe (2 → 1,5)
   fpsFrames++; fpsTime += dt;
   if (fpsTime > 2.5) {
     const fps = fpsFrames / fpsTime;

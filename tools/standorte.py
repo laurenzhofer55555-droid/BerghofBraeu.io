@@ -10,6 +10,7 @@ import html
 import json
 import pathlib
 import re
+from urllib.parse import quote
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 START = '<!-- standorte:start – automatisch aus data/standorte.json (python3 tools/standorte.py) -->'
@@ -37,9 +38,9 @@ def render(loc, indent):
         lines.append(f'{pad}  <p><a href="tel:{tel}">{esc(loc["telefon"])}</a></p>')
     if loc.get('email'):
         lines.append(f'{pad}  <p><a href="mailto:{esc(loc["email"])}">{esc(loc["email"])}</a></p>')
-    if loc.get('lat') and loc.get('lon'):
-        url = f'https://www.openstreetmap.org/?mlat={loc["lat"]}&amp;mlon={loc["lon"]}#map=17/{loc["lat"]}/{loc["lon"]}'
-        lines.append(f'{pad}  <a class="location__link" href="{url}" target="_blank" rel="noopener">In OpenStreetMap öffnen</a>')
+    query = quote(f'{loc["strasse"]}, {re.sub(r"\s*\(.*?\)", "", loc["ort"])}')
+    url = f'https://www.google.com/maps/search/?api=1&amp;query={query}'
+    lines.append(f'{pad}  <a class="location__link" href="{url}" target="_blank" rel="noopener">Route planen (Google Maps)</a>')
     lines.append(f'{pad}</li>')
     return '\n'.join(lines)
 

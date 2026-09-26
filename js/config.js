@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  ZENTRALE STELLSCHRAUBEN – Farben, Kamera, Licht, Material
 //  Alle Werte hier ändern, der Rest des Codes liest nur aus.
-//  Einheiten: 1 Einheit ≈ 10 cm (Flasche ist ca. 2,2 hoch)
+//  Einheiten: 1 Einheit = 10 cm (Flasche 228 mm → 2,28 hoch)
 // ─────────────────────────────────────────────────────────────
 
 export const CONFIG = {
@@ -15,10 +15,10 @@ export const CONFIG = {
   // und ihre Position in index.html/css neu erzeugen, sonst springt die Flasche beim Übergang ins 3D.
   camera: {
     fov: 28,
-    position: [0, 0.35, 7.0],   // Startposition
-    target: [0, -0.42, 0],       // Blickpunkt (tiefer = Flasche steht höher im Bild)
-    portraitDistance: 7.6,       // Abstand auf Hochformat-Screens (Handy)
-    portraitTargetY: -0.2,       // Blickpunkt auf dem Handy (höher = Flasche rückt nach unten, näher an den Titel)
+    position: [0, 0.35, 7.25],  // Startposition
+    target: [0, -0.435, 0],      // Blickpunkt (tiefer = Flasche steht höher im Bild)
+    portraitDistance: 7.87,      // Abstand auf Hochformat-Screens (Handy)
+    portraitTargetY: -0.207,      // Blickpunkt auf dem Handy (höher = Flasche rückt nach unten, näher an den Titel)
     parallax: 0.12,              // Maus-Parallaxe (0 = aus)
   },
 
@@ -45,7 +45,7 @@ export const CONFIG = {
     },
     edgeDarken: 0.04,        // Helligkeit am Rand (längerer Lichtweg → dunkler)
     edgePower: 3.5,          // Breite des dunklen Randes (höher = schmalerer heller Kern)
-    fillHeight: 0.875,       // Füllhöhe relativ zur Flaschenhöhe
+    fillLevelMm: 192,        // Füllhöhe in mm über dem Boden (Bier bis in den Hals)
   },
 
   cap: {
@@ -74,7 +74,7 @@ export const CONFIG = {
 
   perf: {
     maxDprDesktop: 2,
-    maxDprMobile: 1.5,
-    autoDowngradeFps: 45,  // fällt die FPS darunter → Auflösung runter
+    maxDprMobile: 2,
+    autoDowngradeFps: 38,  // fällt die FPS darunter → Auflösung runter
   },
 };

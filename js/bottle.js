@@ -3,27 +3,35 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 
-// Umrechnung Foto-Pixel → Szene-Einheiten (Bauchdurchmesser 470 px = 0,7)
-const K = 0.7 / 470;
+// Maßstab: 1 Einheit = 10 cm → 1 mm = 0,01
+const MM = 0.01;
 
-// Außenprofil der Flasche [Radius, Höhe] in Foto-Pixeln, von unten nach oben
-const PROFILE_PX = [
-  [0, 0], [200, 0], [224, 5], [233, 16], [235, 40],
-  [235, 829], [231, 889], [224, 929], [213, 969], [198, 1009],        // Schulter
-  [183, 1049], [167, 1089], [151, 1129], [135, 1169], [118, 1209],
-  [105, 1249], [97, 1280], [92, 1320], [90, 1350],                    // Hals
-  [96, 1358], [96, 1372], [90, 1380], [90, 1418], [95, 1426],         // Halsring + Mündung
-  [95, 1440], [90, 1452], [0, 1456],
+// Außenprofil der Flasche [Radius, Höhe] in Millimetern, von der Bodenmitte nach oben.
+// Maße: Höhe 228 mm, Körper Ø 70,5 mm, Hals Ø ≈ 26 mm, Mündung für 26-mm-Kronkorken (DIN 6094-1),
+// Boden 4,5 mm nach innen gewölbt. Schulter- und Halsverlauf aus dem Referenzfoto (IMG_6256) ausgelesen.
+const PROFILE_MM = [
+  [0, 4.5], [6, 4.2], [12, 3.2], [18, 1.6], [23, 0.5], [26.5, 0],          // gewölbter Boden
+  [29.5, 0], [31.8, 0.6], [33.2, 2.2], [33.7, 5], [34, 8], [34.4, 12],       // Standring + Fuß
+  [35, 15], [35.25, 17.5], [35.25, 60], [35.25, 100], [35.25, 136],           // Körper Ø 70,5
+  [35.1, 140], [34.7, 143], [33.9, 146.5], [33.3, 150.7], [31.3, 156],       // Schulter (Foto)
+  [29.2, 161.3], [27.1, 166.6], [25, 171.9], [22.9, 177.2], [20.7, 182.5],
+  [18.5, 187.7], [16.5, 193], [15.3, 196.6], [14.6, 199],
+  [13.9, 202], [13.35, 205], [13.3, 208],                                    // Hals Ø ≈ 26,5
+  [13.8, 210.2], [14.6, 211.5], [14.75, 214], [14.6, 217.5], [13.6, 219.2],  // Halsring
+  [12.55, 220.6], [12.7, 221.6], [13.15, 222.8], [13.2, 225.8],              // Rille + Mündungswulst Ø 26,3
+  [12.85, 227.3], [12.1, 228], [9.5, 228], [8.3, 227.6],                     // Mündungsrand
+  [8, 226.5], [8, 214], [0, 214],                                            // Bohrung Ø 16
 ];
-const CAP_BASE_PX = 1432;   // Unterkante Kronkorken
-export const BOTTLE_HEIGHT = 1486 * K;
+const CAP_BASE_MM = 222.9;        // Unterkante Kronkorken
+const CAP_HEIGHT_MM = 6.3;
+export const BOTTLE_HEIGHT = (CAP_BASE_MM + CAP_HEIGHT_MM) * MM;
 export const SHADOW_LAYER = 1; // nur diese Objekte werfen den Kontaktschatten
 
-// Etiketten: Höhe von/bis (px), Breite als Bogenlänge (px)
+// Etiketten: Höhe von/bis (mm über dem Boden), Breite als Bogenlänge (mm)
 const LABELS = {
-  front: { url: 'assets/textures/label-front.webp', y0: 150, y1: 767, width: 555, phi: 0 },
-  back:  { url: 'assets/textures/label-back.webp',  y0: 198, y1: 718, width: 433, phi: Math.PI },
-  neck:  { url: 'assets/textures/label-neck.webp',  y0: 995, y1: 1197, width: 440, phi: 0, cutout: true },
+  front: { url: 'assets/textures/label-front.webp', y0: 20, y1: 120, width: 90, phi: 0 },            // 9 × 10 cm
+  back:  { url: 'assets/textures/label-back.webp',  y0: 27.5, y1: 112.5, width: 69.9, phi: Math.PI },
+  neck:  { url: 'assets/textures/label-neck.webp',  y0: 152, y1: 184, width: 66, phi: 0, cutout: true },
 };
 
 export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
@@ -36,16 +44,16 @@ export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
 
   // glattes Profil über Catmull-Rom (centripetal = kein Überschwingen an Kanten)
   const curve = new THREE.CatmullRomCurve3(
-    PROFILE_PX.map(([r, y]) => new THREE.Vector3(r * K, y * K, 0)), false, 'centripetal'
+    PROFILE_MM.map(([r, y]) => new THREE.Vector3(r * MM, y * MM, 0)), false, 'centripetal'
   );
-  const outer = curve.getPoints(260).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
-  outer[0].set(0, 0);
+  const outer = curve.getPoints(320).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
+  outer[0].x = 0;
   outer[outer.length - 1].x = 0;
   const radiusAt = makeRadiusLookup(outer);
 
   // ── Glas: unten mit Bier gefüllt, oben (Hals) leer ─────────────
   const g = CONFIG.glass;
-  const fillY = PROFILE_PX.at(-1)[1] * K * g.fillHeight;
+  const fillY = g.fillLevelMm * MM;
   const fillR = radiusAt(fillY);
   const lower = outer.filter((p) => p.y < fillY);
   lower.push(new THREE.Vector2(fillR, fillY));
@@ -77,7 +85,7 @@ export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
       alphaTest: L.cutout ? 0.5 : 0,
       envMapIntensity: 0.38,
     });
-    const geo = createWrapGeometry(radiusAt, L.y0 * K, L.y1 * K, L.width * K, 0.0022);
+    const geo = createWrapGeometry(radiusAt, L.y0 * MM, L.y1 * MM, L.width * MM, 0.0022);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.rotation.y = L.phi;
     mesh.name = `Label_${key}`;
@@ -87,7 +95,7 @@ export function createBottle(renderer, manager, { radialSegments = 128 } = {}) {
 
   // ── Kronkorken ──────────────────────────────────────
   const cap = createCap(loader);
-  cap.position.y = CAP_BASE_PX * K;
+  cap.position.y = CAP_BASE_MM * MM;
   body.add(cap);
 
   // alle Teile werfen den Kontaktschatten
@@ -132,17 +140,17 @@ function createCap(loader) {
   group.name = 'Cap';
   const c = CONFIG.cap;
 
-  // Profil der Kappe (px, relativ zur Unterkante), fein interpoliert
+  // Profil der Kappe (mm, relativ zur Unterkante): Kronkorken Ø 32,1 mm, Höhe 6,3 mm
   const capCurve = new THREE.CatmullRomCurve3([
-    [97, 0], [101.5, 1.2], [102.5, 4], [100, 9], [99, 20], [98.5, 34],
-    [97.8, 43], [96.5, 48], [93.5, 51.6], [89, 53.6], [86, 54],
-  ].map(([r, y]) => new THREE.Vector3(r * K, y * K, 0)), false, 'centripetal');
+    [14.4, 0], [15.3, 0.2], [15.9, 0.8], [15.8, 1.6], [15.4, 2.8], [15.25, 4.2],
+    [15.1, 5], [14.6, 5.7], [13.7, 6.15], [13.1, 6.3],
+  ].map(([r, y]) => new THREE.Vector3(r * MM, y * MM, 0)), false, 'centripetal');
   const pts = capCurve.getPoints(48).map((p) => new THREE.Vector2(p.x, p.y));
   const geo = new THREE.LatheGeometry(pts, 21 * 14);
 
   // Riffelung: Radius wellt sich um 21 Falten, unten am stärksten, zur Kante hin abgerundet
   const pos = geo.attributes.position;
-  const skirtTop = 44 * K;
+  const skirtTop = 5 * MM;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     if (y >= skirtTop) continue;
@@ -165,12 +173,12 @@ function createCap(loader) {
   group.add(new THREE.Mesh(geo, metal));
 
   // Deckfläche: leicht gewölbt, trägt den Aufdruck (wird in Schritt 3 die Inhalts-Bühne)
-  const R = 86 * K;
+  const R = 13.1 * MM;
   const topGeo = new THREE.RingGeometry(0.0001, R, 160, 16);
   const tp = topGeo.attributes.position;
   for (let i = 0; i < tp.count; i++) {
     const r = Math.hypot(tp.getX(i), tp.getY(i)) / R;
-    tp.setZ(i, (1 - r * r) * 1.6 * K);
+    tp.setZ(i, (1 - r * r) * 0.25 * MM);
   }
   topGeo.computeVertexNormals();
   const topMat = new THREE.MeshPhysicalMaterial({
@@ -180,7 +188,7 @@ function createCap(loader) {
   });
   const top = new THREE.Mesh(topGeo, topMat);
   top.rotation.x = -Math.PI / 2;
-  top.position.y = 54 * K;
+  top.position.y = CAP_HEIGHT_MM * MM;
   top.name = 'CapTop';
   group.add(top);
   group.userData.top = top;
