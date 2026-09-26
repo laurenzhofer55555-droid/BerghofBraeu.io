@@ -1,0 +1,67 @@
+# CI: prüft jede Änderung (Push und Pull Request).
+# CD: veröffentlicht main nach bestandener Prüfung auf GitHub Pages (berghof-hell.de)
+#     und kontrolliert danach, ob die Live-Seite erreichbar ist.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Website prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Links, Drittanbieter (DSGVO), JSON-LD, Sitemap, JavaScript
+        run: python3 .github/scripts/check-site.py
+
+  deploy:
+    name: Veröffentlichen
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://berghof-hell.de/
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - name: Website zusammenstellen (ohne Werkzeuge und Quelldaten)
+        run: |
+          mkdir _site
+          rsync -a \
+            --exclude '.git*' --exclude '.github' --exclude '.claude' --exclude '.DS_Store' \
+            --exclude 'tools' --exclude 'data' --exclude 'README.md' --exclude '_site' \
+            ./ _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Live-Seite prüfen
+        run: |
+          for page in "" impressum.html datenschutz.html; do
+            url="https://berghof-hell.de/$page"
+            for try in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "$url") && [ "$code" = 200 ] && break
+              echo "$url → $code, neuer Versuch in 10 s"; sleep 10
+            done
+            [ "$code" = 200 ] || { echo "::error::$url antwortet mit $code"; exit 1; }
+            echo "$url → 200"
+          done
