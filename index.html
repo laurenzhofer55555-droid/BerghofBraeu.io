@@ -8,9 +8,11 @@
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://berghof-hell.de/" />
   <meta name="theme-color" content="#F7F4EC" />
-  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="assets/img/favicon-96.png" sizes="96x96" type="image/png" />
   <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
 
   <!-- Vorschau beim Teilen (WhatsApp, Instagram, Facebook …) -->
   <meta property="og:type" content="website" />
@@ -35,7 +37,7 @@
   <meta name="geo.placename" content="Agatharied, Hausham" />
   <meta name="geo.position" content="47.76875;11.83482" />
 
-  <!-- Strukturierte Daten für Google: Website, Brauerei, Bier -->
+  <!-- Strukturierte Daten für Google: Website, Verkaufsstelle, Bier -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -49,7 +51,7 @@
           "publisher": { "@id": "https://berghof-hell.de/#brauerei" }
         },
         {
-          "@type": "Brewery",
+          "@type": "LocalBusiness",
           "@id": "https://berghof-hell.de/#brauerei",
           "name": "Berghof Hell",
           "alternateName": ["Hofer Bräu", "Berghof Agatharied"],
@@ -65,6 +67,8 @@
             "addressRegion": "Bayern",
             "addressCountry": "DE"
           },
+          "telephone": "+49 170 8246931",
+          "email": "laurenz.hofer@icloud.de",
           "geo": { "@type": "GeoCoordinates", "latitude": 47.76875, "longitude": 11.83482 },
           "hasMap": "https://www.openstreetmap.org/?mlat=47.76875&mlon=11.83482#map=17/47.76875/11.83482",
           "areaServed": [
@@ -79,11 +83,16 @@
           "@type": "Product",
           "@id": "https://berghof-hell.de/#bier",
           "name": "Berghof Hell",
-          "description": "Bayerisches Vollbier Hell: goldgelb, mild und süffig. Gebraut aus Wasser, Gerstenmalz und Hopfen.",
+          "description": "Bayerisches Vollbier Hell: goldgelb, mild und süffig. Gebraut aus Wasser, Gerstenmalz und Hopfen von der Brauerei Silbernagl in Hausham.",
           "image": "https://berghof-hell.de/assets/img/og.jpg",
           "category": "Bier",
           "brand": { "@type": "Brand", "name": "Berghof Hell" },
-          "manufacturer": { "@id": "https://berghof-hell.de/#brauerei" },
+          "manufacturer": {
+            "@type": "Brewery",
+            "name": "Brauerei & Brennerei Silbernagl",
+            "address": { "@type": "PostalAddress", "addressLocality": "Hausham", "postalCode": "83734", "addressCountry": "DE" }
+          },
+          "seller": { "@id": "https://berghof-hell.de/#brauerei" },
           "additionalProperty": [
             { "@type": "PropertyValue", "name": "Biersorte", "value": "Vollbier Hell" },
             { "@type": "PropertyValue", "name": "Alkoholgehalt", "value": "4,9 % vol" },
@@ -280,6 +289,11 @@
           <div><dt>Inhalt</dt><dd>0,5 l Flasche</dd></div>
           <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
         </dl>
+        <p class="brewer">
+          Gebraut in kleinen Mengen von der Brauerei &amp; Brennerei Silbernagl in Hausham – einem Familienbetrieb
+          in fünfter Generation mit eigenem Getränkeladen und Schnapsbrennerei, gleich beim Förderturm,
+          knapp einen Kilometer Luftlinie vom Berghof entfernt.
+        </p>
       </div>
     </section>
 
@@ -311,7 +325,7 @@
             </li>
             <li>
               <span class="timeline__year">Heute</span>
-              <p>Jugend- und Gruppenhaus, geführt von Familie Hofer in vierter Generation. Hier wird Berghof Hell gebraut.</p>
+              <p>Jugend- und Gruppenhaus, geführt von Familie Hofer in vierter Generation.</p>
             </li>
           </ol>
 
@@ -359,6 +373,8 @@
               <address>Berg 112<br />83734 Hausham (Agatharied)</address>
               <p>Ansprechpartner: Laurenz Hofer</p>
               <p>Verkauf nach Absprache</p>
+              <p><a href="tel:+491708246931">0170 8246931</a></p>
+              <p><a href="mailto:laurenz.hofer@icloud.de">laurenz.hofer@icloud.de</a></p>
               <a class="location__link" href="https://www.openstreetmap.org/?mlat=47.76875&amp;mlon=11.83482#map=17/47.76875/11.83482" target="_blank" rel="noopener">In OpenStreetMap öffnen</a>
             </li>
           </ul>
@@ -380,6 +396,7 @@
     <div class="site-footer__brand">
       <p><strong>Hofer Bräu · Berghof Hell</strong></p>
       <p>Berg 112 · 83734 Hausham (Agatharied)</p>
+      <p><a href="tel:+491708246931">0170 8246931</a> · <a href="mailto:laurenz.hofer@icloud.de">laurenz.hofer@icloud.de</a></p>
     </div>
     <p class="site-footer__note">Abgabe von Bier nur an Personen ab 16 Jahren. Bitte genieße verantwortungsvoll.</p>
     <nav class="site-footer__nav" aria-label="Rechtliches">

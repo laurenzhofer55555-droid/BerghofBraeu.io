@@ -32,6 +32,8 @@ def render(loc, indent):
         lines.append(f'{pad}  <p>{esc(loc["zeiten"])}</p>')
     if loc.get('telefon'):
         tel = re.sub(r'[^\d+]', '', loc['telefon'])
+        if tel.startswith('0') and not tel.startswith('00'):
+            tel = '+49' + tel[1:]   # internationales Format für Handys
         lines.append(f'{pad}  <p><a href="tel:{tel}">{esc(loc["telefon"])}</a></p>')
     if loc.get('email'):
         lines.append(f'{pad}  <p><a href="mailto:{esc(loc["email"])}">{esc(loc["email"])}</a></p>')

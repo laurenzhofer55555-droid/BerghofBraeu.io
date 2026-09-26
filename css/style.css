@@ -219,6 +219,8 @@ h3 {
 }
 .facts dd { margin: 0; font-size: 17px; color: var(--green); }
 
+.brewer { max-width: 620px; margin: 28px auto 0; text-align: center; font-size: 15px; font-style: italic; color: var(--green-soft); }
+
 /* Geschichte */
 .berghof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(36px, 5vw, 72px); align-items: center; }
 .timeline { list-style: none; margin: 0; padding: 0 0 0 28px; border-left: 1px solid var(--gold); }
