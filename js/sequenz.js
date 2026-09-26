@@ -7,6 +7,8 @@
 //   · zuletzt das Bier wird leer: Schaumkrone wandert nach unten und gibt das Beige frei → danach folgen die Inhalte.
 // Im DOM werden nur transform und opacity animiert. Zum Einstellen lokal kurz `markers: true` setzen – nicht so veröffentlichen.
 
+import { createBeer } from './bier-leeren.js';
+
 const BASE = 'assets/sequenz/';
 const { gsap, ScrollTrigger } = window;
 gsap.registerPlugin(ScrollTrigger);
@@ -19,9 +21,9 @@ const portrait = window.matchMedia('(max-aspect-ratio: 4/5)');
 const saveData = navigator.connection?.saveData === true;
 
 const manifest = await (await fetch(BASE + 'manifest.json')).json();
-const ST = manifest.stations;              // Bildnummer je Station, z. B. [48, 68, 86, 104, 128]
+const ST = manifest.stations;              // Bildnummer je Station, z. B. [0, 18, 42]
 const UNITS = ST.length - 1;               // Scroll-Stufen mit Renderbildern
-const DRAIN = 1;                           // + Stufe 7 „das Bier wird leer“ (nur DOM-Ebenen über dem letzten Bild)
+const DRAIN = 1;                           // + letzte Stufe „das Bier leert sich“ (js/bier-leeren.js, kein Bild)
 const TOTAL = UNITS + DRAIN;
 
 let set, frames = [], stills = [], current = 0, lastDrawn = null, loadRun = 0;
@@ -131,7 +133,12 @@ function placeHeader(self) {
 }
 
 // Stufenlos: das Bild folgt dem Scrollen (scrub), bei Stillstand rastet es an der nächsten Station ein.
+// Das Leeren des Biers am Ende rastet nicht ein: der Pegel folgt direkt der Scrollposition.
 const state = { u: 0 };
+const beer = createBeer(hero);
+const imageStations = Array.from({ length: UNITS + 1 }, (_, i) => i / TOTAL);
+const snapImages = ScrollTrigger.snapDirectional(imageStations);
+const snapTo = (v, self) => (v > UNITS / TOTAL + 0.002 ? v : snapImages(v, self.direction));
 const tl = gsap.timeline({
   defaults: { ease: 'none' },
   scrollTrigger: {
@@ -139,13 +146,14 @@ const tl = gsap.timeline({
     start: 'top top',
     end: () => '+=' + window.innerHeight * TOTAL,
     pin: true,
-    scrub: 0.6,
+    scrub: 0.5,
     // inertia aus: sonst rechnet der Schwung eine Station zu weit (0,9 Stufen gescrollt → Station 2 statt 1)
-    snap: { snapTo: 'labelsDirectional', inertia: false, duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' },
+    snap: { snapTo, inertia: false, duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' },
     invalidateOnRefresh: true,
     onUpdate: (self) => {
       placeHeader(self);
-      // Perlen steigen nur, solange Stufe 7 läuft
+      beer.velocity(self.getVelocity());                        // schnelles Scrollen lässt das Bier stärker schwappen
+      // Bläschen steigen nur, solange das Bier zu sehen ist
       root.classList.toggle('is-draining', self.progress > UNITS / TOTAL + 1e-4 && self.progress < 1 - 1e-4);
     },
     onRefresh: placeHeader,
@@ -160,25 +168,20 @@ tl.to(state, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; d
 tl.to('.hero__text', { opacity: 0, y: -24, duration: 0.45 }, UNITS - 1);
 tl.fromTo('.cap-title', { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.5 }, UNITS - 0.5);
 
-// ── Stufe 7: das Bier wird leer ─────────────────
-// Pegel L = Abstand Oberkante → Bieroberfläche, läuft von 0 bis unter den unteren Rand. Gold (Canvas) und Perlen
-// rutschen mit dem Pegel nach unten, darüber wird der beige Seitenhintergrund frei; die Schaumkrone schwimmt auf
-// der Oberfläche, Schaumränder bleiben kurz am „Glas“ zurück. „Berghof Hell“ bleibt stehen.
-const foam = hero.querySelector('.beer__foam');
-const SURFACE = 0.75;                                             // Bieroberfläche in der Schaumtextur (tools/schaum-rendern.html)
-const foamAbove = () => foam.offsetHeight * SURFACE;              // Schaum oberhalb der Oberfläche
-const levelEnd = () => window.innerHeight * 1.15 + foamAbove();   // Reserve: die iOS-Leiste kann das Fenster noch vergrößern
-tl.fromTo('.beer', { opacity: 0 }, { opacity: 1, duration: 0.04 }, UNITS);
-tl.fromTo([canvas, '.beer__liquid'], { y: 0 }, { y: levelEnd, duration: DRAIN }, UNITS);
-tl.fromTo(foam, { y: () => -foamAbove() }, { y: () => levelEnd() - foamAbove(), duration: DRAIN }, UNITS);
-tl.fromTo('.beer__bubbles', { opacity: 0 }, { opacity: 1, duration: 0.15 }, UNITS);
-tl.to(foam, { scaleY: 0.6, opacity: 0, duration: 0.12, ease: 'power1.in' }, TOTAL - 0.12);
-// Schaumränder werden frei, sobald die Schaumkrone ihre Höhe verlassen hat, und blassen dann aus
-hero.querySelectorAll('.beer__ring').forEach((ring) => {
-  const at = UNITS + (ring.offsetTop + foamAbove()) / levelEnd();          // Oberkante des Schaums erreicht den Ring
-  tl.fromTo(ring, { opacity: 0 }, { opacity: 1, duration: 0.04 }, at - 0.04);
-  tl.to(ring, { opacity: 0, duration: Math.max(0.05, Math.min(0.3, TOTAL - at - 0.1)) }, at + 0.1);
-});
+// ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
+// Flache Goldfläche mit Welle und Schaumkrone ersetzt das Kronkorken-Bild, der Pegel sinkt mit dem Scrollen,
+// darüber wird der beige Hintergrund frei. „Berghof Hell“ bleibt stehen.
+const drain = { p: 0 };
+const beerLayer = hero.querySelector('.beer');
+tl.to(drain, {
+  p: 1, duration: DRAIN, onUpdate: () => {
+    // Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe
+    const fade = Math.min(1, drain.p / 0.05);
+    beerLayer.style.opacity = fade;
+    canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
+    beer.level(drain.p);
+  },
+}, UNITS);
 
 window.addEventListener('resize', () => requestAnimationFrame(resize), { passive: true });
 portrait.addEventListener('change', () => { loadSet(); });

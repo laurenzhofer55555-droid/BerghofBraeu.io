@@ -7,8 +7,7 @@ Ablauf (siehe README, „Sequenz neu rendern“):
   2. python3 tools/sequenz.py <roh>
      → assets/sequenz/desktop/001.webp …, assets/sequenz/mobil/001.webp …,
        Ruhebilder in voller Schärfe (still-001.webp …), assets/sequenz/manifest.json,
-       neue Standbilder der Flasche (assets/img/flasche-berghof-hell*.webp),
-       Texturen für Stufe 7 aus tools/schaum-rendern.html (schaum/schaumrand/perlen.webp), falls vorhanden
+       neue Standbilder der Flasche (assets/img/flasche-berghof-hell*.webp)
   3. Die ausgegebenen Prozentwerte für .poster (index.html + css/style.css) übernehmen, falls sie sich ändern.
 """
 import json
@@ -28,8 +27,6 @@ SETS = {
     'mobil': {'motion': (700, 1129), 'still': (1200, 1935), 'quality': 72, 'still_quality': 80},
 }
 # Standbild vor dem Laden (Ausschnitt um die Flasche), Breiten wie im srcset von index.html
-# Texturen für Stufe 7 „das Bier wird leer“ (mit Transparenz) → WebP-Qualität
-TEXTURES = {'schaum': 70, 'schaumrand': 82, 'perlen': 75}
 POSTERS = {
     'poster-quer': ('flasche-berghof-hell', [322, 474, 701]),
     'poster-hoch': ('flasche-berghof-hell-hoch', [285, 419, 586]),
@@ -64,7 +61,7 @@ def main():
         total = 0
         for old in (OUT / name).glob('*.webp'):                        # nicht mehr benötigte Bilder entfernen
             k = int(old.stem.replace('still-', '')) - 1
-            if k < stations[0] or (old.stem.startswith('still-') and k not in stations):
+            if k < stations[0] or k >= seq['frames'] or (old.stem.startswith('still-') and k not in stations):
                 old.unlink()
         for i in range(stations[0], seq['frames']):
             png = src / f'{i + 1:03d}.png'
@@ -82,12 +79,6 @@ def main():
         print(f'{name}: {seq["frames"] - stations[0]} Bilder + {len(stations)} Ruhebilder, {total / 1e6:.1f} MB')
 
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-
-    for name, quality in TEXTURES.items():
-        png = raw / 'sequenz-roh' / f'{name}.png'
-        if png.exists():
-            size = save(Image.open(png).convert('RGBA'), OUT / f'{name}.webp', quality)
-            print(f'{name}.webp: {size / 1e3:.0f} KB')
 
     for poster, (base, widths) in POSTERS.items():
         im = Image.open(raw / 'sequenz-roh' / f'{poster}.png').convert('RGB')
