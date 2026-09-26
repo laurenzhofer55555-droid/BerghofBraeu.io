@@ -28,6 +28,7 @@ async function start() {
     await import('./sequenz.js');
   } catch (e) {
     console.warn('Scroll-Sequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
+    document.documentElement.classList.remove('seq');   // dann Titel wie gewohnt zeigen, Pfeil ausblenden
   }
 }
 

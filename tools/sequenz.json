@@ -1,41 +1,41 @@
 {
   "_hinweis": "Kamerapfad der Scroll-Sequenz. Jede Station = ein Einrastpunkt (eine Scroll-Stufe). frame = Bildnummer, rot = Drehung der Flasche (rad), cam = Kamera Querformat, camPortrait = Kamera Hochformat (Handy). Nach Änderungen: tools/sequenz-rendern.html neu ausführen und python3 tools/sequenz.py.",
   "_start": "Station, mit der die Seite beginnt (Standbild = Bild 1).",
-  "start": "halb-oben",
-  "frames": 43,
+  "start": "front",
+  "frames": 55,
   "stations": [
     {
-      "name": "halb-oben",
+      "name": "front",
       "frame": 0,
-      "rot": 6.45,
+      "rot": 6.2832,
       "cam": {
         "pos": [
           0,
-          5.3,
-          4.5
+          0,
+          6.6
         ],
         "target": [
           0,
-          -0.3,
+          0,
           0
         ]
       },
       "camPortrait": {
         "pos": [
           0,
-          5.6,
-          4.8
+          0,
+          6.6
         ],
         "target": [
           0,
-          -0.15,
+          0,
           0
         ]
       }
     },
     {
       "name": "vogel",
-      "frame": 18,
+      "frame": 30,
       "rot": 6.55,
       "cam": {
         "pos": [
@@ -64,7 +64,7 @@
     },
     {
       "name": "kronkorken",
-      "frame": 42,
+      "frame": 54,
       "rot": 6.55,
       "cam": {
         "pos": [

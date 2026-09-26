@@ -3,7 +3,7 @@
 // hier wird beim Scrollen nur noch das passende Bild auf ein <canvas> gezeichnet → flüssig auch auf alten Handys.
 //
 // Start: etikettierte Flasche in Frontansicht. Scroll-Stufen (Einrastpunkte = Stationen aus assets/sequenz/manifest.json):
-//   Blick hebt sich · Vogelperspektive (2 Stufen) · Zoom auf den goldenen Kronkorken mit „Berghof Hell“
+//   Flasche frontal · Vogelperspektive · Zoom auf den goldenen Kronkorken, dann erscheint der Titel
 //   · zuletzt das Bier wird leer: Schaumkrone wandert nach unten und gibt das Beige frei → danach folgen die Inhalte.
 // Im DOM werden nur transform und opacity animiert. Zum Einstellen lokal kurz `markers: true` setzen – nicht so veröffentlichen.
 
@@ -164,9 +164,12 @@ const tl = gsap.timeline({
 });
 for (let i = 0; i <= TOTAL; i++) tl.addLabel('station-' + i, i);
 tl.to(state, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; draw(); } }, 0);
-// Titel unten blendet beim Zoom aus, Schriftzug erscheint auf dem goldenen Kronkorken
-tl.to('.hero__text', { opacity: 0, y: -24, duration: 0.45 }, UNITS - 1);
-tl.fromTo('.cap-title', { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.5 }, UNITS - 0.5);
+// Start ohne Titel: Pfeil nach unten blendet beim ersten Scrollen aus. Nach dem Zoom auf den Kronkorken
+// blendet der Rahmen aus und Titel, Trennstrich und „Helles aus Agatharied“ erscheinen wie früher am Start.
+// Rückwärts läuft alles genau umgekehrt.
+tl.to('.scroll-cue', { opacity: 0, duration: 0.15 }, 0);
+tl.to('#start > .frame', { opacity: 0, duration: 0.3 }, UNITS - 0.3);
+tl.fromTo('.hero__text', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, immediateRender: false }, UNITS - 0.35);
 
 // ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
 // Flache Goldfläche mit Welle und Schaumkrone ersetzt das Kronkorken-Bild, der Pegel sinkt mit dem Scrollen,

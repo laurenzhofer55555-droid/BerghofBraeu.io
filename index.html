@@ -89,6 +89,8 @@
       var ok = false;
       try { ok = Number(localStorage.getItem('berghof-ab16')) > Date.now(); } catch (e) {}
       if (!ok) document.documentElement.classList.add('age-gate');
+      // Scroll-Sequenz läuft (nicht bei „Bewegung reduzieren“): Titel erst am Ende zeigen, am Start Pfeil nach unten
+      try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('seq'); } catch (e) {}
     })();
   </script>
 
@@ -108,7 +110,16 @@
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     #sequenz, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
     #sequenz { display: block; z-index: 0; opacity: 0; }
-    .cap-title { position: absolute; left: 0; right: 0; top: 50%; margin: 0; transform: translateY(-50%); opacity: 0; }
+    .scroll-cue { display: none; }
+    .seq .hero__text { opacity: 0; }
+    .seq .scroll-cue { display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom)); transform: translateX(-50%);
+      flex-direction: column; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
+      text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream); }
+    .scroll-cue svg { width: 64px; height: 64px; animation: cue 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 0 4px var(--cream)); }
+    @keyframes cue { 50% { transform: translateY(10px); } }
+    .scroll-cue__mouse { display: none; }
+    @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
     .beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
     /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss */
     .age { display: none; position: fixed; inset: 0; z-index: 40; background: var(--cream); align-items: center; justify-content: center;
@@ -140,9 +151,9 @@
       .age__actions { gap: 10px; } .age__btn { min-width: 104px; padding: 12px 20px; } }
     @media (prefers-reduced-motion: reduce) { .age { transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
-    .poster picture { position: absolute; left: 50%; top: 16.72%; height: 56.44%; aspect-ratio: 564 / 1411; transform: translateX(-50%); display: block; }
+    .poster picture { position: absolute; left: 50%; top: 14.28%; height: 73.16%; aspect-ratio: 670 / 1829; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
-    @media (max-aspect-ratio: 4/5) { .poster picture { top: 21.29%; height: 53.3%; aspect-ratio: 594 / 1477; } }
+    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14.33%; height: 73.08%; aspect-ratio: 742 / 2025; } }
     main { position: relative; z-index: 2; }
     .site-header { position: absolute; inset: 0 0 auto; z-index: 3; pointer-events: none; }
     .site-header__brand { position: absolute; top: var(--frame-inset); left: 50%; transform: translate(-50%, -50%); margin: 0; padding: 0 18px;
@@ -238,9 +249,9 @@
        ersten Bild der Scroll-Sequenz und wird ausgeblendet, sobald diese läuft. Ohne JavaScript bleibt es stehen. -->
   <div class="poster">
     <picture>
-      <source media="(max-aspect-ratio: 4/5)" sizes="21vh" width="419" height="1042"
+      <source media="(max-aspect-ratio: 4/5)" sizes="27vh" width="419" height="1143"
               srcset="assets/img/flasche-berghof-hell-hoch-285.webp 285w, assets/img/flasche-berghof-hell-hoch.webp 419w, assets/img/flasche-berghof-hell-hoch-586.webp 586w" />
-      <img src="assets/img/flasche-berghof-hell.webp" sizes="23vh" width="474" height="1186" fetchpriority="high"
+      <img src="assets/img/flasche-berghof-hell.webp" sizes="27vh" width="474" height="1294" fetchpriority="high"
            srcset="assets/img/flasche-berghof-hell-322.webp 322w, assets/img/flasche-berghof-hell.webp 474w, assets/img/flasche-berghof-hell-701.webp 701w"
            alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
@@ -294,8 +305,14 @@
         </h1>
       </div>
 
-      <!-- Schriftzug auf dem goldenen Kronkorken am Ende der Sequenz (nur Dekoration, die Überschrift steht oben) -->
-      <p class="cap-title" aria-hidden="true">Berghof <em>Hell</em></p>
+      <!-- Start: Hinweis zum Scrollen (blendet beim ersten Scrollen aus, js/sequenz.js) -->
+      <div class="scroll-cue" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="#1F4D2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M32 6V52"/>
+          <path d="M10 32L32 54L54 32"/>
+        </svg>
+        <span class="scroll-cue__touch">nach unten wischen</span><span class="scroll-cue__mouse">nach unten scrollen</span>
+      </div>
     </section>
 
     <!-- ── Zutaten ───────────────────────────── -->
@@ -428,7 +445,14 @@
             </li>
           </ol>
           <!-- nur am Handy: Punktanzeige zur seitlich wischbaren Timeline (js/timeline.js) -->
-          <p class="timeline__hint" aria-hidden="true"><i></i><i></i><i></i><i></i><span>wischen</span></p>
+          <p class="timeline__hint" aria-hidden="true"><i></i><i></i><i></i><i></i></p>
+          <span class="timeline__next" aria-hidden="true">
+            <svg viewBox="0 0 64 24" fill="none" stroke="#1F4D2B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <path d="M4 12C4 8 8 7 10 10C11.5 12 13 12 14 12H58" vector-effect="non-scaling-stroke"/>
+              <path d="M22 10L25 12L22 14L19 12Z" vector-effect="non-scaling-stroke"/>
+              <path d="M49 5C52 8 55 10 60 12C55 14 52 16 49 19" vector-effect="non-scaling-stroke"/>
+            </svg>
+          </span>
 
           <figure class="painting">
             <img

@@ -74,14 +74,14 @@ body::after {
 
 .poster { z-index: 1; pointer-events: none; transition: opacity .9s ease .2s; }
 .poster picture {
-  position: absolute; left: 50%; top: 16.72%;
-  display: block; height: 56.44%;
-  aspect-ratio: 564 / 1411;          /* feste Proportion → kein Springen beim Laden */
+  position: absolute; left: 50%; top: 14.28%;
+  display: block; height: 73.16%;
+  aspect-ratio: 670 / 1829;          /* feste Proportion → kein Springen beim Laden */
   transform: translateX(-50%);
 }
 .poster img { display: block; width: 100%; height: 100%; max-width: none; }
 @media (max-aspect-ratio: 4/5) {
-  .poster picture { top: 21.29%; height: 53.3%; aspect-ratio: 594 / 1477; }   /* Hochformat: Kamera wie tools/sequenz.json (camPortrait) */
+  .poster picture { top: 14.33%; height: 73.08%; aspect-ratio: 742 / 2025; }   /* Hochformat: Kamera wie tools/sequenz.json (camPortrait) */
 }
 .is-ready .poster { opacity: 0; }
 main { position: relative; z-index: 2; }
@@ -135,21 +135,21 @@ main { position: relative; z-index: 2; }
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { will-change: transform, opacity; }
 
-/* Schriftzug auf dem goldenen Kronkorken (Ende der Sequenz) – wie eingeprägt */
-.cap-title {
-  position: absolute; left: 0; right: 0; top: 50%;
-  margin: 0; padding: 0 24px;
-  transform: translateY(-50%);
-  opacity: 0;
-  font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(52px, min(12vw, 16vh), 176px); line-height: 1;
-  color: var(--green);
-  text-align: center; white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(255, 244, 214, .55), 0 -1px 0 rgba(90, 60, 10, .25);
-  pointer-events: none;
-  will-change: transform, opacity;
+/* Start: Hinweis zum Scrollen; Titel erscheint erst am Ende der Sequenz (Klasse .seq aus dem Head-Skript) */
+.scroll-cue { display: none; }
+.seq .hero__text { opacity: 0; }
+.seq .scroll-cue {
+  display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  flex-direction: column; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
+      text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream);
 }
-.cap-title em { font-style: italic; font-weight: 400; }
+.scroll-cue svg { width: 64px; height: 64px; animation: cue 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 0 4px var(--cream)); }
+@keyframes cue { 50% { transform: translateY(10px); } }
+.scroll-cue__mouse { display: none; }
+@media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
 
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
@@ -377,20 +377,20 @@ html.snap-sections { scroll-snap-type: y proximity; }
 }
 
 /* ── Handy (bis 768 px): kürzer, Geschichte als seitlich wischbare Timeline ── */
-.timeline__hint { display: none; }
+.timeline__hint, .timeline__next { display: none; }
 @media (max-width: 768px) {
   .ingredient p { display: none; }                 /* Texte bleiben im HTML (Google, Desktop) */
   #standort { display: none; }                     /* Adresse und Kontakt stehen im Fußbereich und im Impressum */
 
   .timeline {
     display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
-    margin: 0 -24px; padding: 0 10vw; border-left: 0;
+    margin: 0 -24px; padding: 0 15vw 0 8vw; scroll-padding-inline-start: 8vw; border-left: 0;
     scrollbar-width: none;
   }
   .timeline::-webkit-scrollbar { display: none; }
   .timeline:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 4px; }
   .timeline li {
-    flex: 0 0 80vw; scroll-snap-align: center;
+    flex: 0 0 77vw; scroll-snap-align: start;   /* nächste Station ragt ca. 15 % herein */
     padding: 40px 14px 4px; text-align: center;
   }
   .timeline li:last-child { padding-bottom: 4px; }
@@ -416,7 +416,16 @@ html.snap-sections { scroll-snap-type: y proximity; }
   }
   .timeline__hint i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--green); }
   .timeline__hint i.is-active { background: var(--green); }
-  .timeline__hint span { margin-left: 8px; }
+  /* feiner Pfeil rechts: stupst beim ersten Sichtbarwerden einmal nach rechts, verschwindet nach dem ersten Wischen */
+  .berghof { position: relative; }
+  .timeline__next {
+    display: block; position: absolute; right: 0; top: 4px; width: 44px; height: 17px;
+    transition: opacity .4s ease; pointer-events: none;
+  }
+  .timeline__next svg { display: block; width: 100%; height: 100%; }
+  .timeline__next.is-nudging svg { animation: nudge 1.4s ease-in-out 1; }
+  .timeline__next.is-gone { opacity: 0; }
+  @keyframes nudge { 30% { transform: translateX(8px); } 60% { transform: translateX(0); } }
 }
 
 /* ── Reduzierte Bewegung ────────────── */
