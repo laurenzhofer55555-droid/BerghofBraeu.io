@@ -7,6 +7,7 @@
 
 const TAU = Math.PI * 2;
 const PAD = 170;                     // Platz oberhalb der Oberfläche für Schaum und Wellenberge (px)
+const BELOW = 100;                   // Überstand unten: am Handy startet der Pegel 70 px über dem Rand, das Gold muss trotzdem bis unten reichen
 const STEP = 8;                      // Punktabstand des Pfads (px)
 
 export function createBeer(hero) {
@@ -27,9 +28,9 @@ export function createBeer(hero) {
     W = hero.clientWidth;
     H = hero.clientHeight;
     foamH = Math.min(100, Math.max(56, H * 0.09));          // Schaumkrone ca. zwei Finger breit
-    svg.setAttribute('viewBox', `0 0 ${W} ${H + PAD}`);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H + PAD + BELOW}`);
     svg.setAttribute('width', W);
-    svg.setAttribute('height', H + PAD);
+    svg.setAttribute('height', H + PAD + BELOW);
     setLevel(level);
     draw();
   }
@@ -63,7 +64,7 @@ export function createBeer(hero) {
       top.push([X, PAD - foamH + wave(X, foamAmp * 0.85, t - 0.12, foamTilt) + bumps]);
     }
     const line = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('');
-    const bottom = H + PAD;
+    const bottom = H + PAD + BELOW;
     gold.setAttribute('d', `${line(surf)}L${W} ${bottom}L0 ${bottom}Z`);
     const under = surf.slice().reverse().map(([x, y]) => `L${x.toFixed(1)} ${(y + 3).toFixed(1)}`).join('');
     foam.setAttribute('d', `${line(top)}${under}Z`);

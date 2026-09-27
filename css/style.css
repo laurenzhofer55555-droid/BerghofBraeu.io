@@ -178,7 +178,7 @@ html.gold-page .site-header__brand { background: transparent; }
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
 .beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
-.beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 170px); will-change: transform; }
+.beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); will-change: transform; }   /* PAD + BELOW in js/bier-leeren.js */
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }
 .beer__foam { fill: #FFFFFF; }
