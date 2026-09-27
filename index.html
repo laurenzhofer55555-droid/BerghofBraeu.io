@@ -2,6 +2,10 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
+  <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
+       GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-lLSUit1wnJyGhb9frODM3WG1JJKqi7SGXb2iywq2qxY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
   <meta name="description" content="Berghof Hell: bayerisches Helles vom Berghof in Agatharied bei Hausham im Oberland. Mild, süffig, 4,9 % vol. Erhältlich direkt am Berghof, Berg 112." />
@@ -177,8 +181,10 @@
     .section { position: relative; z-index: 2; background: var(--cream); }
     @media (max-width: 767px) { body { font-size: 17px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
   </style>
-  <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren -->
-  <link rel="preload" href="css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
+       einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
+  <link rel="preload" href="css/style.css" as="style" />
+  <link rel="stylesheet" href="css/style.css" media="print" id="css-main" />
   <noscript><link rel="stylesheet" href="css/style.css" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->

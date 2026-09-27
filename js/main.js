@@ -7,6 +7,15 @@
 import { gated, confirmed } from './altersabfrage.js';
 import './timeline.js';                              // Geschichte am Handy: aktive Station hervorheben
 
+// Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
+// hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
+const css = document.getElementById('css-main');
+if (css) {
+  const activate = () => { css.media = 'all'; };
+  if (css.sheet) activate();
+  else css.addEventListener('load', activate, { once: true });
+}
+
 const START_DELAY = 1200;   // ms nach dem Laden, falls der Besucher nichts tut
 
 const loadScript = (src) => new Promise((resolve, reject) => {

@@ -6,10 +6,14 @@
 - JSON-LD ist gültiges JSON, keine doppelten ids
 - jede Seite verlinkt Impressum und Datenschutz, keine .todo-Platzhalter
 - sitemap.xml ist gültig und verweist nur auf vorhandene Seiten
-- JavaScript in js/ ist syntaktisch korrekt (node --check)
+- JavaScript in js/ ist syntaktisch korrekt (node --check), nachgeladene Dateien (import, loadScript, fetch) existieren
+- jede Seite hat eine Content-Security-Policy (Meta-Tag); jedes Inline-Skript steht mit seinem sha256-Hash darin,
+  Inline-Event-Handler (onload=…, onclick=…) gibt es nicht – sonst blockiert der Browser sie still
 
 Aufruf: python3 .github/scripts/check-site.py [Ordner]   (Standard: aktueller Ordner)
 """
+import base64
+import hashlib
 import json
 import re
 import shutil
@@ -32,6 +36,8 @@ LOADING_ATTRS = {
 }
 # <link rel=…>, die nur Verweise sind und nichts laden
 LINK_REL_REFERENCE = {"canonical", "alternate", "author", "license", "me"}
+# <script type=…>, die der Browser ausführt (JSON-LD & Co. sind nur Daten)
+EXECUTABLE_SCRIPT_TYPES = {"", "text/javascript", "application/javascript", "module"}
 
 errors = []
 
@@ -88,8 +94,10 @@ class PageParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.where, self.base = where, base
         self.ids, self.links = set(), set()
-        self.in_jsonld = self.in_style = False
+        self.in_jsonld = self.in_style = self.in_inline_script = False
         self.buf = []
+        self.csp = None                 # Inhalt des Content-Security-Policy-Meta-Tags
+        self.inline_scripts = []        # Quelltext der ausführbaren Inline-Skripte
 
     def handle_starttag(self, tag, attrs):
         a = {k: (v or "") for k, v in attrs}
@@ -101,6 +109,11 @@ class PageParser(HTMLParser):
             fail(self.where, "Platzhalter class=\"todo\" ist noch vorhanden")
         if "style" in a:
             check_css(self.where, self.base, a["style"])
+        for attr in a:
+            if re.fullmatch(r"on[a-z]+", attr):
+                fail(self.where, f"Inline-Event-Handler {attr}=\"…\" an <{tag}> – die Content-Security-Policy blockiert ihn")
+        if tag == "meta" and a.get("http-equiv", "").lower() == "content-security-policy":
+            self.csp = a.get("content", "")
 
         if tag == "a" and a.get("href"):
             self.links.add(unquote(urlsplit(a["href"]).path).lstrip("./"))
@@ -124,11 +137,13 @@ class PageParser(HTMLParser):
 
         if tag == "script" and a.get("type") == "application/ld+json":
             self.in_jsonld, self.buf = True, []
+        elif tag == "script" and not a.get("src") and a.get("type", "").lower() in EXECUTABLE_SCRIPT_TYPES:
+            self.in_inline_script, self.buf = True, []
         elif tag == "style":
             self.in_style, self.buf = True, []
 
     def handle_data(self, data):
-        if self.in_jsonld or self.in_style:
+        if self.in_jsonld or self.in_style or self.in_inline_script:
             self.buf.append(data)
 
     def handle_endtag(self, tag):
@@ -138,9 +153,36 @@ class PageParser(HTMLParser):
                 json.loads("".join(self.buf))
             except json.JSONDecodeError as e:
                 fail(self.where, f"JSON-LD ist kein gültiges JSON: {e}")
+        elif tag == "script" and self.in_inline_script:
+            self.in_inline_script = False
+            self.inline_scripts.append("".join(self.buf))
         elif tag == "style" and self.in_style:
             self.in_style = False
             check_css(self.where, self.base, "".join(self.buf))
+
+
+def check_csp(where, csp, inline_scripts):
+    """Content-Security-Policy vorhanden, streng, und passend zu den Inline-Skripten der Seite."""
+    if csp is None:
+        fail(where, "Content-Security-Policy (Meta-Tag) fehlt")
+        return
+    directives = {}
+    for part in csp.split(";"):
+        words = part.split()
+        if words:
+            directives[words[0].lower()] = words[1:]
+    for name in ("default-src", "script-src", "object-src", "base-uri", "form-action"):
+        if name not in directives:
+            fail(where, f"Content-Security-Policy: {name} fehlt")
+    script_src = directives.get("script-src", directives.get("default-src", []))
+    for word in ("'unsafe-inline'", "'unsafe-eval'", "*"):
+        if word in script_src:
+            fail(where, f"Content-Security-Policy: script-src erlaubt {word}")
+    for code in inline_scripts:
+        digest = base64.b64encode(hashlib.sha256(code.encode("utf-8")).digest()).decode()
+        if f"'sha256-{digest}'" not in script_src:
+            fail(where, f"Inline-Skript nicht in der Content-Security-Policy: 'sha256-{digest}' fehlt in script-src "
+                        "(Skript geändert? Hash in allen Seiten-Köpfen aktualisieren)")
 
 
 def check_pages():
@@ -152,6 +194,7 @@ def check_pages():
         parser = PageParser(where, page.parent)
         parser.feed(page.read_text(encoding="utf-8"))
         parser.close()
+        check_csp(where, parser.csp, parser.inline_scripts)
         for legal in LEGAL_PAGES:
             if legal not in parser.links:
                 fail(where, f"Link auf {legal} fehlt")
@@ -164,8 +207,14 @@ def check_scripts():
     files = sorted(ROOT.glob("js/**/*.js"))
     for f in files:
         src = f.read_text(encoding="utf-8")
+        where = str(f.relative_to(ROOT))
         for m in re.finditer(r"(?:\bfrom\s*|\bimport\s*\(?\s*|\bfetch\(\s*)['\"`]((?:https?:)?//[^'\"`]+)", src):
-            fail(str(f.relative_to(ROOT)), f"lädt von Drittanbieter: {m.group(1)}")
+            fail(where, f"lädt von Drittanbieter: {m.group(1)}")
+        # nachgeladene eigene Dateien: Module relativ zur Datei, alles andere relativ zur Seite (Hauptordner)
+        for m in re.finditer(r"(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['\"](\.{1,2}/[^'\"]+)['\"]", src, re.M):
+            check_local(where, f.parent, m.group(1))
+        for m in re.finditer(r"['\"`]((?:vendor|assets|js|css)/[^'\"`$]+\.(?:js|mjs|json|css|webp|png|jpg|svg|woff2))['\"`]", src):
+            check_local(where, ROOT, m.group(1))
     node = shutil.which("node")
     if not node:
         print("Hinweis: node nicht gefunden, JavaScript-Syntax wird nicht geprüft")

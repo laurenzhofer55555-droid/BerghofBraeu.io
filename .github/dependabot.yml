@@ -1,0 +1,8 @@
+# Hält die festgelegten Versionen (Commit-SHAs) der GitHub Actions aktuell: Dependabot öffnet
+# wöchentlich einen Pull Request, die Prüfung in ci-cd.yml läuft darauf, veröffentlicht wird erst nach dem Zusammenführen.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

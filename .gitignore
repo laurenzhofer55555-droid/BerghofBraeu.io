@@ -2,3 +2,9 @@
 # Lokal
 .DS_Store
 .claude/
+
+# Original-Uploads (Fotos, Etikett-Druckdateien, Wegbeschreibung) nie committen: der Verlauf ist öffentlich
+*.heic
+*.HEIC
+/*.png
+/*.jpg

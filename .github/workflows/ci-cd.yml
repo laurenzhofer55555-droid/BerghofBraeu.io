@@ -17,8 +17,8 @@ jobs:
     name: Website prüfen
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
       - name: Links, Drittanbieter (DSGVO), JSON-LD, Sitemap, JavaScript
@@ -39,24 +39,33 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v7
-      - name: Website zusammenstellen (ohne Werkzeuge und Quelldaten)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Website zusammenstellen (ohne Werkzeuge, Quelldaten und Render-Dateien)
+        # Nur für das lokale Rendern der Bildsequenz (tools/sequenz-rendern.html) gebraucht, Besucher laden sie nie:
+        # 3D-Modell (js/scene.js, bottle.js, stage.js, config.js, textures.js), vendor/three, vendor/lenis, assets/textures
         run: |
           mkdir _site
           rsync -a \
             --exclude '.git*' --exclude '.github' --exclude '.claude' --exclude '.DS_Store' \
             --exclude 'tools' --exclude 'data' --exclude 'README.md' --exclude '_site' \
+            --exclude '/js/scene.js' --exclude '/js/bottle.js' --exclude '/js/stage.js' \
+            --exclude '/js/config.js' --exclude '/js/textures.js' \
+            --exclude '/vendor/three' --exclude '/vendor/lenis.min.js' --exclude '/assets/textures' \
+            --exclude '*.heic' --exclude '/*.png' \
             ./ _site/
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - name: Zusammengestellte Website prüfen (fehlt durch das Weglassen etwas?)
+        run: python3 .github/scripts/check-site.py _site
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
+          include-hidden-files: true   # sonst fehlen .well-known/security.txt und .nojekyll
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
       - name: Live-Seite prüfen
         run: |
-          for page in "" impressum.html datenschutz.html; do
+          for page in "" impressum.html datenschutz.html .well-known/security.txt; do
             url="https://berghof-hell.de/$page"
             for try in 1 2 3 4 5 6; do
               code=$(curl -s -o /dev/null -w '%{http_code}' "$url") && [ "$code" = 200 ] && break

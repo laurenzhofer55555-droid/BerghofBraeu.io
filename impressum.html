@@ -2,6 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
+  <!-- Sicherheit: nur eigene Dateien, keine Skripte (GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Impressum | Berghof Hell</title>
   <meta name="description" content="Impressum von Hofer Bräu, Berghof Hell, Berg 112, 83734 Hausham (Agatharied). Anbieterkennzeichnung nach § 5 DDG." />

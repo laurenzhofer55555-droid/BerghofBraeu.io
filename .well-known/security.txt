@@ -1,0 +1,5 @@
+# Sicherheitslücke auf berghof-hell.de gefunden? Bitte per E-Mail melden, danke.
+Contact: mailto:laurenz.hofer@icloud.com
+Expires: 2027-09-27T00:00:00.000Z
+Preferred-Languages: de, en
+Canonical: https://berghof-hell.de/.well-known/security.txt
