@@ -9,16 +9,17 @@
           "name": "front",
           "frame": 0,
           "rot": 6.2832,
-          "shift": 0.125,
+          "fov": 19.4,
+          "shift": 0.015,
           "cam": {
             "pos": [
               0,
-              0,
-              8.4
+              -0.446,
+              12.26
             ],
             "target": [
               0,
-              0,
+              -0.446,
               0
             ]
           }
@@ -67,15 +68,17 @@
           "name": "front",
           "frame": 0,
           "rot": 6.2832,
+          "fov": 29.0,
+          "shift": -0.1356,
           "cam": {
             "pos": [
               0,
-              0,
-              6.6
+              -0.446,
+              6.36
             ],
             "target": [
               0,
-              0,
+              -0.446,
               0
             ]
           }
@@ -118,5 +121,6 @@
       ]
     }
   },
-  "_shift": "shift = Linsenverschiebung (Anteil der Bildhöhe, um den das Bild nach oben rückt), ohne die Kamera zu kippen: Desktop-Start frontal wie am Handy, Flasche aber über dem Titel."
+  "_shift": "shift = Linsenverschiebung (Anteil der Bildhöhe, um den das Bild nach oben rückt), ohne die Kamera zu kippen: Desktop-Start frontal wie am Handy, Flasche aber über dem Titel.",
+  "_augenhoehe": "Start auf Augenhöhe: Kamera in Höhe der Mitte des Hauptetiketts (js/bottle.js: Etikett 20 bis 120 mm über dem Boden, Mitte 70 mm → y = -0,446), Blick horizontal (Pitch 0), Drehung 0 = Etikett mittig zur Kamera. fov = vertikaler Bildwinkel je Station (Standard 28°), shift = Linsenverschiebung statt Kamerakippen. Brennweite (Kleinbild-Äquivalent): Querformat 12 / tan(fov/2), Hochformat 18 / tan(fov/2)."
 }

@@ -89,6 +89,7 @@
       const pos = st.map((s) => V(s.cam.pos)), target = st.map((s) => V(s.cam.target));
       const rot = st.map((s) => new THREE.Vector3(s.rot, 0, 0));
       const shift = st.map((s) => new THREE.Vector3(s.shift || 0, 0, 0));   // Linsenverschiebung (Anteil der Bildhöhe)
+      const fovs = st.map((s) => new THREE.Vector3(s.fov || CONFIG.camera.fov, 0, 0));   // Bildwinkel je Station (vertikal, Grad)
       const last = st.length - 1;
       let p, tg;
       if (st[last].zoom && f > st[last - 1].frame) {
@@ -104,14 +105,16 @@
         p = hermite(st, pos, f); tg = hermite(st, target, f);
       }
       const zooming = st[last].zoom && f > st[last - 1].frame;
-      return { pos: p, target: tg, rot: hermite(st, rot, f).x, shift: zooming ? shift[last].x : hermite(st, shift, f).x };
+      return { pos: p, target: tg, rot: hermite(st, rot, f).x, shift: zooming ? shift[last].x : hermite(st, shift, f).x,
+        fov: zooming ? fovs[last].x : hermite(st, fovs, f).x };
     }
 
     async function shoot(name, dir, w, h, f, portrait) {
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      const { pos, target, rot, shift } = pose(f, portrait);
-      // Linsenverschiebung: Bildausschnitt rückt nach unten → Flasche steht höher, Perspektive bleibt frontal
+      const { pos, target, rot, shift, fov } = pose(f, portrait);
+      camera.fov = fov;
+      // Linsenverschiebung (statt Kamera zu kippen): positiv = Bild rückt nach oben, negativ = nach unten, Senkrechte bleiben senkrecht
       if (Math.abs(shift) > 1e-6) camera.setViewOffset(w, h, 0, shift * h, w, h);
       else camera.clearViewOffset();
       bottle.pivot.rotation.y = rot;
