@@ -1,11 +1,9 @@
-// Starter: Die Seite (Text, Rahmen, Standbild der Flasche) erscheint sofort.
-// Die Scroll-Sequenz (js/sequenz.js, ohne Bibliothek) ist Zugabe und wird geladen, sobald die Seite fertig ist:
-// bei der ersten Interaktion (Maus, Scrollen, Tippen, Tastatur) oder gleich nach dem Laden.
-// Weil die Höhe des Startbereichs allein im CSS steht, spielt es keine Rolle, wann sie startet.
-// Beim ersten Besuch wartet sie auf die Altersabfrage (js/altersabfrage.js) und startet direkt nach „Ja“.
-// Bei „Bewegung reduzieren“ bleibt es beim Standbild, die Inhalte folgen direkt darunter.
+// Starter: Die Seite (Text, Rahmen, Standbild der Flasche) erscheint sofort und ist bis zum Ende der Startsequenz gesperrt (CSS).
+// Die Steuerung der zwei Gesten (js/sequenz.js, ohne Bibliothek) startet sofort; ihre Bilder lädt sie nach dem Startbild.
+// Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite.
+// Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import { gated, confirmed } from './altersabfrage.js';
+import './altersabfrage.js';                         // Altersabfrage 16+ (richtet sich selbst ein)
 import './timeline.js';                              // Geschichte am Handy: aktive Station hervorheben
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
@@ -28,30 +26,13 @@ if (css) {
   }
 }
 
-const START_DELAY = 300;   // ms nach dem Laden, falls der Besucher nichts tut
-
-let started = false;
-async function start() {
-  if (started) return;
-  started = true;
-  events.forEach((type) => window.removeEventListener(type, start));
-  try {
-    await import('./sequenz.js');
-  } catch (e) {
-    console.warn('Scroll-Sequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
-    document.documentElement.classList.remove('seq');   // dann Titel wie gewohnt zeigen, Pfeil ausblenden
-  }
-}
-
-const events = ['pointerdown', 'pointermove', 'wheel', 'touchstart', 'keydown', 'scroll'];
-function arm() {
-  events.forEach((type) => window.addEventListener(type, start, { passive: true }));
-  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1));
-  const afterLoad = () => setTimeout(() => idle(start, { timeout: 1500 }), START_DELAY);
-  if (document.readyState === 'complete') afterLoad();
-  else window.addEventListener('load', afterLoad, { once: true });
-}
+const root = document.documentElement;
+const unlock = () => { root.classList.remove('seq'); root.classList.add('frei'); };
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  if (gated) confirmed.then(start);   // erster Besuch: Sequenz startet direkt nach „Ja“
-  else arm();
+  import('./sequenz.js').catch((e) => {
+    console.warn('Startsequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
+    unlock();
+  });
+  const guard = () => setTimeout(() => { if (!window.__sequenz) unlock(); }, 8000);
+  if (document.readyState === 'complete') guard(); else window.addEventListener('load', guard, { once: true });
 }

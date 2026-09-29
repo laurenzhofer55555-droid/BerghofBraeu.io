@@ -6,9 +6,9 @@ Ablauf (siehe README, „Sequenz neu rendern“):
      → PNGs in <roh>/sequenz-roh-desktop, <roh>/sequenz-roh-mobil, <roh>/sequenz-roh (Standbilder)
   2. python3 tools/sequenz.py <roh> [desktop|mobil]
      → assets/sequenz/desktop/001.webp …, assets/sequenz/mobil/001.webp …,
-       Ruhebild der Startstation in voller Schärfe (still-001.webp), winzige Ersatzbilder (mini/001.webp …, damit beim schnellen
-       Scrollen nie ein Bild fehlt), assets/sequenz/manifest.json (inkl. titleClear: Stufe, bis zu der der Titel
-       ausgeblendet sein muss, weil die Flasche danach in seinen Bereich kommt),
+       Ruhebild der Startstation in voller Schärfe (still-001.webp), assets/sequenz/manifest.json (inkl. titleClear:
+       Anteil der ersten Teilstrecke, bis zu dem der Titel am Desktop weg sein muss, weil die Flasche danach in seinen Bereich kommt),
+       die Kronkorken-Mitte je Bild (cap, aus <roh>/sequenz-roh/kappe.json: dort beginnt der Farbwechsel zu Bier),
        neue Standbilder der Flasche (assets/img/flasche-berghof-hell*.webp)
   3. Die ausgegebenen Prozentwerte für .poster (index.html + css/style.css) übernehmen, falls sie sich ändern.
 """
@@ -28,8 +28,6 @@ SETS = {
     'desktop': {'motion': (1600, 800), 'still': (2880, 1440), 'quality': 72, 'still_quality': 80},
     'mobil': {'motion': (700, 1129), 'still': (1200, 1935), 'quality': 72, 'still_quality': 80},
 }
-# Ersatzbilder: winzig (ca. 3 KB), werden zuerst geladen und gezeichnet, solange das scharfe Bild noch fehlt
-MINI = {'desktop': (400, 200), 'mobil': (240, 387)}
 # Titelbereich der Startseite am Desktop (Anteile der Bildbreite/-höhe, 1440×900: Titel liegt bei 73 bis 93 % der Höhe)
 TITLE_ZONE = (0.30, 0.734, 0.70, 0.931)
 # Standbild vor dem Laden (Ausschnitt um die Flasche), Breiten wie im srcset von index.html
@@ -51,19 +49,6 @@ def bottle_box(img):
     return diff.point(lambda v: 255 if v > 6 else 0).getbbox()
 
 
-def make_minis(name, first, frames):
-    """Mini-Ersatzbilder aus den fertigen Bewegungsbildern (WebP), unabhängig von den PNG-Rohbildern."""
-    total = 0
-    for i in range(first, frames):
-        src = OUT / name / f'{i + 1:03d}.webp'
-        out = OUT / name / 'mini' / f'{i + 1:03d}.webp'
-        if out.exists() and out.stat().st_mtime >= src.stat().st_mtime:
-            total += out.stat().st_size
-            continue
-        total += save(Image.open(src).convert('RGB').resize(MINI[name], Image.LANCZOS), out, 60)
-    return total
-
-
 def title_clear(first, station1, frames_dir):
     """Erstes Bild, in dem die Flasche in den Titelbereich ragt → Stufe (0 bis 1), bis zu der der Titel weg sein muss."""
     x0, y0, x1, y1 = TITLE_ZONE
@@ -77,25 +62,21 @@ def title_clear(first, station1, frames_dir):
     return 1.0
 
 
-def minis_only():
-    """Nur Mini-Bilder und Titelmaß aus den vorhandenen WebP-Bildern (ohne PNG-Rohbilder) neu erzeugen."""
+def titel_only():
+    """Nur titleClear aus den vorhandenen WebP-Bildern (ohne PNG-Rohbilder) neu berechnen."""
     manifest_path = OUT / 'manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    for name, spec in manifest['sets'].items():
-        first, frames = spec['stations'][0], spec['frames']
-        mini_total = make_minis(name, first, frames)
-        spec['mini'] = list(MINI[name])
-        if name == 'desktop':
-            spec['titleClear'] = title_clear(first, spec['stations'][1], OUT / name)
-        print(f'{name}: Mini-Bilder {mini_total / 1e3:.0f} KB' + (f', titleClear {spec["titleClear"]}' if name == 'desktop' else ''))
+    spec = manifest['sets']['desktop']
+    spec['titleClear'] = title_clear(spec['stations'][0], spec['stations'][1], OUT / 'desktop')
+    print(f'desktop: titleClear {spec["titleClear"]}')
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
 
 def main():
-    if len(sys.argv) == 2 and sys.argv[1] == '--minis':
-        return minis_only()
+    if len(sys.argv) == 2 and sys.argv[1] == '--titel':
+        return titel_only()
     if len(sys.argv) < 2:
-        sys.exit('Aufruf: python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]  |  python3 tools/sequenz.py --minis')
+        sys.exit('Aufruf: python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]  |  python3 tools/sequenz.py --titel')
     raw = pathlib.Path(sys.argv[1])
     only = sys.argv[2] if len(sys.argv) > 2 else None           # nur ein Format umwandeln (das andere bleibt)
     seq = json.loads((ROOT / 'tools' / 'sequenz.json').read_text(encoding='utf-8'))
@@ -130,13 +111,14 @@ def main():
                     continue
                 im = im or Image.open(png).convert('RGB')
                 total += save(im.resize(size, Image.LANCZOS), out, quality)
-        mini_total = make_minis(name, stations[0], frames)
-        manifest['sets'][name] = {'motion': list(cfg['motion']), 'still': list(cfg['still']), 'mini': list(MINI[name]),
+        manifest['sets'][name] = {'motion': list(cfg['motion']), 'still': list(cfg['still']),
                                   'frames': frames, 'stations': stations}
+        kappe = raw / 'sequenz-roh' / 'kappe.json'
+        if kappe.exists():
+            manifest['sets'][name]['cap'] = json.loads(kappe.read_text(encoding='utf-8'))[name]
         if name == 'desktop':
             manifest['sets'][name]['titleClear'] = title_clear(stations[0], stations[1], OUT / name)
-        print(f'{name}: {frames - stations[0]} Bilder + 1 Ruhebild, {total / 1e6:.1f} MB, '
-              f'Mini-Bilder {mini_total / 1e3:.0f} KB' + (f', titleClear {manifest["sets"][name]["titleClear"]}' if name == 'desktop' else ''))
+        print(f'{name}: {frames - stations[0]} Bilder + 1 Ruhebild, {total / 1e6:.1f} MB' + (f', titleClear {manifest["sets"][name]["titleClear"]}' if name == 'desktop' else ''))
 
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 

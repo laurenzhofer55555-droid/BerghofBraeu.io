@@ -37,13 +37,14 @@ function ty(node) { const m = node && getComputedStyle(node).transform; if (!m |
 window.__state = () => {
   const q = window.__sequenz, c = document.getElementById('sequenz');
   const cs = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e) : null; };
+  const rc = (s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
   return {
-    y: Math.round(scrollY), u: q ? +q.u.toFixed(4) : null, target: q ? +q.target.toFixed(6) : null, p: q ? +q.progress.toFixed(6) : null,
-    frame: q ? q.frame : null, shown: q ? q.shown : null, minis: q ? q.loaded.mini : 0,
-    canvas: num(cs('#sequenz')?.opacity), beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), frameO: num(cs('#start > .frame')?.opacity),
-    level: Math.round(ty(document.querySelector('.beer__liquid'))), gold: document.documentElement.classList.contains('gold-page'),
-    height: document.documentElement.scrollHeight,
-    range: (() => { const i = document.querySelector('.intro'), h = document.getElementById('start'); return i && h ? i.offsetHeight - h.offsetHeight : 0; })(),
+    y: Math.round(scrollY), z: q ? q.zustand : null, P: q ? +q.P.toFixed(4) : null, busy: q ? q.busy : null, bereit: q ? q.bereit : null,
+    wartet: q ? q.wartet : null, frame: q ? q.frame : null, stalls: q ? q.stalls : 0, geladen: q ? q.geladen : 0,
+    cv: c ? getComputedStyle(c).visibility : null, beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cue: num(cs('.scroll-cue')?.opacity),
+    frameO: num(cs('#start > .frame')?.opacity), level: Math.round(ty(document.querySelector('.beer__liquid'))),
+    gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei'),
+    overflow: getComputedStyle(document.documentElement).overflow, height: document.documentElement.scrollHeight,
   };
 };
 // Messung nach allen Zeichenschritten des Bildes (rAF, dann setTimeout): so sieht der Fühler genau, was gezeigt wird
@@ -53,7 +54,7 @@ window.__state = () => {
 function record() {
   if (!document.documentElement || !document.body) return;
   const c = document.getElementById('sequenz'), st = window.__state();
-  if (c && c.width && st.canvas > 0.05) { const d = c.getContext('2d').getImageData(c.width >> 1, c.height >> 2, 1, 1).data; if (d[0] + d[1] + d[2] < 12) window.__blank++; }
+  if (c && c.width && st.cv === 'visible' && getComputedStyle(c).opacity > 0.05) { const d = c.getContext('2d').getImageData(c.width >> 1, c.height >> 2, 1, 1).data; if (d[0] + d[1] + d[2] < 12) window.__blank++; }
   st.t = Math.round(performance.now()); st.input = performance.now() - window.__lastInput < 200 ? 1 : 0;
   window.__S.push(st);
 }
@@ -123,41 +124,52 @@ export async function open(b, path = '', { wait = 2500 } = {}) {
 }
 
 // ── Gesten ──────────────────────────────────────
-// Trackpad-Schwung: Rad-Ereignisse mit abklingender Stärke (wie macOS-Momentum); total in px, Vorzeichen = Richtung
-export async function flick(b, total, { jitter = 0 } = {}) {
+// Trackpad-Schwung: Rad-Ereignisse mit abklingender Stärke (wie macOS-Momentum). total in px, Vorzeichen = Richtung (positiv = nach unten),
+// decay = Abklingen je Schritt (0,92 ≈ 1,2 s, 0,97 ≈ 2,5 s Nachlauf)
+export async function flick(b, total, { decay = 0.92, jitter = 0 } = {}) {
   const { w, h } = b.view;
   let v = total * 0.12;
-  for (let k = 0; k < 80 && Math.abs(v) > 1; k++) {
+  for (let k = 0; k < 400 && Math.abs(v) > 1; k++) {
     await b.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: w / 2, y: h / 2, deltaX: 0, deltaY: v });
-    await sleep(16); v *= 0.92;
+    await sleep(16); v *= decay;
   }
-  // Loslassen mit winziger Gegenbewegung (Trackpad-Nachlauf, Daumen): früher rastete die Seite dadurch zurück
-  if (jitter) { await b.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: w / 2, y: h / 2, deltaX: 0, deltaY: -Math.sign(total) * jitter }); }
+  if (jitter) await b.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: w / 2, y: h / 2, deltaX: 0, deltaY: -Math.sign(total) * jitter });
+  await sleep(300);   // ein Mensch beginnt die nächste Geste erst nach einer Pause (die Seite wertet Ereignisse ohne 150 ms Pause als Nachlauf)
 }
-export const swipe = (b, dy, speed = 4000, fling = true) => {
-  const { w, h } = b.view;
-  return b.send('Input.synthesizeScrollGesture', { x: w / 2, y: h * 0.6, yDistance: -dy, speed, gestureSourceType: 'touch', preventFling: !fling });
-};
-export const gesture = (b, dy, opts) => (b.view.mobile ? swipe(b, dy, opts?.speed) : flick(b, dy, opts));
+// Ein einzelner Mausrad-Schritt (klassisches Mausrad)
+export const wheelNotch = (b, dy = 100) => b.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: b.view.w / 2, y: b.view.h / 2, deltaX: 0, deltaY: dy });
+// Wisch mit dem Finger: dy > 0 = Finger nach oben (Seite geht weiter), in `ms` Millisekunden
+export async function touchSwipe(b, dy, { ms = 160, x = null } = {}) {
+  const { w, h } = b.view, X = x ?? w / 2, Y0 = h * 0.7, steps = Math.max(4, Math.round(ms / 16));
+  await b.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: X, y: Y0 }] });
+  for (let k = 1; k <= steps; k++) { await b.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: X, y: Y0 - (dy * k) / steps }] }); await sleep(ms / steps); }
+  await b.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+}
+const KEYS = { ArrowDown: [40, 'ArrowDown'], ArrowUp: [38, 'ArrowUp'], PageDown: [34, 'PageDown'], PageUp: [33, 'PageUp'], ' ': [32, 'Space'], Tab: [9, 'Tab'] };
+export async function keyPress(b, key, modifiers = 0) {
+  const [vk, code] = KEYS[key];
+  await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk, modifiers, text: key === ' ' ? ' ' : undefined });
+  await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk, modifiers });
+}
+// Eine Geste je nach Gerät: Handy = Wisch, Desktop = Mausrad-Schwung; dir +1 weiter, −1 zurück
+export const gesture = (b, dir = 1) => (b.view.mobile ? touchSwipe(b, dir * 220) : flick(b, dir * 900));
 
 // ── Zustand ─────────────────────────────────────
 export const state = (b) => b.js('window.__state()');
 export const samples = async (b) => JSON.parse(await b.js('JSON.stringify(window.__S)'));
-export const range = (b) => b.js('(() => { const i = document.querySelector(".intro"), h = document.getElementById("start"); return i.offsetHeight - h.offsetHeight; })()');
-export const waitStart = async (b, ms = 30000) => {   // Sequenz ist bereit: Standbild ausgeblendet
-  for (let t = 0; t < ms; t += 100) { if (await b.js(`document.documentElement.classList.contains('is-ready')`)) return true; await sleep(100); }
+export const log = async (b) => JSON.parse(await b.js('JSON.stringify(window.__sequenz ? window.__sequenz.log : [])'));
+// Sequenz ist bereit: alle Bilder geladen, Standbild ausgeblendet (Startzustand A)
+export const waitReady = async (b, ms = 30000) => {
+  for (let t = 0; t < ms; t += 100) { if (await b.js(`!!(window.__sequenz && window.__sequenz.bereit && document.documentElement.classList.contains('is-ready'))`)) return true; await sleep(100); }
   return false;
 };
-// Wartet, bis Glättung und Bilder angekommen sind (scharfes Bild oder Ruhebild gezeichnet)
-export async function settle(b, ms = 5000) {
-  for (let t = 0; t < ms; t += 40) {
-    // fertig, wenn der Fortschritt zur aktuellen Scrollposition passt (nicht nur zum letzten Durchlauf), Glättung
-    // angekommen ist und das scharfe Bild (oder Ruhebild) gezeichnet wurde
-    const s = await b.js(`(() => { const q = window.__sequenz; if (!q) return null; const R = document.querySelector('.intro').offsetHeight - document.getElementById('start').offsetHeight;
-      return [q.progress, q.target, q.shown, q.u, Math.min(1, Math.max(0, scrollY / R))]; })()`);
-    if (s && Math.abs(s[0] - s[1]) < 1e-9 && Math.abs(s[1] - s[4]) < 1e-4 && (s[3] > 2.02 || /^(still|full)/.test(s[2] || ''))) { await sleep(60); return true; }
-    await sleep(40);
-  }
+// Wartet, bis keine Animation läuft und die Eingabesperre vorbei ist (Zustand steht fest)
+export async function idle(b, ms = 8000) {
+  for (let t = 0; t < ms; t += 50) { if (await b.js(`!!(window.__sequenz && window.__sequenz.gestenbereit)`)) { await sleep(50); return true; } await sleep(50); }
+  return false;
+}
+export async function waitZustand(b, z, ms = 8000) {
+  for (let t = 0; t < ms; t += 50) { if ((await b.js(`window.__sequenz ? window.__sequenz.zustand + (window.__sequenz.busy ? '*' : '') : ''`)) === z) return true; await sleep(50); }
   return false;
 }
 export async function shot(b, file) {

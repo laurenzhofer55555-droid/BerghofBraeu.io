@@ -1,9 +1,8 @@
 {
-  "_hinweis": "Kamerapfad der Scroll-Sequenz, getrennt für Desktop (Querformat) und Handy (Hochformat). Jede Station = ein Einrastpunkt (eine Scroll-Stufe). frame = Bildnummer, rot = Drehung der Flasche (rad), cam = Kamera. Nach Änderungen: tools/sequenz-rendern.html neu ausführen und python3 tools/sequenz.py.",
-  "_sets": "Beide Formate brauchen gleich viele Stationen (gleiche Scroll-Stufen in js/sequenz.js).",
+  "_hinweis": "Kamerapfad der Sequenz, getrennt für Desktop (Querformat) und Handy (Hochformat). Die Fahrt läuft als EINE Animation (Zeit statt Scrollen, js/sequenz.js): Frontansicht auf Augenhöhe → Vogelperspektive → Zoom in den Kronkorken, ohne Halt an den Stationen. frame = Bildnummer der Station, rot = Drehung der Flasche (rad), cam = Kamera. Nach Änderungen: tools/sequenz-rendern.html neu ausführen und python3 tools/sequenz.py.",
   "sets": {
     "desktop": {
-      "frames": 85,
+      "frames": 110,
       "stations": [
         {
           "name": "front",
@@ -26,7 +25,7 @@
         },
         {
           "name": "vogel",
-          "frame": 36,
+          "frame": 50,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -43,7 +42,7 @@
         },
         {
           "name": "kronkorken",
-          "frame": 84,
+          "frame": 109,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -59,10 +58,12 @@
           },
           "zoom": true
         }
-      ]
+      ],
+      "tangent": 1.3,
+      "zoomEase": 2.6
     },
     "mobil": {
-      "frames": 55,
+      "frames": 110,
       "stations": [
         {
           "name": "front",
@@ -85,7 +86,7 @@
         },
         {
           "name": "vogel",
-          "frame": 30,
+          "frame": 50,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -102,7 +103,7 @@
         },
         {
           "name": "kronkorken",
-          "frame": 54,
+          "frame": 109,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -118,9 +119,12 @@
           },
           "zoom": true
         }
-      ]
+      ],
+      "tangent": 2.0,
+      "zoomEase": 1.5
     }
   },
   "_shift": "shift = Linsenverschiebung (Anteil der Bildhöhe, um den das Bild nach oben rückt), ohne die Kamera zu kippen: Desktop-Start frontal wie am Handy, Flasche aber über dem Titel.",
-  "_augenhoehe": "Start auf Augenhöhe: Kamera in Höhe der Mitte des Hauptetiketts (js/bottle.js: Etikett 20 bis 120 mm über dem Boden, Mitte 70 mm → y = -0,446), Blick horizontal (Pitch 0), Drehung 0 = Etikett mittig zur Kamera. fov = vertikaler Bildwinkel je Station (Standard 28°), shift = Linsenverschiebung statt Kamerakippen. Brennweite (Kleinbild-Äquivalent): Querformat 12 / tan(fov/2), Hochformat 18 / tan(fov/2)."
+  "_augenhoehe": "Start auf Augenhöhe: Kamera in Höhe der Mitte des Hauptetiketts (js/bottle.js: Etikett 20 bis 120 mm über dem Boden, Mitte 70 mm → y = -0,446), Blick horizontal (Pitch 0), Drehung 0 = Etikett mittig zur Kamera. fov = vertikaler Bildwinkel je Station (Standard 28°), shift = Linsenverschiebung statt Kamerakippen. Brennweite (Kleinbild-Äquivalent): Querformat 12 / tan(fov/2), Hochformat 18 / tan(fov/2).",
+  "_feinabstimmung": "tangent = Steigung der Bahn an der mittleren Station (größer = durchlaufend), zoomEase = Anlauf des Zooms (Exponent): gemeinsam so gewählt, dass die Änderung von Bild zu Bild an der Station nicht springt."
 }

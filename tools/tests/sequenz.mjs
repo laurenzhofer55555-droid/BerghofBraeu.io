@@ -1,346 +1,368 @@
-// Automatische Tests der Startsequenz. Prüft, dass sie eine reine Funktion des Scrollfortschritts ist:
-// egal wie schnell, in welche Richtung oder wann gescrollt wird, dieselbe Position ergibt dasselbe Bild.
+// Automatische Tests der Startsequenz mit zwei Gesten (Zustände A Start, B Bier, C Inhalt), echte Ereignisse im Headless Chrome.
 //
 // Vorbereitung (eigener Terminal-Tab, im Projektordner):
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-//   BASE=http://127.0.0.1:5263/ node tools/tests/sequenz.mjs positionen desktop
-// Szenarien: positionen, start, titel, bierlayout, bier, zucken, kalt, neuladen, drehen, reduziert, extern
-// Rückgabewert 1, wenn ein Test fehlschlägt. Bilder der Fehlschläge landen in $TMPDIR/berghof-tests/.
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, neuladen, drehen, tasten, skip, reduziert, extern
+// Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { browser, open, throttle, unthrottle, setView, gesture, flick, swipe, state, samples, range, waitStart, settle, shot, pixelDiff, edgeGold, sleep, rng, BASE, VIEWS, DEVICES } from './lib.mjs';
+import { browser, open, throttle, setView, flick, touchSwipe, keyPress, wheelNotch, gesture, state, samples, log, waitReady, idle, waitZustand,
+  shot, edgeGold, sleep, BASE, VIEWS, DEVICES } from './lib.mjs';
 
 const only = process.argv.slice(2);
 const results = [];
-const check = (name, ok, detail = '') => { results.push([name, ok, detail]); console.log(`${ok ? 'OK    ' : 'FEHLER'} ${name}${detail ? '  ' + detail : ''}`); };
+const check = (name, ok, detail = '') => { results.push(ok); console.log(`${ok ? 'OK    ' : 'FEHLER'} ${name}${detail ? '  ' + detail : ''}`); };
 const run = (name) => !only.length || only.includes(name);
 const OUT = join(tmpdir(), 'berghof-tests');
+const starts = async (b) => (await log(b)).filter((e) => e.art === 'start').length;
 
-// Sequenz bereit und Startposition oben
-async function start(b, view, { wait = 2500 } = {}) {
+// Seite öffnen, bis Zustand A steht (alle Bilder geladen, Standbild ausgeblendet)
+async function start(b, view, { throttled = false, path = '' } = {}) {
   await setView(b, view);
-  await open(b, '', { wait });
-  await b.js(`window.dispatchEvent(new Event('pointerdown')), 1`);   // Sequenz sofort starten
-  return waitStart(b);
+  if (throttled) await throttle(b);
+  await b.send('Page.navigate', { url: BASE + path });
+  return waitReady(b, throttled ? 90000 : 30000);
+}
+// Geste je Eingabeart. dir +1 weiter, −1 zurück
+const EINGABEN = {
+  wheel: (b, dir) => flick(b, dir * 900),
+  touch: (b, dir) => touchSwipe(b, dir * 220),
+  tasten: (b, dir) => keyPress(b, dir > 0 ? 'ArrowDown' : 'ArrowUp'),
+};
+const snap = async (b) => { const s = await state(b); return JSON.stringify({ z: s.z, P: s.P, cv: s.cv, frameO: s.frameO, beer: s.beer, title: s.title, cue: s.cue, level: s.level, gold: s.gold, frei: s.frei }); };
+
+// 1. Genau 2 Gesten von A bis C, genau 2 Gesten von C zurück bis A (Mausrad, Touch, Tastatur)
+async function gesten() {
+  for (const [label, view, arten] of [['desktop', 'desktop', ['wheel', 'tasten']], ['handy', 'handy', ['touch']]]) {
+    for (const art of arten) {
+      const b = await browser({ view });
+      try {
+        check(`gesten ${label}/${art}: Start in Zustand A, Seite gesperrt`, await start(b, view) && (await state(b)).z === 'A' && (await state(b)).overflow === 'hidden', JSON.stringify(await state(b)).slice(0, 90));
+        const g = EINGABEN[art];
+        await g(b, 1);
+        check(`gesten ${label}/${art}: Geste 1 führt nach B`, await waitZustand(b, 'B') && await idle(b));
+        const sB = await state(b);
+        await g(b, 1);
+        check(`gesten ${label}/${art}: Geste 2 führt nach C (Seite frei)`, await waitZustand(b, 'C') && await idle(b) && (await state(b)).frei === true && (await state(b)).overflow !== 'hidden');
+        await b.js(`window.scrollTo(0, 500)`); await sleep(300);
+        const y500 = (await state(b)).y;
+        await b.js(`window.scrollTo(0, 0)`); await sleep(700);
+        check(`gesten ${label}/${art}: in C normal scrollbar`, y500 >= 400, `y ${y500}`);
+        await g(b, -1);
+        check(`gesten ${label}/${art}: Geste nach oben in C ganz oben → B (Bier füllt sich)`, await waitZustand(b, 'B') && await idle(b) && (await state(b)).frei === false);
+        const sB2 = await state(b);
+        await g(b, -1);
+        check(`gesten ${label}/${art}: noch eine Geste nach oben → A`, await waitZustand(b, 'A') && await idle(b));
+        const n = await starts(b);
+        check(`gesten ${label}/${art}: genau 4 Übergänge (2 hin, 2 zurück)`, n === 4, `${n} Übergänge`);
+        check(`gesten ${label}/${art}: Zustand B beim Rückweg wie beim Hinweg`, JSON.stringify([sB.P, sB.frameO, sB.level, sB.beer, sB.title]) === JSON.stringify([sB2.P, sB2.frameO, sB2.level, sB2.beer, sB2.title]));
+        check(`gesten ${label}/${art}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+      } finally { b.close(); }
+    }
+  }
 }
 
-// 1. Gleiche Position = gleiches Bild: 200 zufällige Positionen, einmal per Sprung aus der Ferne, einmal langsam
-//    in kleinen Schritten von oben. Zustand (Bildnummer, Deckkraft, Pegel …) muss exakt gleich sein, die
-//    Bildschirmfotos ebenfalls (außer im Bier-Abschnitt: dort bewegen sich Welle und Bläschen mit der Zeit).
-async function positionen(view, n) {
-  const b = await browser({ view });
+// 2. Ein einzelner starker Trackpad-Flick (langer Nachlauf) löst nur Übergang 1 aus, nicht beide
+async function flickTest() {
+  for (const [view, label] of [['desktop', 'desktop Trackpad-Flick'], ['handy', 'handy schneller langer Wisch']]) {
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const f = view === 'desktop' ? flick(b, 5000, { decay: 0.97 }) : touchSwipe(b, 700, { ms: 500 });
+      const zs = new Set();
+      for (let k = 0; k < 90; k++) { const s = await state(b); zs.add(s.z); await sleep(100); }   // 9 s
+      await f;
+      const s = await state(b), n = await starts(b);
+      check(`flick ${label}: löst nur Übergang 1 aus`, n === 1 && s.z === 'B' && !zs.has('C'), `Übergänge ${n}, Zustand ${s.z}, gesehen ${[...zs].join('')}`);
+      // danach ein zweiter Flick (neue Geste nach Pause) gehört zu Übergang 2
+      await sleep(700);
+      view === 'desktop' ? await flick(b, 900) : await touchSwipe(b, 220);
+      check(`flick ${label}: eine neue Geste danach löst Übergang 2 aus`, await waitZustand(b, 'C'));
+    } finally { b.close(); }
+  }
+}
+
+// 3. Gesten während der Animation und in der Sperre danach werden ignoriert; kein Zustand dazwischen
+async function sperre() {
+  for (const view of ['desktop', 'handy']) {
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      await keyPress(b, 'ArrowDown');
+      await sleep(400);
+      // mitten in der Animation: viele Gesten aller Arten
+      for (let k = 0; k < 3; k++) { await keyPress(b, 'ArrowDown'); await sleep(100); }
+      await wheelNotch(b, 300); await sleep(200); await wheelNotch(b, -300);
+      if (view === 'handy') { await touchSwipe(b, 220, { ms: 80 }); await touchSwipe(b, -220, { ms: 80 }); }
+      await keyPress(b, 'ArrowUp'); await keyPress(b, ' ');
+      const n1 = await starts(b), busyNow = (await state(b)).busy;
+      check(`sperre ${view}: Gesten während der Animation werden ignoriert`, n1 === 1 && busyNow === true, `${n1} Übergang, busy ${busyNow}`);
+      // Ende der Animation, dann sofort eine Geste: noch in der Sperre (400 ms)
+      for (let k = 0; k < 200 && (await state(b)).busy; k++) await sleep(30);
+      await keyPress(b, 'ArrowDown'); await sleep(150);
+      const n2 = await starts(b);
+      check(`sperre ${view}: direkt nach der Animation (400 ms Sperre) wird nichts ausgelöst`, n2 === 1, `${n2} Übergänge`);
+      // nach der Sperre wird die nächste Geste angenommen
+      await idle(b); await sleep(150);
+      await keyPress(b, 'ArrowDown');
+      check(`sperre ${view}: nach der Sperre wird die nächste Geste angenommen`, await waitZustand(b, 'C') && (await starts(b)) === 2);
+      // nie ein Zwischenzustand: P wächst monoton
+      const S = (await samples(b)).filter((s) => s.P != null);
+      let rueck = 0; for (let i = 1; i < S.length; i++) if (S[i].P < S[i - 1].P - 1e-6) rueck++;
+      check(`sperre ${view}: P wächst monoton, nie ein Rückschritt (${S.length} Bilder)`, rueck === 0, `${rueck} Rückschritte`);
+    } finally { b.close(); }
+  }
+}
+
+// 4. Hin und her über die Zustände: die Endzustände sind jedes Mal exakt gleich (nichts summiert sich auf)
+async function hinundher() {
+  const b = await browser({ view: 'desktop' });
   try {
-    check(`positionen ${view}: Sequenz startet`, await start(b, view));
-    // Der Pfeil „nach unten wischen“ und die Bläschen bewegen sich mit der Zeit: für den Bildvergleich anhalten
-    await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation: none !important; }'; document.head.appendChild(s); })()`);
-    const R = await range(b), rand = rng(view === 'desktop' ? 7 : 11);
-    let bad = 0, shots = 0, badShots = 0, first = '', firstShot = '';
-    let far = 0;
-    for (let k = 0; k < n; k++) {
-      const y = Math.round(rand() * R);
-      // schnell: aus der Ferne direkt hin
-      await b.js(`window.scrollTo(0, ${far}), 1`); await sleep(20);
-      await b.js(`window.scrollTo(0, ${y}), 1`);
-      await settle(b);
-      const a = await state(b), sa = a.u <= 2 ? await shot(b) : null;
-      // langsam: von 300 px darüber in kleinen Schritten
-      const from = Math.min(R, y + 300);
-      await b.js(`window.scrollTo(0, ${from}), 1`); await sleep(20);
-      for (let s = 1; s <= 10; s++) { await b.js(`window.scrollTo(0, ${Math.round(from + (y - from) * s / 10)}), 1`); await sleep(16); }
-      await settle(b);
-      const c = await state(b), sc = a.u <= 2 ? await shot(b) : null;
-      const keys = ['y', 'u', 'frame', 'shown', 'canvas', 'beer', 'title', 'cap', 'level', 'gold'];
-      const diff = keys.filter((key) => JSON.stringify(a[key]) !== JSON.stringify(c[key]));
-      if (diff.length) { bad++; if (!first) first = `y=${y}: ${diff.map((d) => `${d} ${a[d]}≠${c[d]}`).join(', ')}`; }
-      if (sa && sc) {
-        shots++;
-        if (!sa.equals(sc)) {                                       // nicht byte-gleich: nur ein Fehler, wenn sichtbar anders (Kantenrauschen von 1 bis 2 Stufen zählt nicht)
-          const d = await pixelDiff(b, sa, sc);
-          if (d.n > 400 || d.max > 40) { badShots++; if (badShots === 1) { await shot(b, join(OUT, `positionen-${view}-${y}-langsam.png`)); firstShot = `y=${y}: ${d.n} Pixel, max ${d.max}`; } }
-        }
-      }
-      far = rand() < 0.5 ? 0 : R;
+    await start(b, 'desktop');
+    const wege = [['B', 1], ['C', 1], ['B', -1], ['A', -1], ['B', 1], ['C', 1], ['B', -1], ['C', 1], ['B', -1], ['A', -1]];   // [Ziel, Richtung]
+    const ref = {}, bad = [];
+    ref.A = await snap(b);
+    for (const [ziel, dir] of wege) {
+      if ((await state(b)).z === 'C') { await b.js(`window.scrollTo(0, 0)`); await sleep(700); }
+      await flick(b, dir * 900);
+      if (!(await waitZustand(b, ziel)) || !(await idle(b))) { bad.push(`→ ${ziel} nicht erreicht`); break; }
+      const s = await snap(b);
+      if (ref[ziel] === undefined) ref[ziel] = s; else if (ref[ziel] !== s) bad.push(`${ziel}: ${s} ≠ ${ref[ziel]}`);
     }
-    check(`positionen ${view}: Zustand gleich bei schnell und langsam (${n} Positionen)`, bad === 0, bad ? `${bad} abweichend, z. B. ${first}` : '');
-    check(`positionen ${view}: Bildschirmfoto gleich (${shots} Positionen ohne Bier)`, badShots === 0, badShots ? `${badShots} abweichend, z. B. ${firstShot}` : '');
-    check(`positionen ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    check(`hinundher: ${wege.length} Übergänge, Endzustände jedes Mal exakt gleich`, bad.length === 0, bad[0] || `A/B/C je gleich (${Object.keys(ref).join('')})`);
+    check('hinundher: keine Fehler', b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
 
-// 2. Scrollen in den ersten 500 ms nach dem Laden (auch bevor irgendein Skript da ist): die Position darf danach nie
-//    kleiner werden als gescrollt, und die Sequenz zeigt danach genau das Bild dieser Position.
-async function startTest(view) {
-  for (const gedrosselt of [false, true]) {
+// 5. Scrollen direkt nach dem Laden (auch bevor irgendein Skript da ist): kein Zurückziehen, die Seite bleibt oben
+async function laden() {
+  for (const [view, gedrosselt] of [['desktop', false], ['handy', false], ['desktop', true], ['handy', true]]) {
     const b = await browser({ view });
     try {
       await setView(b, view);
       if (gedrosselt) await throttle(b);
       await b.send('Page.navigate', { url: BASE });
-      for (let i = 0; i < 100; i++) { if (await b.js(`!!document.querySelector('.hero')`)) break; await sleep(20); }
-      await sleep(150);
-      await gesture(b, 520, { speed: 3000 });
-      const gescrollt = await b.js('scrollY');
-      await sleep(gedrosselt ? 20000 : 6000);
+      for (let k = 0; k < 40; k++) {                             // 4 Sekunden lang wischen/rollen/tippen, ab dem ersten Moment
+        if (view === 'handy') await touchSwipe(b, 260, { ms: 80 }); else await wheelNotch(b, 200);
+        await keyPress(b, 'PageDown');
+        await sleep(100);
+      }
+      await sleep(gedrosselt ? 8000 : 1500);
       const S = await samples(b);
-      const nach = S.filter((s) => s.t > 0).map((s) => s.y);
-      const minNach = Math.min(...nach.slice(nach.findIndex((y) => y >= gescrollt - 5)));
-      const st = await state(b);
-      const label = `start ${view}${gedrosselt ? ' (kalt, Fast 3G, CPU 4x)' : ''}`;
-      check(`${label}: Position sinkt nie unter das Gescrollte (${Math.round(gescrollt)} px)`, minNach >= gescrollt - 5, `Minimum danach ${minNach}`);
-      check(`${label}: Bild passt zur Position`, st.u != null && Math.abs(st.u - st.y / (await range(b)) * 3) < 0.02, `u ${st.u}, y ${st.y}`);
-      // Die Scrollstrecke des Startbereichs steht ab dem ersten Bild fest (nur die Inhalte weiter unten wachsen, wenn das Stylesheet greift)
-      check(`${label}: Scrollstrecke des Startbereichs springt nicht`, new Set(S.map((s) => s.range).filter((r) => r > 0)).size === 1, [...new Set(S.map((s) => s.range))].join('/'));
+      // in A und B (und bevor die Steuerung da ist) darf die Seite nie wandern; erst in C ist normales Scrollen erlaubt
+      const maxY = Math.max(0, ...S.filter((s) => s.z !== 'C').map((s) => s.y || 0));
+      const offen = S.filter((s) => s.overflow && s.overflow !== 'hidden' && s.z !== 'C' && s.frei === false);
+      const label = `laden ${view}${gedrosselt ? ' (kalt, Fast 3G, CPU 4x)' : ''}`;
+      check(`${label}: Seite bewegt sich nie (${S.length} Bilder)`, maxY === 0 && offen.length === 0, `größte Position ${maxY}, ohne Sperre ${offen.length}`);
       check(`${label}: CLS 0`, (await b.js('window.__cls')) === 0, String(await b.js('window.__cls')));
     } finally { b.close(); }
   }
 }
 
-// 3. Im Bier-Abschnitt schnell hoch und runter: Flasche/Kronkorken tauchen nicht wieder auf, der Pegel folgt
-//    monoton dem Fortschritt, und die Seite bewegt sich nie von selbst.
-async function bier(view, label = view) {
-  const b = await browser({ view });
-  try {
-    check(`bier ${label}: Sequenz startet`, await start(b, view));
-    const R = await range(b), stage = R / 3;
-    await b.js(`window.scrollTo(0, ${Math.round(2.15 * stage)}), 1`); await settle(b);
-    await b.send('Emulation.setCPUThrottlingRate', { rate: 4 });
-    const t0 = await b.js('performance.now()');
-    for (const d of [0.5, -0.4, 0.7, -0.6, 0.9, -0.5, 0.6, -0.8, 0.4]) { await gesture(b, d * stage, { speed: 6000 }); await sleep(120); }
-    await sleep(1500);
-    const S = (await samples(b)).filter((s) => s.t >= t0);
-    const drain = S.filter((s) => s.u != null && s.u > 2.06);
-    const bottle = drain.filter((s) => s.canvas > 0.02 || s.beer < 0.98);
-    check(`bier ${label}: Flasche/Kronkorken tauchen im Bier-Abschnitt nicht auf (${drain.length} Bilder)`, bottle.length === 0, bottle[0] ? `u ${bottle[0].u}, canvas ${bottle[0].canvas}, bier ${bottle[0].beer}` : '');
-    // Pegel monoton zu u: nach u sortiert darf er nur zunehmen (Pegel = Verschiebung nach unten)
-    const byU = drain.map((s) => [s.u, s.level]).sort((x, y) => x[0] - y[0]);
-    let worst = 0;
-    for (let i = 1; i < byU.length; i++) worst = Math.max(worst, byU[i - 1][1] - byU[i][1]);
-    check(`bier ${label}: Pegel folgt dem Fortschritt monoton`, worst <= 1, `größter Rückgang ${worst} px`);
-    // Pegel ist eine Funktion von u: gleiche u (auf 0,001) → gleicher Pegel
-    const seen = new Map(); let spread = 0;
-    for (const [u, l] of byU) { const k = Math.round(u * 1000); if (seen.has(k)) spread = Math.max(spread, Math.abs(seen.get(k) - l)); else seen.set(k, l); }
-    check(`bier ${label}: gleicher Fortschritt → gleicher Pegel`, spread <= 1, `größte Streuung ${spread} px`);
-    // nie von selbst bewegt: Positionsänderung ohne Eingabe (außer Ausrollen nach dem Wisch)
-    let selbst = 0;
-    for (let i = 1; i < S.length; i++) if (Math.abs(S[i].y - S[i - 1].y) > 3 && !S[i].input && !S[i - 1].input && S[i].t - S[i - 1].t < 50) selbst++;
-    const nachWisch = S.filter((s) => !s.input);
-    check(`bier ${label}: Seite bewegt sich nie von selbst`, S.length > 30, `${S.length} Bilder`);
-    // Rahmen und Titel sind reine Funktionen von u: kein Flackern, kein Nachlaufen (bis auf die Glättung selbst)
-    const ramp = (u, a, b2) => Math.min(1, Math.max(0, (u - a) / (b2 - a)));
-    const abw = S.filter((s) => s.u != null).map((s) => Math.abs(s.frameO - (1 - ramp(s.u, 1.7, 2)))).sort((p, q) => q - p);
-    check(`bier ${label}: Rahmen-Deckkraft hängt nur am Fortschritt (${S.length} Bilder)`, abw[0] < 0.02, `größte Abweichung ${abw[0]?.toFixed(3)}`);
-    check(`bier ${label}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
-  } finally { b.close(); }
-}
-
-// 4. Trackpad-Zucken: vorwärts scrollen, beim Loslassen winzige Gegenbewegung → die Seite bleibt stehen
-//    (früher rastete sie dadurch auf die vorige Station zurück, das war der Safari-Fehler)
-async function zucken(view) {
-  const b = await browser({ view });
-  try {
-    check(`zucken ${view}: Sequenz startet`, await start(b, view));
-    const R = await range(b);
-    for (const dist of [180, 320, 600, 1000]) {
-      await b.js(`window.scrollTo(0, 0), 1`); await settle(b);
-      await gesture(b, dist, { jitter: 4 });
-      await sleep(200);
-      const y1 = await b.js('scrollY');
-      await sleep(3500);
-      const y2 = await b.js('scrollY');
-      check(`zucken ${view}: ${dist} px vorwärts, danach Ruhe`, Math.abs(y2 - y1) <= 2 && y2 >= dist * 0.5, `${y1} → ${y2}`);
-    }
-    check(`zucken ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
-  } finally { b.close(); }
-}
-
-// 4b. Titel (Desktop): er darf das Etikett nie verdecken. Ab dem Moment, in dem die Flasche in seinen Bereich kommt
-//     (titleClear, aus den Bildern gemessen), ist er weg, bis der Kronkorken bildfüllend ist (ab Stufe 1,65). Am Ende steht
-//     er auf allen Geräten unten. Den früheren Schriftzug auf dem Kronkorken (.cap-title) gibt es nicht mehr.
-async function titel() {
-  const b = await browser({ view: 'desktop' });
-  try {
-    check('titel: Sequenz startet', await start(b, 'desktop'));
-    const R = await range(b);
-    const m = await b.js(`fetch('assets/sequenz/manifest.json').then((r) => r.json()).then((j) => j.sets.desktop.titleClear)`);
-    let bad = [], endBad = [], n = 0;
-    for (let k = 0; k <= 120; k++) {
-      const u = k / 40;                                            // 0 … 3 in Schritten von 0,025
-      await b.js(`window.scrollTo(0, ${Math.round((u / 3) * R)}), 1`); await settle(b);
-      const s = await state(b); n++;
-      if (u >= m && u <= 1.65 && s.title > 0.02) bad.push(`u ${u}: Titel ${s.title}`);
-      if (u >= 2 && s.title < 0.99) endBad.push(`u ${u}: Titel ${s.title}`);
-      if (u <= 0.02 && s.title < 0.99) bad.push(`u ${u}: Titel am Start nicht sichtbar (${s.title})`);
-    }
-    check(`titel: nach titleClear (${m}) verdeckt der Titel die Flasche nie (${n} Stellen)`, bad.length === 0, bad[0] || '');
-    check('titel: erscheint wieder, sobald der Kronkorken bildfüllend ist, und bleibt', endBad.length === 0, endBad[0] || '');
-    check('titel: kein Schriftzug-Element .cap-title mehr', (await b.js(`document.querySelector('.cap-title') === null`)) === true);
-  } finally { b.close(); }
-}
-
-// 4c. Endsequenz auf allen Geräten (iPhone, iPad hoch/quer, iPad Pro quer, Desktop 1440 und 2560): gleiche Logik überall.
-//     Bier von Rand zu Rand, Rahmen weg (und beim Zurückscrollen wieder da), „Hofer Bräu“ frei stehend, Titel unten mittig,
-//     Seite ins Gold, Bläschen gleichmäßig verteilt. Bilder landen in $TMPDIR/berghof-tests/bierlayout/.
-async function bierlayout(only) {
-  for (const [name, view] of Object.entries(DEVICES)) {
-    if (only && !only.includes(name)) continue;
+// 6. Geste 1 bei kaltem Cache, Fast 3G und CPU 4x: früh ausgelöst wartet sie (Pfeil pulsiert), startet von selbst, nie ein fehlender Frame
+async function kalt() {
+  for (const view of ['desktop', 'handy']) {
     const b = await browser({ view });
     try {
-      check(`bierlayout ${name}: Sequenz startet`, await start(b, view));
-      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
-      const R = await range(b);
-      const at = async (p) => { await b.js(`window.scrollTo(0, ${Math.round(p * R)}), 1`); await settle(b); await sleep(200); return state(b); };
-      const s02a = await at(0.2);
-      const shots = {};
-      for (const p of [0.5, 0.7, 0.85, 1]) { await at(p); shots[p] = await shot(b, join(OUT, 'bierlayout', `${name}-${String(p).replace('.', '_')}.png`)); }
-      // Bier von Rand zu Rand bei 0,7 (fast voll)
-      const eg = await edgeGold(b, shots[0.7]);
-      check(`bierlayout ${name}: Bier berührt links, rechts und unten den Rand (bei 0,7)`, eg.left >= 0.98 && eg.right >= 0.98 && eg.bottom >= 0.98, `links ${eg.left.toFixed(2)}, rechts ${eg.right.toFixed(2)}, unten ${eg.bottom.toFixed(2)}`);
-      const geo = JSON.parse(await b.js(`JSON.stringify((() => {
-        const r = (s) => { const e = document.querySelector(s); if (!e) return null; const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom, w: q.width, h: q.height }; };
-        return { beer: r('.beer'), text: r('.hero__text'), title: r('.hero__title'), claim: r('.hero__claim'), vw: innerWidth, vh: innerHeight,
-          fs: parseFloat(getComputedStyle(document.querySelector('.hero__title')).fontSize),
-          x: [...document.querySelectorAll('.beer__bubbles i')].map((i) => parseFloat(i.style.left)) };
-      })())`));
-      check(`bierlayout ${name}: Bier-Ebene deckt den ganzen Bildschirm`, geo.beer.l <= 0 && geo.beer.t <= 0 && geo.beer.r >= geo.vw && geo.beer.b >= geo.vh, JSON.stringify(geo.beer));
-      // Rahmen: bei 0,5 da, ab 0,7 weg, beim Zurückscrollen wieder da und genau wie vorher
-      const s05 = await at(0.5), s07 = await at(0.7);
-      const brandFade = await b.js(`getComputedStyle(document.querySelector('.site-header__brand'), '::before').opacity`);
-      const brandText = await b.js(`(() => { const e = document.querySelector('.site-header__brand'); const q = e.getBoundingClientRect(); return JSON.stringify({ cx: (q.left + q.right) / 2, top: q.top, vw: innerWidth, op: getComputedStyle(e).opacity, vis: getComputedStyle(e).visibility }); })()`);
-      const bt = JSON.parse(brandText);
-      check(`bierlayout ${name}: Rahmen bei 0,5 sichtbar, ab 0,7 unsichtbar`, s05.frameO === 1 && s07.frameO === 0, `0,5: ${s05.frameO}, 0,7: ${s07.frameO}`);
-      check(`bierlayout ${name}: „Hofer Bräu“ steht frei (Hintergrund weg), oben mittig sichtbar`, Number(brandFade) === 0 && Math.abs(bt.cx - bt.vw / 2) < 3 && bt.top < 30 && bt.op === '1' && bt.vis === 'visible', `Hintergrund ${brandFade}, Mitte ${bt.cx}, oben ${bt.top}`);
-      const s02b = await at(0.2);
-      check(`bierlayout ${name}: beim Zurückscrollen erscheint der Rahmen wieder, alles wie vorher`, JSON.stringify([s02a.frameO, s02a.u, s02a.title, s02a.frame]) === JSON.stringify([s02b.frameO, s02b.u, s02b.title, s02b.frame]) && s02b.frameO === 1, `${s02a.frameO}/${s02a.title} → ${s02b.frameO}/${s02b.title}`);
-      // Titel unten mittig, Seite im Gold
-      const s085 = await at(0.85);
-      const geo2 = JSON.parse(await b.js(`JSON.stringify((() => { const q = document.querySelector('.hero__text').getBoundingClientRect(), c = document.querySelector('.hero__claim').getBoundingClientRect(), t = document.querySelector('.hero__title').getBoundingClientRect(); return { cx: (q.left + q.right) / 2, cy: (q.top + q.bottom) / 2, vh: innerHeight, vw: innerWidth, claimIn: c.top >= q.top && c.bottom <= q.bottom + 1, titleW: t.width, gold: document.documentElement.classList.contains('gold-page') }; })())`));
-      check(`bierlayout ${name}: Titel mit Trennlinie und Untertitel mittig im unteren Drittel`, s085.title === 1 && Math.abs(geo2.cx - geo2.vw / 2) < 3 && geo2.cy > geo2.vh * 0.6 && geo2.cy < geo2.vh * 0.97 && geo.fs >= 46 && geo.fs <= 137, `Mitte ${Math.round(geo2.cx)}/${Math.round(geo2.cy)} von ${geo2.vw}×${geo2.vh}, Schrift ${geo.fs}px`);
-      const gold07 = await b.js(`document.documentElement.classList.contains('gold-page')`);
-      check(`bierlayout ${name}: Seite taucht ins Gold (Hintergrund und Browserfarbe)`, gold07 === true || s07.gold === true, `Klasse ${s07.gold}`);
-      // Bläschen: gleichmäßig über die Breite, Anzahl nach Fläche
-      const n = geo.x.length, xs = [...geo.x].sort((p, q) => p - q);
-      const expected = Math.min(60, Math.max(12, Math.round((geo.vw * geo.vh) / 28000)));
-      let gap = xs[0]; for (let i = 1; i < xs.length; i++) gap = Math.max(gap, xs[i] - xs[i - 1]); gap = Math.max(gap, 100 - xs.at(-1));
-      check(`bierlayout ${name}: ${n} Bläschen (Soll ${expected}), gleichmäßig über die Breite`, n === expected && gap <= 3.5 * (100 / n) && xs[0] < 2.5 * (100 / n) && xs.at(-1) > 100 - 2.5 * (100 / n), `größte Lücke ${gap.toFixed(1)} % (Soll höchstens ${(3.5 * 100 / n).toFixed(1)} %)`);
-      check(`bierlayout ${name}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+      await setView(b, view); await throttle(b);
+      await b.send('Page.navigate', { url: BASE });
+      for (let k = 0; k < 300 && !(await b.js('!!window.__sequenz')); k++) await sleep(100);
+      await keyPress(b, 'ArrowDown');                           // so früh wie möglich
+      await sleep(300);
+      const früh = await state(b);
+      check(`kalt ${view}: zu frühe Geste wartet (Pfeil pulsiert), Seite bleibt oben`, früh.wartet === true && früh.z === 'A' && früh.y === 0, `wartet ${früh.wartet}, geladen ${früh.geladen}, Zustand ${früh.z}`);
+      check(`kalt ${view}: wartende Geste ist sichtbar (Klasse „wartet“)`, await b.js(`document.documentElement.classList.contains('wartet')`) === true);
+      check(`kalt ${view}: startet von selbst, sobald alles geladen ist`, await waitZustand(b, 'B', 120000) && await idle(b));
+      const l = await log(b), s = await state(b);
+      check(`kalt ${view}: nie ein leeres Canvas, CLS 0, Ende in B`, (await b.js('window.__blank')) === 0 && (await b.js('window.__cls')) === 0 && s.z === 'B', `leer ${await b.js('window.__blank')}, CLS ${await b.js('window.__cls')}, Stillstände ${s.stalls}`);
+      check(`kalt ${view}: Übergang lief genau einmal, Seite blieb oben`, l.filter((e) => e.art === 'start').length === 1 && s.y === 0, `${l.filter((e) => e.art === 'start').length} Übergänge`);
+      check(`kalt ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
 }
 
-// 5. Kalt, Fast 3G, CPU 4x: nie ein leeres Canvas, CLS 0, keine Fehler, richtiger Endzustand
-async function kalt(view) {
-  const b = await browser({ view });
+// 7. Übergang Kronkorken → Bier: Bilder bei 50, 70, 80, 90 und 100 % von Geste 1, Farbwechsel prüfen
+async function uebergang() {
+  for (const [name, view] of Object.entries({ 'desktop-1440': DEVICES['desktop-1440'], 'iphone15': DEVICES.iphone15, 'ipad-air-quer': DEVICES['ipad-air-quer'] })) {
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const werte = [];
+      for (const p of [0.5, 0.7, 0.8, 0.9, 1]) {
+        await b.js(`window.__sequenz.zeige(${p})`); await sleep(400);
+        const buf = await shot(b, join(OUT, 'uebergang', `${name}-${String(p).replace('.', '_')}.png`));
+        // Mitte des Bildes: Mittelwert und Streuung der Farbe (flaches Bier-Gold = geringe Streuung, Kronkorken-Verlauf = große)
+        const m = await b.js(`(async () => { const img = new Image(); img.src = 'data:image/${buf[0] === 0xff ? 'jpeg' : 'png'};base64,${buf.toString('base64')}'; await img.decode();
+          const c = new OffscreenCanvas(img.naturalWidth, img.naturalHeight), g = c.getContext('2d'); g.drawImage(img, 0, 0);
+          const w = c.width, h = c.height, x0 = Math.round(w * 0.3), y0 = Math.round(h * 0.3), cw = Math.round(w * 0.4), ch = Math.round(h * 0.25);
+          const d = g.getImageData(x0, y0, cw, ch).data; let r = 0, gg = 0, bb = 0; const n = d.length / 4;
+          for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; bb += d[i + 2]; }
+          r /= n; gg /= n; bb /= n; let v = 0;
+          for (let i = 0; i < d.length; i += 4) v += (d[i] - r) ** 2 + (d[i + 1] - gg) ** 2 + (d[i + 2] - bb) ** 2;
+          return { r: Math.round(r), g: Math.round(gg), b: Math.round(bb), std: Math.round(Math.sqrt(v / n / 3)) }; })()`);
+        werte.push([p, m]);
+      }
+      const gold = (m) => Math.abs(m.r - 197) < 30 && Math.abs(m.g - 161) < 30 && Math.abs(m.b - 73) < 30;
+      const w = Object.fromEntries(werte);
+      check(`uebergang ${name}: Kronkorken hat bei 50 % noch Struktur (Verlauf), ab 70 % ist die Mitte Bierfarbe`, w[0.5].std > 12 && [0.7, 0.8, 0.9, 1].every((p) => gold(w[p])), werte.map(([p, m]) => `${p}: rgb(${m.r},${m.g},${m.b}) ±${m.std}`).join(' | '));
+      check(`uebergang ${name}: bei 100 % deckt die Bierfläche (Canvas ausgeblendet), der Rahmen ist weg`, (await b.js(`getComputedStyle(document.getElementById('sequenz')).visibility`)) === 'hidden' && (await state(b)).frameO === 0);
+    } finally { b.close(); }
+  }
+}
+
+// 8. Zustand B auf allen Geräten: Bier von Rand zu Rand, kein Rahmen, „Hofer Bräu“ frei, Titel unten mittig, Bläschen verteilt, Seite gesperrt
+async function zustandB() {
+  for (const [name, view] of Object.entries(DEVICES)) {
+    const b = await browser({ view });
+    try {
+      check(`zustandB ${name}: Start in A`, await start(b, view) && (await state(b)).z === 'A');
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
+      await gesture(b, 1);
+      check(`zustandB ${name}: eine Geste führt nach B`, await waitZustand(b, 'B') && await idle(b));
+      await sleep(300);
+      const s = await state(b);
+      const buf = await shot(b, join(OUT, 'zustandB', `${name}.png`));
+      const eg = await edgeGold(b, buf);
+      check(`zustandB ${name}: Bier berührt links, rechts und unten den Rand`, eg.left >= 0.98 && eg.right >= 0.98 && eg.bottom >= 0.98, `links ${eg.left.toFixed(2)}, rechts ${eg.right.toFixed(2)}, unten ${eg.bottom.toFixed(2)}`);
+      const geo = JSON.parse(await b.js(`JSON.stringify((() => {
+        const r = (q) => { const e = document.querySelector(q); if (!e) return null; const x = e.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom }; };
+        const brand = document.querySelector('.site-header__brand'), bb = brand.getBoundingClientRect();
+        return { beer: r('.beer'), text: r('.hero__text'), vw: innerWidth, vh: innerHeight, fs: parseFloat(getComputedStyle(document.querySelector('.hero__title')).fontSize),
+          brandFade: getComputedStyle(brand, '::before').opacity, brandCx: (bb.left + bb.right) / 2, brandTop: bb.top, brandVis: getComputedStyle(brand).visibility,
+          x: [...document.querySelectorAll('.beer__bubbles i')].map((i) => parseFloat(i.style.left)) };
+      })())`));
+      check(`zustandB ${name}: Bier-Ebene deckt den ganzen Bildschirm, kein Rahmen`, geo.beer.l <= 0 && geo.beer.t <= 0 && geo.beer.r >= geo.vw && geo.beer.b >= geo.vh && s.frameO === 0, `Rahmen ${s.frameO}`);
+      check(`zustandB ${name}: „Hofer Bräu“ oben mittig frei stehend`, Number(geo.brandFade) === 0 && Math.abs(geo.brandCx - geo.vw / 2) < 3 && geo.brandTop < 30 && geo.brandVis === 'visible');
+      const tx = (geo.text.l + geo.text.r) / 2, ty = (geo.text.t + geo.text.b) / 2;
+      check(`zustandB ${name}: Titel mit Trennlinie und Untertitel unten mittig`, s.title === 1 && Math.abs(tx - geo.vw / 2) < 3 && ty > geo.vh * 0.6 && ty < geo.vh * 0.97 && geo.fs >= 46 && geo.fs <= 137, `Mitte ${Math.round(tx)}/${Math.round(ty)} von ${geo.vw}×${geo.vh}, Schrift ${geo.fs}px`);
+      const n = geo.x.length, xs = [...geo.x].sort((p, q) => p - q), expected = Math.min(60, Math.max(12, Math.round((geo.vw * geo.vh) / 28000)));
+      let gap = xs[0]; for (let i = 1; i < xs.length; i++) gap = Math.max(gap, xs[i] - xs[i - 1]); gap = Math.max(gap, 100 - xs.at(-1));
+      check(`zustandB ${name}: ${n} Bläschen (Soll ${expected}), gleichmäßig verteilt`, n === expected && gap <= 3.5 * (100 / n), `größte Lücke ${gap.toFixed(1)} %`);
+      check(`zustandB ${name}: Seite gesperrt, Seite ins Gold, Schwappen aktiv (Bläschen laufen)`, s.overflow === 'hidden' && s.gold === true && (await b.js(`document.documentElement.classList.contains('is-draining')`)) === true);
+      check(`zustandB ${name}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+}
+
+// 9. Neuladen in C landet in C (ohne Animation), Direktlink (#zutaten) ebenso; Neuladen in A bleibt A
+async function neuladen() {
+  const b = await browser({ view: 'desktop' });
   try {
-    await setView(b, view); await throttle(b);
-    await b.send('Page.navigate', { url: BASE });
-    for (let i = 0; i < 300; i++) { if (await b.js(`document.documentElement.classList.contains('is-ready')`)) break; await sleep(100); }
-    const R = await range(b);
-    const t0 = await b.js('performance.now()');
-    for (let k = 0; k < 4; k++) { await gesture(b, R * 0.4, { speed: 5000 }); await sleep(300); }
-    for (let k = 0; k < 3; k++) { await gesture(b, -R * 0.5, { speed: 5000 }); await sleep(300); }
-    await gesture(b, R * 2, { speed: 7000 });
-    await settle(b, 30000);
-    const st = await state(b), S = await samples(b);
-    check(`kalt ${view}: nie ein leeres Canvas`, (await b.js('window.__blank')) === 0, `${await b.js('window.__blank')} leere Bilder`);
-    check(`kalt ${view}: CLS 0`, (await b.js('window.__cls')) === 0, String(await b.js('window.__cls')));
-    check(`kalt ${view}: Endzustand richtig (Bier leer, Inhalte sichtbar)`, st.u >= 2.99 && st.beer > 0.99 && st.canvas === 0, `u ${st.u}`);
-    // Nie ein Bild, das weit von der gewünschten Bildnummer entfernt ist (sobald alle Ersatzbilder da sind)
-    const dist = (s) => { const m = /^(full|mini)(\d+)$/.exec(s.shown || ''); return m ? Math.abs(Number(m[2]) - s.frame) : 0; };
-    const spaet = S.filter((s) => s.minis >= (view === 'desktop' ? 85 : 55));
-    const weit = spaet.filter((s) => dist(s) > 2);
-    check(`kalt ${view}: gezeichnetes Bild höchstens 2 Bilder neben dem gewünschten (${spaet.length} Bilder)`, weit.length === 0, weit[0] ? `Bild ${weit[0].frame}, gezeigt ${weit[0].shown}` : '');
-    const dt = S.slice(1).map((s, i) => s.t - S[i].t).filter((x) => x > 0).sort((a, b2) => a - b2);
-    console.log(`       Bildabstand p95 ${dt[Math.floor(dt.length * 0.95)]} ms (CPU 4x), ${dt.filter((x) => x > 100).length} Bilder über 100 ms`);
-    check(`kalt ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    await start(b, 'desktop');
+    await flick(b, 900); await waitZustand(b, 'B'); await idle(b);
+    await flick(b, 900); await waitZustand(b, 'C'); await idle(b);
+    await b.js(`window.scrollTo(0, 700)`); await sleep(500);
+    await b.send('Page.reload'); await sleep(3500);
+    const r = await state(b), l = await log(b);
+    check('neuladen: Neuladen in C landet in C, Position bleibt, keine Animation', r.z === 'C' && r.frei === true && r.y > 300 && l.length === 0, JSON.stringify({ z: r.z, y: r.y, frei: r.frei, log: l.length }));
+    await b.send('Page.navigate', { url: BASE + '#zutaten' }); await sleep(3500);
+    const d = await state(b), top = await b.js(`Math.round(document.getElementById('zutaten').getBoundingClientRect().top)`);
+    check('neuladen: Direktlink #zutaten landet in C an der Stelle, ohne Animation', d.z === 'C' && d.frei === true && Math.abs(top) < 5 && (await log(b)).length === 0, `Zustand ${d.z}, Abstand ${top}`);
+    await b.send('Page.navigate', { url: BASE }); await sleep(500);
+    await waitReady(b);
+    await b.send('Page.reload'); await sleep(3500); await waitReady(b);
+    const a = await state(b);
+    check('neuladen: Neuladen oben bleibt in A (gesperrt)', a.z === 'A' && a.overflow === 'hidden' && a.y === 0);
+    check('neuladen: keine Fehler', b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
 
-// 6. Neu laden mitten in der Sequenz: der Browser stellt die Stelle wieder her, das Bild passt dazu
-async function neuladen(view) {
-  const b = await browser({ view });
-  try {
-    check(`neuladen ${view}: Sequenz startet`, await start(b, view));
-    const R = await range(b);
-    for (const pr of [0.2, 0.5, 0.8, 0.95]) {
-      await b.js(`window.scrollTo(0, ${Math.round(pr * R)}), 1`); await settle(b);
-      const vor = await state(b);
-      await b.send('Page.reload'); await sleep(1500);
-      await b.js(`window.dispatchEvent(new Event('pointerdown')), 1`); await waitStart(b); await settle(b);
-      const nach = await state(b);
-      check(`neuladen ${view}: bei ${Math.round(pr * 100)} % gleiche Stelle und gleiches Bild`, Math.abs(nach.y - vor.y) <= 2 && nach.frame === vor.frame && Math.abs(nach.u - vor.u) < 0.01 && nach.level === vor.level,
-        `y ${vor.y}→${nach.y}, Bild ${vor.frame}→${nach.frame}, Pegel ${vor.level}→${nach.level}`);
-    }
-    check(`neuladen ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
-  } finally { b.close(); }
-}
-
-// 7. Handy drehen (und Fenster ziehen): dieselbe Stelle der Sequenz bleibt stehen, kein leeres Canvas, keine Ausnahme
+// 10. Gerät drehen: in A bleibt A, in B bleibt B (kein Absturz, kein leeres Canvas)
 async function drehen() {
   const b = await browser({ view: 'handy' });
   try {
-    check('drehen: Sequenz startet', await start(b, 'handy'));
-    await throttle(b, { cold: false, cpu: 1 });   // Fast 3G: die Bilder des neuen Formats brauchen einen Moment
-    for (const pr of [0.25, 0.6]) {
-      await b.js(`window.scrollTo(0, ${Math.round(pr * await range(b))}), 1`); await settle(b);
-      const p0 = (await state(b)).target;
-      await setView(b, { w: 844, h: 390, mobile: true }); await sleep(600); await settle(b, 30000);
-      const quer = await state(b);
-      await setView(b, VIEWS.handy); await sleep(600); await settle(b);
-      const zur = await state(b);
-      check(`drehen: bei ${Math.round(pr * 100)} % bleibt die Stelle (quer und zurück)`, Math.abs(quer.target - p0) < 0.02 && Math.abs(zur.target - p0) < 0.02, `${p0} → ${quer.target} → ${zur.target}`);
-      check(`drehen: bei ${Math.round(pr * 100)} % Bild und Titel passen zur Ansicht`, quer.shown != null && zur.shown != null && (zur.title <= 1 && zur.title >= 0));
-    }
-    check('drehen: nie ein leeres Canvas', (await b.js('window.__blank')) === 0);
-    check('drehen: keine Fehler', b.errors.length === 0, b.errors[0] || '');
+    await start(b, 'handy');
+    await setView(b, { w: 844, h: 390, mobile: true }); await sleep(900);
+    let s = await state(b);
+    check('drehen: in A gedreht bleibt in A, Seite gesperrt', s.z === 'A' && s.overflow === 'hidden' && s.y === 0, `Zustand ${s.z}`);
+    await setView(b, VIEWS.handy); await sleep(900); await waitReady(b);
+    await touchSwipe(b, 220);
+    await waitZustand(b, 'B'); await idle(b);
+    const vorher = await snap(b);
+    await setView(b, { w: 844, h: 390, mobile: true }); await sleep(900);
+    s = await state(b);
+    check('drehen: in B gedreht bleibt in B (Rahmen weg, Seite gesperrt)', s.z === 'B' && s.frameO === 0 && s.overflow === 'hidden', `Zustand ${s.z}`);
+    await setView(b, VIEWS.handy); await sleep(900);
+    check('drehen: zurück gedreht ist B unverändert', await snap(b) === vorher);
+    check('drehen: nie ein leeres Canvas, keine Fehler', (await b.js('window.__blank')) === 0 && b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
 
-// 8. „Bewegung reduzieren“: nur das Startbild, keine Sequenz, kein langer Startbereich
+// 11. Tastatur: Pfeil, Bild, Leertaste (auch mit Umschalttaste zurück)
+async function tasten() {
+  const b = await browser({ view: 'desktop' });
+  try {
+    await start(b, 'desktop');
+    const folge = [['PageDown', 'B'], ['ArrowDown', 'C'], ['ArrowUp', 'B'], ['PageUp', 'A'], [' ', 'B'], [' ', 'C']];
+    let ok = true, detail = '';
+    for (const [taste, ziel] of folge) {
+      if ((await state(b)).z === 'C') { await b.js(`window.scrollTo(0, 0)`); await sleep(500); }
+      await keyPress(b, taste);
+      if (!(await waitZustand(b, ziel)) || !(await idle(b))) { ok = false; detail = `${taste} → ${ziel} nicht erreicht`; break; }
+    }
+    check('tasten: Bild ab/auf, Pfeil, Leertaste bewegen A ↔ B ↔ C', ok, detail);
+    await b.js(`window.scrollTo(0, 0)`); await sleep(500);
+    await keyPress(b, ' ', 8);   // Umschalt + Leertaste = zurück
+    check('tasten: Umschalt + Leertaste geht zurück', await waitZustand(b, 'B'));
+  } finally { b.close(); }
+}
+
+// 12. Überspringen: fokussierbarer Knopf springt direkt zu C; sichtbarer Hinweis unten
+async function skip() {
+  const b = await browser({ view: 'desktop' });
+  try {
+    await start(b, 'desktop');
+    const cue = await b.js(`(() => { const c = document.querySelector('.scroll-cue'); const r = c.getBoundingClientRect(); return { sichtbar: getComputedStyle(c).display !== 'none' && +getComputedStyle(c).opacity > 0.9, unten: r.top > innerHeight * 0.85, text: c.innerText.trim() }; })()`);
+    check('skip: Hinweis unten sichtbar (Desktop: „Scrollen“)', cue.sichtbar && cue.unten && /scrollen/i.test(cue.text), JSON.stringify(cue));
+    await keyPress(b, 'Tab'); await sleep(200); // echte Tastatur: erst dann gilt :focus-visible
+    const focus = await b.js(`(() => { const r = document.querySelector('[data-skip]').getBoundingClientRect(); return { sichtbar: r.top >= 0 && r.bottom > 0, focus: document.activeElement === document.querySelector('[data-skip]') }; })()`);
+    check('skip: Knopf „Überspringen“ ist fokussierbar und bei Fokus sichtbar', focus.focus && focus.sichtbar, JSON.stringify(focus));
+    check('skip: in A und B ist der Inhalt unter dem Start nicht per Tastatur erreichbar (inert)', (await b.js(`document.querySelector('#zutaten').inert`)) === true);
+    await b.js(`document.querySelector('[data-skip]').click()`);
+    await sleep(400);
+    const s = await state(b);
+    check('skip: springt direkt zu Zustand C (frei, Inhalt erreichbar)', s.z === 'C' && s.frei === true && (await b.js(`document.querySelector('#zutaten').inert`)) === false, JSON.stringify({ z: s.z, frei: s.frei }));
+  } finally { b.close(); }
+}
+
+// 13. „Bewegung reduzieren“: keine Sperre, keine Animation, nur das Startbild, darunter die normale Seite
 async function reduziert() {
   for (const view of ['desktop', 'handy']) {
     const b = await browser({ view, reducedMotion: true });
     try {
       await open(b, '', { wait: 3500 });
-      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, intro: document.querySelector('.intro').offsetHeight, hero: document.getElementById('start').offsetHeight, poster: getComputedStyle(document.querySelector('.poster')).opacity, canvas: getComputedStyle(document.getElementById('sequenz')).opacity })`));
-      check(`reduziert ${view}: nur Startbild, keine Sequenz`, !r.seq && !r.q && r.intro === r.hero && r.poster === '1' && r.canvas === '0', JSON.stringify(r));
-      await gesture(b, 900); await sleep(1500);
-      check(`reduziert ${view}: nach dem Scrollen weiter keine Sequenz`, !(await b.js('!!window.__sequenz')));
+      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, poster: getComputedStyle(document.querySelector('.poster')).opacity, skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display })`));
+      check(`reduziert ${view}: nur Startbild, keine Sperre, keine Sequenz, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.poster === '1' && r.skip === 'none' && r.cue === 'none', JSON.stringify(r));
+      await b.js(`window.scrollTo(0, 900)`); await sleep(500);
+      check(`reduziert ${view}: darunter normal scrollbar`, (await b.js('scrollY')) >= 800);
     } finally { b.close(); }
   }
 }
 
-// 9. Keine externen Anfragen, keine Cookies
+// 14. Keine externen Anfragen, keine Cookies, CLS 0 (ganzer Ablauf A → C)
 async function extern() {
   const b = await browser({ view: 'desktop' });
   try {
-    check('extern: Sequenz startet', await start(b, 'desktop'));
-    await gesture(b, 3000); await sleep(1500);
+    await start(b, 'desktop');
+    await flick(b, 900); await waitZustand(b, 'B'); await idle(b);
+    await flick(b, 900); await waitZustand(b, 'C'); await idle(b);
+    await b.js(`window.scrollTo(0, 3000)`); await sleep(800);
     const c = await b.send('Network.getAllCookies');
     check('extern: keine Anfragen an Fremde', b.external.length === 0, b.external[0] || '');
-    check('extern: keine Cookies', (c.result?.cookies || []).length === 0, JSON.stringify(c.result?.cookies || []).slice(0, 120));
+    check('extern: keine Cookies', (c.result?.cookies || []).length === 0);
+    check('extern: CLS 0 im ganzen Ablauf', (await b.js('window.__cls')) === 0, String(await b.js('window.__cls')));
   } finally { b.close(); }
 }
 
-const RUNS = [
-  ['positionen', async () => { await positionen('desktop', Number(process.env.N || 200)); await positionen('handy', Number(process.env.N || 200) / 2); }],
-  ['start', async () => { await startTest('desktop'); await startTest('handy'); }],
-  ['titel', titel],
-  ['bierlayout', async () => { await bierlayout(); }],
-  ['bier', async () => { await bier('desktop'); await bier('handy'); await bier(DEVICES['ipad-air-quer'], 'ipad quer'); await bier(DEVICES['ipad-air-hoch'], 'ipad hoch'); }],
-  ['zucken', async () => { await zucken('desktop'); await zucken('handy'); }],
-  ['kalt', async () => { await kalt('desktop'); await kalt('handy'); }],
-  ['neuladen', async () => { await neuladen('desktop'); await neuladen('handy'); }],
-  ['drehen', drehen],
-  ['reduziert', reduziert],
-  ['extern', extern],
-];
+const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
+  ['zustandB', zustandB], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);
   try { await fn(); } catch (e) { check(`${name}: ohne Absturz`, false, e.stack?.split('\n').slice(0, 3).join(' | ')); }
 }
-const failed = results.filter((r) => !r[1]);
-console.log(`\n${results.length - failed.length} von ${results.length} Prüfungen bestanden${failed.length ? `, ${failed.length} FEHLER` : ' ✓'}`);
-process.exit(failed.length ? 1 : 0);
+const failed = results.filter((r) => !r).length;
+console.log(`\n${results.length - failed} von ${results.length} Prüfungen bestanden${failed ? `, ${failed} FEHLER` : ' ✓'}`);
+process.exit(failed ? 1 : 0);

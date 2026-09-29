@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
        GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vlc/ovQZUwCBonIysez2mmMyEQ9go12EKjwPQI2B+3U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-W1MLevFcz2++4AUjsFEplTYbFgmjE6L8KkrxxVdikpU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
@@ -90,15 +90,17 @@
   <!-- Altersabfrage: ohne gültige Bestätigung (30 Tage) erscheint das Overlay, bevor etwas von der Seite zu sehen ist -->
   <script>
     (function () {
-      var ok = false;
+      var root = document.documentElement, ok = false;
       try { ok = Number(localStorage.getItem('berghof-ab16')) > Date.now(); } catch (e) {}
-      if (!ok) document.documentElement.classList.add('age-gate');
-      // Scroll-Sequenz läuft (nicht bei „Bewegung reduzieren“): hoher Startbereich (CSS), Titel am Handy erst am Ende
-      try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('seq'); } catch (e) {}
-      // Die Scrollposition gehört dem Browser (Neu laden und Zurück stellen die Stelle wieder her, kein scrollTo):
-      // die Höhe des Startbereichs steht allein im CSS, die Sequenz zeigt danach genau das passende Bild.
-      // Aufruf mit Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
-      if (location.hash) document.documentElement.classList.add('css-wait');
+      if (!ok) root.classList.add('age-gate');
+      // Startsequenz (nicht bei „Bewegung reduzieren“): die Seite ist ab dem ersten Pixel gesperrt (CSS .seq), bis die
+      // zwei Übergänge durchgelaufen sind. js/sequenz.js hebt die Sperre mit .frei auf.
+      try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('seq'); } catch (e) {}
+      // Direktlink (#…), Neuladen, Zurück: nicht gesperrt, js/sequenz.js entscheidet (Position über 0 oder Sprungmarke → Inhalt).
+      // Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
+      var nav = ''; try { nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
+      if (location.hash || nav === 'reload' || nav === 'back_forward') root.classList.add('frei');
+      if (location.hash) root.classList.add('css-wait');
     })();
   </script>
 
@@ -121,15 +123,27 @@
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     #sequenz, .poster { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100lvh; }
     #sequenz { display: block; z-index: 0; opacity: 0; }
-    /* Handy (Hochformat): Start ohne Titel, Pfeil nach unten; Desktop unverändert mit Titel am Start */
+    /* Start (A) und Bier (B): Seite gesperrt, ab dem ersten Pixel und ohne JavaScript-Wartezeit; .seq setzt das Head-Skript, .frei hebt die Sperre auf (Zustand C) */
+    .seq:not(.frei), .seq:not(.frei) body { overflow: hidden; overscroll-behavior: none; }
+    .seq:not(.frei) body { touch-action: none; }
+    /* Überspringen: nur mit Tastatur sichtbar (Fokus), springt direkt zum Inhalt */
+    .skip { position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px; background: var(--green); color: var(--cream);
+      font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transform: translateY(-300%); }
+    .skip:focus-visible { transform: none; outline: 2px solid #7A5C1C; outline-offset: 3px; }
+    html:not(.seq) .skip, .frei .skip { display: none; }
+    /* Hinweis unten: Handy groß und mittig, Desktop klein unten rechts (der Titel steht mittig). Handy: Start ohne Titel. */
     .scroll-cue { display: none; }
-    @media (max-aspect-ratio: 4/5) { .seq .hero__text { opacity: 0; } }
-    @media (max-aspect-ratio: 4/5) { .seq .scroll-cue { display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    .seq .scroll-cue { display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom)); transform: translateX(-50%);
       flex-direction: column; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
-      text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream); } }
+      text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream); }
+    .seq.frei .scroll-cue { display: none; }
+    @media (max-aspect-ratio: 4/5) { .seq .hero__text { opacity: 0; } .seq .hero { padding-bottom: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom)); } }   /* Titel über dem Pfeil */
+    @media not all and (max-aspect-ratio: 4/5) { .seq .scroll-cue { left: auto; right: calc(var(--frame-inset) + 30px); bottom: calc(var(--frame-inset) + 20px); transform: none; flex-direction: row; gap: 10px; font-size: 13px; }
+      .scroll-cue svg { width: 26px; height: 26px; } }
     .scroll-cue svg { width: 64px; height: 64px; animation: cue 2.4s ease-in-out infinite;
       filter: drop-shadow(0 0 4px var(--cream)); }
     @keyframes cue { 50% { transform: translateY(10px); } }
+    .wartet .scroll-cue svg { animation: cue-warten 1.1s ease-in-out infinite; } @keyframes cue-warten { 50% { opacity: .3; } }
     .scroll-cue__mouse { display: none; }
     @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
     .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
@@ -165,16 +179,11 @@
       .age__actions { gap: 10px; } .age__btn { min-width: 104px; padding: 12px 20px; } }
     @media (prefers-reduced-motion: reduce) { .age { transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
-    .poster picture { position: absolute; left: 50%; top: 9.52%; height: 57%; aspect-ratio: 528 / 1425; transform: translateX(-50%); display: block; }
+    .poster picture { position: absolute; left: 50%; top: 9.92%; height: 56.04%; aspect-ratio: 528 / 1401; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
-    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14.33%; height: 73.08%; aspect-ratio: 742 / 2025; } }
+    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14%; height: 72.54%; aspect-ratio: 742 / 2010; } }
     main { position: relative; z-index: 2; }
-    /* Scroll-Sequenz: Startbereich klebt in einem hohen Container, finale Seitenhöhe ohne JavaScript (Kopie aus css/style.css) */
-    :root { --steps: 3; --stage: max(100svh, 540px); }
-    .seq .intro { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
-    .seq .hero { position: sticky; top: 0; }
     .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
-    .seq .site-header { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
     .site-header__brand { position: sticky; top: var(--frame-inset); width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
       font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
     .site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
@@ -266,15 +275,18 @@
       <p class="age__note">Bitte genieße verantwortungsvoll.<br /><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </div>
   </div>
+  <!-- Tastatur: springt ohne die zwei Übergänge direkt zum Inhalt (js/sequenz.js) -->
+  <button class="skip" type="button" data-skip>Überspringen</button>
+
   <canvas id="sequenz" aria-hidden="true"></canvas>
 
   <!-- Standbild der Flasche: sofort sichtbar (schnell, von Google lesbar), liegt pixelgenau unter dem
        ersten Bild der Scroll-Sequenz und wird ausgeblendet, sobald diese läuft. Ohne JavaScript bleibt es stehen. -->
   <div class="poster">
     <picture>
-      <source media="(max-aspect-ratio: 4/5)" sizes="27vh" width="419" height="1143"
+      <source media="(max-aspect-ratio: 4/5)" sizes="27vh" width="419" height="1135"
               srcset="assets/img/flasche-berghof-hell-hoch-285.webp 285w, assets/img/flasche-berghof-hell-hoch.webp 419w, assets/img/flasche-berghof-hell-hoch-586.webp 586w" />
-      <img src="assets/img/flasche-berghof-hell.webp" sizes="22vh" width="474" height="1279" fetchpriority="high"
+      <img src="assets/img/flasche-berghof-hell.webp" sizes="21vh" width="474" height="1258" fetchpriority="high"
            srcset="assets/img/flasche-berghof-hell-322.webp 322w, assets/img/flasche-berghof-hell.webp 474w, assets/img/flasche-berghof-hell-701.webp 701w"
            alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
@@ -286,10 +298,8 @@
 
   <main>
     <!-- ── Start ─────────────────────────────── -->
-    <!-- hoher Container: der Startbereich klebt darin, während die Scroll-Sequenz läuft (Höhe in CSS, .seq) -->
-    <div class="intro">
     <section class="hero" id="start" aria-labelledby="hero-title">
-      <!-- Letzte Stufe der Scroll-Sequenz: das Bier leert sich (js/bier-leeren.js) – nur Dekoration -->
+      <!-- Bier (Zustand B): füllt den Bildschirm, leert sich mit der zweiten Geste (js/bier-leeren.js) – nur Dekoration -->
       <div class="beer" aria-hidden="true">
         <div class="beer__liquid">
           <svg class="beer__svg" focusable="false">
@@ -317,17 +327,16 @@
         </h1>
       </div>
 
-      <!-- Handy: Hinweis zum Scrollen (blendet beim ersten Scrollen aus, js/sequenz.js) -->
+      <!-- Hinweis zur Geste (im Start und im Bier sichtbar, sonst aus; js/sequenz.js) -->
       <div class="scroll-cue" aria-hidden="true">
         <svg viewBox="0 0 64 64" fill="none" stroke="#1F4D2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" focusable="false">
           <path d="M32 6V52"/>
           <path d="M10 32L32 54L54 32"/>
         </svg>
-        <span class="scroll-cue__touch">nach unten wischen</span><span class="scroll-cue__mouse">nach unten scrollen</span>
+        <span class="scroll-cue__touch">nach unten wischen</span><span class="scroll-cue__mouse">scrollen</span>
       </div>
 
     </section>
-    </div>
 
     <!-- ── Zutaten ───────────────────────────── -->
     <section class="section" id="zutaten" aria-labelledby="zutaten-title">
