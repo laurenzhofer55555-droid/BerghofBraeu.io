@@ -47,7 +47,11 @@ Trackpad-Zucken beim Loslassen, kalter Cache mit Fast 3G und CPU 4x, Neu laden m
 python3 tools/tests/serve.py . 5263 &          # Testserver (gzip, Cache wie GitHub Pages)
 node tools/tests/sequenz.mjs                   # alle Tests; einzelne: node tools/tests/sequenz.mjs positionen titel
 node tools/tests/schnell-scrollen-gif.mjs      # GIF vom schnellen Scrollen (desktop oder handy)
+node tools/tests/safari.mjs                    # dieselben Kernprüfungen im ECHTEN Safari (macOS)
 ```
+
+Für `safari.mjs` einmalig `sudo safaridriver --enable` ausführen und in Safari unter „Entwickler“ die „Entfernte Automatisierung“ erlauben.
+Der WebDriver wertet je Geste nur einen Mausrad-Schritt; die Gesten bestehen deshalb aus `scrollBy`-Schritten (echte Scroll-Ereignisse in Safari).
 
 Zusätzlich vor dem Veröffentlichen: `python3 .github/scripts/check-site.py`, Lighthouse (Handy und Desktop) und ein Blick im echten Safari
 (iPhone-Simulator: Wischen mit kleiner Gegenbewegung beim Loslassen, schneller Schwung, Neu laden).
