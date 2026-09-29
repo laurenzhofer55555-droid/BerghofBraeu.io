@@ -3,12 +3,37 @@
 // Die Oberfläche ist eine Welle aus drei überlagerten Sinuswellen (SVG-Pfad, per requestAnimationFrame),
 // die sich dauerhaft sanft bewegt. Beim Scrollen schwappt das Bier: die Scrollgeschwindigkeit kippt die
 // Oberfläche, eine gedämpfte Feder lässt sie danach ruhig ausschwingen. Der Schaum folgt leicht verzögert.
-// Der Pegel selbst wird nur per transform verschoben (level() aus js/sequenz.js, scrub).
+// Der Pegel selbst wird nur per transform verschoben (level() aus js/sequenz.js, allein aus dem Scrollfortschritt).
+// Das Bier füllt auf allen Geräten den ganzen Bildschirm von Rand zu Rand (Höhe 100lvh, siehe .beer in css/style.css).
+// Die Wellenamplitude ist in Pixeln fest; die Wellenlänge wächst mit der Bildschirmbreite (2 bis 3 Wellenberge). Die Bläschen
+// werden nach Fläche gezählt und gleichmäßig über die Breite verteilt.
 
 const TAU = Math.PI * 2;
 const PAD = 170;                     // Platz oberhalb der Oberfläche für Schaum und Wellenberge (px)
 const BELOW = 100;                   // Überstand unten: am Handy startet der Pegel 70 px über dem Rand, das Gold muss trotzdem bis unten reichen
 const STEP = 8;                      // Punktabstand des Pfads (px)
+const REF_W = 393;                   // Breite, für die die Wellenform ursprünglich gezeichnet wurde (Handy)
+
+// Bläschen: Anzahl nach Fläche (Handy 12), gleichmäßig über die Breite verteilt, wiederholbar (feste Zufallsfolge)
+function random(seed) {
+  return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+}
+function fillBubbles(container, W, H) {
+  const n = Math.min(60, Math.max(12, Math.round((W * H) / 28000)));
+  if (container.childElementCount === n) return;
+  container.textContent = '';
+  const rnd = random(7);
+  const slots = Array.from({ length: n }, (_, i) => i).sort(() => rnd() - 0.5);   // Reihenfolge mischen, Plätze bleiben gleichmäßig
+  for (let k = 0; k < n; k++) {
+    const i = document.createElement('i');
+    const x = ((slots[k] + 0.5 + (rnd() - 0.5) * 0.7) / n) * 100;                   // Platz in der Reihe + leichte Streuung
+    i.style.left = x.toFixed(1) + '%';
+    i.style.setProperty('--s', (5 + Math.round(rnd() * 5)) + 'px');
+    i.style.setProperty('--d', (7.2 + rnd() * 4.2).toFixed(1) + 's');
+    i.style.setProperty('--w', '-' + (rnd() * 10).toFixed(1) + 's');
+    container.appendChild(i);
+  }
+}
 
 export function createBeer(hero) {
   const liquid = hero.querySelector('.beer__liquid');
@@ -16,18 +41,22 @@ export function createBeer(hero) {
   const gold = hero.querySelector('.beer__gold');
   const foam = hero.querySelector('.beer__foam');
   const edge = hero.querySelector('.beer__edge');
+  const box = hero.querySelector('.beer');
+  const bubbles = hero.querySelector('.beer__bubbles');
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let W = 0, H = 0, foamH = 0, level = 0, running = false, last = 0, t = 0;
   let scrollV = 0, smoothV = 0;      // Scrollgeschwindigkeit (px/s), geglättet
   let tilt = 0, tiltV = 0;           // Schwappen: Neigung der Oberfläche (px) und ihre Geschwindigkeit
   let foamTilt = 0, foamAmp = 9;     // Schaum folgt verzögert
-  let foamFirst = true;              // Desktop: Schaum ist beim Start oben zu sehen; Handy: reines Gold, Schaum kommt von oben
+  let cycles = 1;                    // Wellenberge relativ zur Breite (wächst mit breiteren Bildschirmen, siehe measure)
 
   function measure() {
-    if (hero.clientWidth === W && hero.clientHeight === H) return;   // nur bei echter Größenänderung (nicht bei der Adressleiste)
-    W = hero.clientWidth;
-    H = hero.clientHeight;
+    if (box.clientWidth === W && box.clientHeight === H) return;   // nur bei echter Größenänderung (nicht bei der Adressleiste)
+    W = box.clientWidth;
+    H = box.clientHeight;
+    cycles = Math.min(2.6, Math.max(1, Math.sqrt(W / REF_W)));      // Handy 1×, Tablet ca. 1,5×, Desktop ca. 2× bis 2,6×: 2 bis 3 Wellenberge
+    fillBubbles(bubbles, W, H);
     foamH = Math.min(100, Math.max(56, H * 0.09));          // Schaumkrone ca. zwei Finger breit
     svg.setAttribute('viewBox', `0 0 ${W} ${H + PAD + BELOW}`);
     svg.setAttribute('width', W);
@@ -39,16 +68,17 @@ export function createBeer(hero) {
   // Pegel 0 (voll) … 1 (leer, alles unter dem unteren Rand)
   function setLevel(p) {
     level = p;
-    const from = foamFirst ? foamH + 24 : -70, to = H + foamH + 70;
+    const from = -70, to = H + foamH + 70;                     // reines Gold am Start, die Schaumkrone kommt von oben
     liquid.style.transform = `translate3d(0, ${from + (to - from) * p - PAD}px, 0)`;
   }
 
   // Oberfläche: drei Sinuswellen + Neigung durch Schwappen
   function wave(x, amp, time, tiltPx) {
     const u = x / W;
-    return amp * (0.55 * Math.sin(TAU * u * 1.1 + time * 1.3)
-      + 0.3 * Math.sin(TAU * u * 2.3 - time * 1.9 + 1.1)
-      + 0.15 * Math.sin(TAU * u * 4.1 + time * 2.7 + 2.3))
+    const k = TAU * u * cycles;
+    return amp * (0.55 * Math.sin(k * 1.1 + time * 1.3)
+      + 0.3 * Math.sin(k * 2.3 - time * 1.9 + 1.1)
+      + 0.15 * Math.sin(k * 4.1 + time * 2.7 + 2.3))
       + tiltPx * (2 * u - 1);
   }
 
@@ -117,7 +147,5 @@ export function createBeer(hero) {
       if (still) draw();
     },
     velocity(v) { scrollV = v; },
-    // false: beim Start ist nur Gold zu sehen, die Schaumkrone kommt beim Scrollen von oben ins Bild (Handy)
-    foamAtStart(on) { foamFirst = on; setLevel(level); draw(); },
   };
 }

@@ -16,6 +16,15 @@ export const VIEWS = {
   desktop: { w: 1440, h: 900, mobile: false },
   handy: { w: 390, h: 844, mobile: true },
 };
+// Geräte für die Endsequenz (Bier über die ganze Fläche)
+export const DEVICES = {
+  'iphone15': { w: 393, h: 852, mobile: true },
+  'ipad-air-hoch': { w: 820, h: 1180, mobile: true },
+  'ipad-air-quer': { w: 1180, h: 820, mobile: true },
+  'ipad-pro-quer': { w: 1366, h: 1024, mobile: true },
+  'desktop-1440': { w: 1440, h: 900, mobile: false },
+  'desktop-2560': { w: 2560, h: 1440, mobile: false },
+};
 
 // Messfühler (läuft in der Seite): pro Bildschirmbild ein Eintrag, dazu Layoutverschiebungen und leeres Canvas
 const PROBE = `
@@ -31,7 +40,7 @@ window.__state = () => {
   return {
     y: Math.round(scrollY), u: q ? +q.u.toFixed(4) : null, target: q ? +q.target.toFixed(6) : null, p: q ? +q.progress.toFixed(6) : null,
     frame: q ? q.frame : null, shown: q ? q.shown : null, minis: q ? q.loaded.mini : 0,
-    canvas: num(cs('#sequenz')?.opacity), beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cap: num(cs('.cap-title')?.opacity),
+    canvas: num(cs('#sequenz')?.opacity), beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), frameO: num(cs('#start > .frame')?.opacity),
     level: Math.round(ty(document.querySelector('.beer__liquid'))), gold: document.documentElement.classList.contains('gold-page'),
     height: document.documentElement.scrollHeight,
     range: (() => { const i = document.querySelector('.intro'), h = document.getElementById('start'); return i && h ? i.offsetHeight - h.offsetHeight : 0; })(),
@@ -56,7 +65,7 @@ export async function browser({ view = 'desktop', reducedMotion = false } = {}) 
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(WORK, { recursive: true });
   const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, '--no-first-run',
-    '--hide-scrollbars', '--use-angle=metal', '--enable-gpu', 'about:blank'], { stdio: 'ignore' });
+    '--hide-scrollbars', ...(process.env.NOGPU ? ['--disable-gpu'] : ['--use-angle=metal', '--enable-gpu']), 'about:blank'], { stdio: 'ignore' });
   let t = [];
   for (let i = 0; i < 100 && !t.some((x) => x.type === 'page'); i++) { try { t = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch { await sleep(200); } }
   const ws = new WebSocket(t.find((x) => x.type === 'page').webSocketDebuggerUrl);
@@ -73,7 +82,13 @@ export async function browser({ view = 'desktop', reducedMotion = false } = {}) 
     }
     if (m.method && b.onEvent) b.onEvent(m);
   };
-  const send = (method, params = {}) => new Promise((res) => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
+  // Jeder DevTools-Aufruf hat ein Zeitlimit: ein hängender Aufruf soll den Test mit Fehlermeldung beenden, nicht ewig blockieren
+  const send = (method, params = {}, ms = 60000) => new Promise((res, rej) => {
+    const i = ++id;
+    const timer = setTimeout(() => { pending.delete(i); rej(new Error(`Zeitüberschreitung bei ${method}`)); }, ms);
+    pending.set(i, (m) => { clearTimeout(timer); res(m); });
+    ws.send(JSON.stringify({ id: i, method, params }));
+  });
   const js = async (e) => (await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true })).result?.result?.value;
   const b = { send, js, errors, external, chrome, view, ws, onEvent: null };
   await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
@@ -146,10 +161,45 @@ export async function settle(b, ms = 5000) {
   return false;
 }
 export async function shot(b, file) {
-  const r = await b.send('Page.captureScreenshot', { format: 'png' });
+  // Headless Chrome hängt bei PNG-Aufnahmen großer Mobil-Fenster (z. B. iPad 820×1180) und weiteren Aufrufen danach:
+  // dort JPEG (Qualität 92) aufnehmen; die Datei bekommt dann die Endung .jpg
+  const jpeg = b.view.mobile && b.view.w >= 600;
+  const r = await b.send('Page.captureScreenshot', jpeg ? { format: 'jpeg', quality: 92 } : { format: 'png' });
   const buf = Buffer.from(r.result.data, 'base64');
-  if (file) { mkdirSync(join(file, '..'), { recursive: true }); writeFileSync(file, buf); }
+  if (file) { file = jpeg ? file.replace(/\.png$/, '.jpg') : file; mkdirSync(join(file, '..'), { recursive: true }); writeFileSync(file, buf); }
   return buf;
+}
+
+// Vergleicht zwei Bildschirmfotos pixelweise (im Browser dekodiert): Anzahl der Pixel mit mehr als `tol` Stufen Unterschied
+// und größter Unterschied. Byte-Gleichheit wäre zu streng: an Kanten mit Bruchteil-Pixeln rastert Chrome je nach Verlauf
+// anders. Die obersten `ignoreTop` CSS-Pixel (Kopf mit dem Kästchen „Hofer Bräu“) zählen nicht mit.
+export function pixelDiff(b, bufA, bufB, tol = 4, ignoreTop = 40) {
+  const mime = (buf) => (buf[0] === 0xff ? 'jpeg' : 'png');
+  return b.js(`(async () => {
+    const load = async (src) => { const img = new Image(); img.src = src; await img.decode(); const c = new OffscreenCanvas(img.naturalWidth, img.naturalHeight); const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, c.width, c.height).data; };
+    const [x, y] = [await load('data:image/${mime(bufA)};base64,${bufA.toString('base64')}'), await load('data:image/${mime(bufB)};base64,${bufB.toString('base64')}')];
+    let n = 0, max = 0;
+    const skip = Math.round(${ignoreTop} * (x.length / 4 / innerWidth / innerHeight) ** 0.5) * Math.round(x.length / 4 / innerHeight) * 4;   // Kopfband (Kästchen „Hofer Bräu“ auf Bruchteil-Pixeln) auslassen
+    for (let i = skip; i < x.length; i += 4) { const d = Math.max(Math.abs(x[i] - y[i]), Math.abs(x[i + 1] - y[i + 1]), Math.abs(x[i + 2] - y[i + 2])); if (d > max) max = d; if (d > ${tol}) n++; }
+    return { n, max };
+  })()`);
+}
+
+// Bierfläche berührt den linken, rechten und unteren Rand? Anteil der Randpixel in Bier-Gold (#C5A149, Toleranz `tol`)
+// im Bereich unterhalb der Schaumkrone. Der Titel liegt mittig, berührt also keinen Rand.
+export function edgeGold(b, buf, tol = 30) {
+  const mime = buf[0] === 0xff ? 'jpeg' : 'png';
+  return b.js(`(async () => {
+    const img = new Image(); img.src = 'data:image/${mime};base64,${buf.toString('base64')}'; await img.decode();
+    const w = img.naturalWidth, h = img.naturalHeight, c = new OffscreenCanvas(w, h), g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, w, h).data, s = Math.max(1, Math.round(w / innerWidth));
+    const gold = (x, y) => { const i = (y * w + x) * 4; return Math.abs(d[i] - 197) <= ${tol} && Math.abs(d[i + 1] - 161) <= ${tol} && Math.abs(d[i + 2] - 73) <= ${tol}; };
+    const frac = (pts) => pts.filter(([x, y]) => gold(x, y)).length / pts.length;
+    const left = [], right = [], bottom = [];
+    for (let y = Math.round(h * 0.6); y < h - 2 * s; y += s * 4) { left.push([s, y]); right.push([w - 1 - s, y]); }
+    for (let x = Math.round(w * 0.05); x < w * 0.95; x += s * 8) bottom.push([x, h - 1 - s]);
+    return { left: frac(left), right: frac(right), bottom: frac(bottom) };
+  })()`);
 }
 
 // Seeded Zufall (wiederholbare Positionen)

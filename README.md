@@ -26,6 +26,11 @@ Dann http://localhost:5173 öffnen.
   `createImageBitmap`, danach wieder freigegeben – schont den Speicher am Handy), Ruhebild der Startstation pixelgleich zum Standbild.
   Die letzte Stufe (das Bier leert sich) zeichnet `js/bier-leeren.js` als SVG über dem letzten Bild (`.beer` in `index.html`): Welle,
   Schaumkrone, Bläschen. Der Pegel hängt nur am Fortschritt, das Schwappen verformt nur die Welle.
+  Ab dem bildfüllenden Kronkorken ist der Ablauf auf **allen Geräten gleich** (eine Logik in `apply()`, kein Gerätezweig): der Rahmen
+  blendet aus (Deckkraft, auch die Fläche hinter „Hofer Bräu“ über `--frame-o`), die Seite taucht ins Gold, der Titel erscheint unten,
+  das Bier füllt den ganzen Bildschirm von Rand zu Rand (`.beer`: Höhe 100lvh). Wellenamplitude fest in Pixeln, Wellenlänge wächst mit
+  der Breite (2 bis 3 Wellenberge), Bläschen nach Fläche gezählt und gleichmäßig verteilt. Nur der Start unterscheidet sich:
+  Handy ohne Titel und mit Pfeil, Desktop mit Titel, der ausblendet, bevor die Flasche in seinen Bereich kommt (`titleClear`).
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
 - `tools/tests/` – automatische Tests der Sequenz (siehe unten), werden nicht ausgeliefert
 - Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
