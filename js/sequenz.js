@@ -3,10 +3,17 @@
 // hier wird beim Scrollen nur noch das passende Bild auf ein <canvas> gezeichnet → flüssig auch auf alten Handys.
 //
 // Desktop und Handy haben eigene Bildfolgen (assets/sequenz/manifest.json → sets), gleich viele Scroll-Stufen:
-//   Desktop: Blick von oben · Vogelperspektive · Zoom auf den Kronkorken, Titel steht am Start und blendet beim Zoom aus,
+//   Desktop: Flasche frontal · Vogelperspektive · Zoom auf den Kronkorken, Titel steht am Start und blendet beim Zoom aus,
 //            „Berghof Hell“ erscheint auf dem goldenen Kronkorken.
 //   Handy:   Flasche frontal (ohne Titel, Pfeil nach unten) · Vogelperspektive · Zoom, danach erscheint der Titel.
 //   Zuletzt leert sich das Bier (js/bier-leeren.js) → danach folgen die Inhalte.
+//
+// Robust nach dem Apple-Prinzip:
+//   · Das Layout steht allein im CSS (.intro ist hoch, .hero klebt per sticky) → kein Pin, kein Höhensprung,
+//     egal wann dieses Skript geladen wird.
+//   · Scrollposition → Fortschritt → Bildnummer; gezeichnet wird höchstens einmal pro Bildschirmbild (requestAnimationFrame).
+//   · Fehlt ein Bild, wird das nächstliegende geladene gezeichnet, im Zweifel bleibt das letzte stehen → nie ein leeres Canvas.
+//   · Geladen wird zuerst rund um die aktuelle Position, dann jedes 8. Bild, dann wird aufgefüllt.
 // Im DOM werden nur transform und opacity animiert. Zum Einstellen lokal kurz `markers: true` setzen – nicht so veröffentlichen.
 
 import { createBeer } from './bier-leeren.js';
@@ -14,10 +21,13 @@ import { createBeer } from './bier-leeren.js';
 const BASE = 'assets/sequenz/';
 const { gsap, ScrollTrigger } = window;
 gsap.registerPlugin(ScrollTrigger);
+// Ein- und Ausblenden der Adressleiste am Handy löst kein Neuberechnen aus (Layout und Canvas hängen nicht daran)
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const root = document.documentElement;
 const canvas = document.getElementById('sequenz');
 const ctx = canvas.getContext('2d', { alpha: false });
+const intro = document.querySelector('.intro');
 const hero = document.getElementById('start');
 const PHONE = '(max-aspect-ratio: 4/5)';   // Hochformat: Handy-Bildfolge, Handy-Standbild und Handy-Ablauf
 const portrait = window.matchMedia(PHONE);
@@ -29,26 +39,51 @@ let ST = manifest.sets[set].stations;      // Bildnummer je Station, z. B. [0, 1
 const UNITS = ST.length - 1;               // Scroll-Stufen mit Renderbildern (bei beiden Formaten gleich)
 const DRAIN = 1;                           // + letzte Stufe „das Bier leert sich“ (js/bier-leeren.js, kein Bild)
 const TOTAL = UNITS + DRAIN;
+// Die Höhe des Startbereichs steht im CSS (--steps): muss zu den Stufen hier passen
+if (parseInt(getComputedStyle(root).getPropertyValue('--steps'), 10) !== TOTAL) {
+  console.warn(`--steps in css/style.css muss ${TOTAL} sein (Stufen in js/sequenz.js)`);
+}
 
-let frames = [], stills = [], current = 0, lastDrawn = null, loadRun = 0;
+let frames = [], stills = [], current = 0, loadRun = 0;
 
-// ── Laden: erst das Ruhebild der Startstation, dann jedes 8., 4., 2. Bild, dann alle ──
-function loadOrder() {
-  const n = manifest.sets[set].frames, a = ST[0], order = [], seen = new Set();
-  const add = (job) => { const key = job.join(); if (!seen.has(key)) { seen.add(key); order.push(job); } };
-  add(['still', 0]);
-  for (const step of [8, 4]) for (let i = a; i < n; i += step) add(['frame', i]);
-  add(['frame', n - 1]);
-  if (!saveData) for (let s = 1; s <= UNITS; s++) add(['still', s]);
-  for (const step of [2, 1]) for (let i = a; i < n; i += step) add(['frame', i]);
+// ── Laden ───────────────────────────────────────
+// Jeder freie Lader holt sich das jeweils wichtigste Bild: zuerst das Ruhebild bzw. die Bilder rund um die
+// aktuelle Position (auch nach schnellem Scrollen oder Neuladen mitten in der Sequenz), dann jedes 8. Bild
+// als Gerüst über die ganze Strecke, die übrigen Ruhebilder, dann jedes 4., 2. und schließlich alle.
+const NEAR = 6;                            // so viele Bilder vor und hinter der Position haben Vorrang
+let queue = [], busy = new Set();
+
+function baseOrder() {
+  const n = manifest.sets[set].frames, order = [];
+  for (let i = 0; i < n; i += 8) order.push(['frame', i]);
+  order.push(['frame', n - 1]);
+  if (!saveData) for (let s = 0; s <= UNITS; s++) order.push(['still', s]);
+  for (const step of [4, 2, 1]) for (let i = 0; i < n; i += step) order.push(['frame', i]);
   return order;
 }
 
-function loadImage(src) {
+const have = (kind, i) => (kind === 'still' ? stills : frames)[i] || busy.has(kind + i);
+
+function nextJob() {
+  const station = Math.round(current);
+  if (Math.abs(current - station) < 0.002 && (!saveData || station === 0) && !have('still', station)) return ['still', station, 'high'];
+  const f = Math.round(frameAt(current)), n = frames.length;
+  for (let d = 0; d <= NEAR; d++) {
+    for (const i of d ? [f + d, f - d] : [f]) if (i >= 0 && i < n && !have('frame', i)) return ['frame', i, 'high'];
+  }
+  while (queue.length) {
+    const [kind, i] = queue.shift();
+    if (!have(kind, i)) return [kind, i, 'low'];
+  }
+  return null;
+}
+
+function loadImage(src, priority) {
   const img = new Image();
   img.decoding = 'async';
+  img.fetchPriority = priority;
   img.src = src;
-  return img.decode().then(() => img);
+  return img.decode().then(() => img);     // erst fertig dekodiert verwenden → kein Ruckeln beim ersten Zeichnen
 }
 
 async function loadSet() {
@@ -57,17 +92,18 @@ async function loadSet() {
   ST = manifest.sets[set].stations;
   frames = new Array(manifest.sets[set].frames);
   stills = new Array(ST.length);
-  lastDrawn = null;
-  const queue = loadOrder();
+  queue = baseOrder();
+  busy = new Set();
   const worker = async () => {
-    while (queue.length && run === loadRun) {
-      const [kind, i] = queue.shift();
+    for (let job = nextJob(); job && run === loadRun; job = nextJob()) {
+      const [kind, i, priority] = job, key = kind + i;
+      busy.add(key);
       const file = kind === 'still' ? `still-${String(ST[i] + 1).padStart(3, '0')}` : String(i + 1).padStart(3, '0');
       try {
-        const img = await loadImage(`${BASE}${set}/${file}.webp`);
+        const img = await loadImage(`${BASE}${set}/${file}.webp`, priority);
         if (run !== loadRun) return;
         (kind === 'still' ? stills : frames)[i] = img;
-        draw();
+        requestDraw();
       } catch (e) { /* einzelnes Bild fehlt → nächstliegendes wird gezeichnet */ }
     }
   };
@@ -75,10 +111,10 @@ async function loadSet() {
 }
 
 // ── Zeichnen ────────────────────────────────────
-// Stufe (0…6) → Bildnummer, stückweise linear zwischen den Stationen
+// Stufe (0…UNITS) → Bildnummer, stückweise linear zwischen den Stationen
 function frameAt(u) {
-  const i = Math.min(UNITS - 1, Math.floor(u));
-  return ST[i] + (ST[i + 1] - ST[i]) * (u - i);
+  const i = Math.max(0, Math.min(UNITS - 1, Math.floor(u)));
+  return ST[i] + (ST[i + 1] - ST[i]) * (Math.min(UNITS, Math.max(0, u)) - i);
 }
 
 function nearestFrame(f) {
@@ -89,12 +125,23 @@ function nearestFrame(f) {
   return null;
 }
 
+let shown = null;      // zuletzt gezeichnetes Bild: bleibt stehen, bis ein passenderes geladen ist (nie leeres Canvas)
+let stale = true;      // Canvas neu angelegt (Größe geändert) → muss neu gezeichnet werden
+let queued = false;
+
+function requestDraw() {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => { queued = false; draw(); });
+}
+
 function draw() {
   const station = Math.round(current);
   const atRest = Math.abs(current - station) < 0.002;
-  const img = (atRest && stills[station]) || nearestFrame(Math.round(frameAt(current))) || (current < 0.5 && stills[0]);
-  if (!img || img === lastDrawn) return;
-  lastDrawn = img;
+  const img = (atRest && stills[station]) || nearestFrame(Math.round(frameAt(current))) || stills[station] || shown;
+  if (!img || (img === shown && !stale)) return;
+  shown = img;
+  stale = false;
 
   // Bildhöhe = Fensterhöhe (Flasche liegt so exakt wie das Standbild), waagrecht zentriert.
   // Ist das Fenster breiter als das Bild, wird der Randstreifen des Bildes seitlich gestreckt (nahtlos).
@@ -112,32 +159,20 @@ function draw() {
   }
 }
 
+// Canvas nur bei echter Größenänderung neu anlegen (Höhe = 100lvh, die Adressleiste ändert sie nicht)
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
   if (w === canvas.width && h === canvas.height) return;
   canvas.width = w;
   canvas.height = h;
-  lastDrawn = null;
+  stale = true;
   draw();
 }
 
-loadSet();
-
 // ── Scroll-Steuerung ────────────────────────────
-// Markenname auf der oberen Rahmenlinie bleibt mit dem Rahmen stehen: während der Sequenz fest,
-// danach an der Stelle, an der der Startbereich weiterscrollt
-const header = document.querySelector('.site-header');
-let headerPast = null;
-function placeHeader(self) {
-  const past = self.progress >= 1;
-  if (past === headerPast && !past) return;
-  headerPast = past;
-  header.style.position = past ? 'absolute' : 'fixed';
-  header.style.top = past ? self.end + 'px' : '0px';
-}
-
-// Stufenlos: das Bild folgt dem Scrollen (scrub), bei Stillstand rastet es an der nächsten Station ein.
+// Stufenlos: das Bild folgt dem Scrollen (leicht geglättet), erst wenn das Scrollen ruht, rastet es an der
+// nächsten Station in Scrollrichtung ein (nie zurück gegen die Bewegung).
 // Das Leeren des Biers am Ende rastet nicht ein: der Pegel folgt direkt der Scrollposition.
 const state = { u: 0 };
 const beer = createBeer(hero);
@@ -158,6 +193,35 @@ function setGold(top, page) {
   root.classList.toggle('gold-page', page);
 }
 
+// Nach dem Anlegen und nach jedem Neuberechnen (Drehen, Fenstergröße) steht die Zeitleiste sofort auf der
+// Scrollposition, ohne erst von vorn hinterherzulaufen (z. B. wenn schon vor dem Laden gescrollt wurde).
+// Inhaltsabschnitte danach rasten per CSS-Scroll-Snap ein (nur außerhalb der Sequenz).
+function settle(self) {
+  self.getTween()?.progress(1);
+  // ScrollTrigger setzt die Zeitleiste beim Anlegen ohne Callbacks: einmal still auf 0, dann mit Callbacks auf die
+  // Position → Canvas, Bier, Gold und Titel passen immer zum Fortschritt (auch bei Sprungmarke oder spätem Laden)
+  self.animation.progress(0, true).progress(self.progress);
+  root.classList.toggle('snap-sections', self.progress >= 1);
+}
+
+// Drehen oder Fenstergröße ändern: dieselbe Stelle der Sequenz bleibt stehen. Der Browser behält sonst nur die
+// Pixelposition, die Stufen sind danach aber anders hoch (man landete eine Station weiter).
+// Das resize-Ereignis kommt vor den Scroll-Ereignissen der neuen Größe → der gemerkte Fortschritt ist noch der alte.
+let trigger = null, saved = 0, restore = null, width = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === width) return;             // nur die Höhe (Adressleiste am Handy): nichts zu tun
+  width = window.innerWidth;
+  if (restore === null && saved > 0 && saved < 1) restore = saved;
+}, { passive: true });
+ScrollTrigger.addEventListener('refresh', () => {
+  if (restore === null || !trigger) return;
+  const p = restore;
+  restore = null;
+  window.scrollTo(0, trigger.start + p * (trigger.end - trigger.start));
+  trigger.update();
+  settle(trigger);
+});
+
 // Zeitleiste je Format (gsap.matchMedia): beim Drehen des Handys wird sie sauber zurückgesetzt und neu gebaut
 gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) => {
   const { phone } = context.conditions;
@@ -170,28 +234,25 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
       setGold(u >= UNITS - 0.08 && u < UNITS + 0.07, u >= UNITS - 0.08 && u < UNITS + 0.9);
     } : undefined,
     scrollTrigger: {
-      trigger: hero,
+      trigger: intro,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * TOTAL,
-      pin: true,
+      end: () => '+=' + (intro.offsetHeight - hero.offsetHeight),     // Strecke, auf der .hero klebt (aus dem CSS)
       scrub: 0.5,
-      // inertia aus: sonst rechnet der Schwung eine Station zu weit (0,9 Stufen gescrollt → Station 2 statt 1)
-      snap: { snapTo, inertia: false, duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' },
+      // inertia aus: sonst rechnet der Schwung eine Station zu weit (0,9 Stufen gescrollt → Station 2 statt 1).
+      // delay: erst einrasten, wenn wirklich nicht mehr gescrollt wird (auch Trackpad-Nachlauf abwarten)
+      snap: { snapTo, inertia: false, duration: { min: 0.3, max: 0.8 }, delay: 0.2, ease: 'power2.inOut' },
       invalidateOnRefresh: true,
       onUpdate: (self) => {
-        placeHeader(self);
         beer.velocity(self.getVelocity());                      // schnelles Scrollen lässt das Bier stärker schwappen
-        // Bläschen steigen nur, solange das Bier zu sehen ist
-        root.classList.toggle('is-draining', self.progress > UNITS / TOTAL + 1e-4 && self.progress < 1 - 1e-4);
+        root.classList.toggle('snap-sections', self.progress >= 1);
+        if (restore === null) saved = self.progress;
       },
-      onRefresh: placeHeader,
-      // Inhaltsabschnitte danach rasten per CSS-Scroll-Snap ein (nur außerhalb der Sequenz)
-      onLeave: () => root.classList.add('snap-sections'),
-      onEnterBack: () => root.classList.remove('snap-sections'),
+      onRefresh: settle,
     },
   });
+  trigger = tl.scrollTrigger;
   for (let i = 0; i <= TOTAL; i++) tl.addLabel('station-' + i, i);
-  tl.fromTo(state, { u: 0 }, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; draw(); } }, 0);
+  tl.fromTo(state, { u: 0 }, { u: UNITS, duration: UNITS, onUpdate: () => { current = state.u; requestDraw(); } }, 0);
 
   if (phone) {
     // Handy: Start ohne Titel, Pfeil nach unten blendet beim ersten Scrollen aus. Nach dem Zoom auf den Kronkorken
@@ -216,7 +277,8 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
 
   // ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
   // Flache Goldfläche mit Welle und Schaumkrone ersetzt das Kronkorken-Bild, der Pegel sinkt mit dem Scrollen,
-  // darüber wird der beige Hintergrund frei.
+  // darüber wird der beige Hintergrund frei. Übergabe an bier-leeren.js allein über den Zustand der Zeitleiste
+  // (drain.p 0…1): gleiches Ergebnis, egal ob langsam gescrollt, gesprungen oder neu geladen.
   tl.fromTo(drain, { p: 0 }, {
     p: 1, duration: DRAIN, onUpdate: () => {
       // Desktop: Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der Stufe (Handy: schon beim Zoom)
@@ -226,6 +288,7 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
         canvas.style.opacity = drain.p > 0 ? 1 - fade : '';
       }
       beer.level(drain.p);
+      root.classList.toggle('is-draining', drain.p > 1e-3 && drain.p < 1);   // Bläschen steigen nur, solange Bier zu sehen ist
     },
   }, UNITS);
 
@@ -234,9 +297,11 @@ gsap.matchMedia().add({ phone: PHONE, wide: `not all and ${PHONE}` }, (context) 
     setGold(false, false);
     beerLayer.style.opacity = '';
     canvas.style.opacity = '';
+    root.classList.remove('is-draining');
   };
 });
 
 window.addEventListener('resize', () => requestAnimationFrame(resize), { passive: true });
 portrait.addEventListener('change', () => { loadSet(); });
 resize();
+loadSet();

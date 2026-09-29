@@ -24,6 +24,11 @@
   src: url('../vendor/fonts/source-serif-4-latin-wght-italic.woff2') format('woff2');
   font-weight: 200 900; font-style: italic; font-display: swap;
 }
+/* Ersatzschrift, solange die Schriften laden: Georgia, auf Breite und Höhe der Webschriften gebracht
+   (gemessen in Chrome) → Titel und Text springen beim Schriftwechsel nicht. Gleiche Werte im Start-CSS von index.html. */
+@font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
+@font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
+@font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
 
 :root {
   --cream: #F7F4EC;
@@ -34,8 +39,8 @@
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
   --ink: #22301f;
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-text: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
+  --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
   --ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E");
 }
@@ -67,16 +72,17 @@ body::after {
 }
 
 /* Sequenz-Canvas liegt fix hinter dem Inhalt. Standbild und Canvas teilen sich exakt denselben Rahmen,
-   damit die Flasche beim Übergang deckungsgleich liegt. */
-#sequenz, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
+   damit die Flasche beim Übergang deckungsgleich liegt. Höhe = große Fensterhöhe (lvh): das Ein- und Ausblenden
+   der Adressleiste am Handy ändert die Größe nicht (kein Neuanlegen des Canvas, kein Flackern). */
+#sequenz, .poster { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100lvh; }
 #sequenz { display: block; z-index: 0; opacity: 0; }
 .is-ready #sequenz { opacity: 1; }
 
 .poster { z-index: 1; pointer-events: none; transition: opacity .9s ease .2s; }
 .poster picture {
-  position: absolute; left: 50%; top: 16.72%;
-  display: block; height: 56.44%;
-  aspect-ratio: 564 / 1411;          /* feste Proportion → kein Springen beim Laden */
+  position: absolute; left: 50%; top: 9.52%;
+  display: block; height: 57%;
+  aspect-ratio: 528 / 1425;          /* feste Proportion → kein Springen beim Laden */
   transform: translateX(-50%);
 }
 .poster img { display: block; width: 100%; height: 100%; max-width: none; }
@@ -86,12 +92,22 @@ body::after {
 .is-ready .poster { opacity: 0; }
 main { position: relative; z-index: 2; }
 
-/* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie ── */
-.site-header { position: absolute; inset: 0 0 auto; z-index: 3; pointer-events: none; }
+/* ── Scroll-Sequenz: Layout steht allein im CSS (Apple-Prinzip) ──
+   Der Startbereich klebt (sticky) in einem hohen Container: Startbild + 3 Scroll-Stufen (2 Bildstufen + Bier).
+   Die Seite hat so ab dem ersten Pixel ihre endgültige Höhe, egal wann GSAP geladen ist.
+   .seq setzt das Head-Skript (nicht bei „Bewegung reduzieren“); --steps muss zu js/sequenz.js passen. */
+:root { --steps: 3; --stage: max(100svh, 540px); }
+.seq .intro { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
+.seq .hero { position: sticky; top: 0; }
+
+/* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie und klebt mit dem Startbereich ── */
+.site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
+.seq .site-header { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
 .site-header__brand {
-  position: absolute; top: var(--frame-inset); left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0; padding: 0 18px;
+  position: sticky; top: var(--frame-inset);
+  width: max-content; margin: var(--frame-inset) auto 0;
+  transform: translateY(-50%);
+  padding: 0 18px;
   background: var(--cream);
   font-size: 13px; font-weight: 500;
   letter-spacing: .32em; text-transform: uppercase;
@@ -206,7 +222,7 @@ html.gold-page .site-header__brand { background: transparent; }
   color: var(--green);
   white-space: nowrap;
 }
-.hero__title em { font-style: italic; font-weight: 400; }
+.hero__title em { font-style: italic; font-weight: 400; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
 .hero__claim {
   display: block;
   font-family: var(--font-text);

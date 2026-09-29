@@ -3,28 +3,29 @@
   "_sets": "Beide Formate brauchen gleich viele Stationen (gleiche Scroll-Stufen in js/sequenz.js).",
   "sets": {
     "desktop": {
-      "frames": 43,
+      "frames": 85,
       "stations": [
         {
-          "name": "halb-oben",
+          "name": "front",
           "frame": 0,
-          "rot": 6.45,
+          "rot": 6.2832,
+          "shift": 0.125,
           "cam": {
             "pos": [
               0,
-              5.3,
-              4.5
+              0,
+              8.4
             ],
             "target": [
               0,
-              -0.3,
+              0,
               0
             ]
           }
         },
         {
           "name": "vogel",
-          "frame": 18,
+          "frame": 36,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -41,7 +42,7 @@
         },
         {
           "name": "kronkorken",
-          "frame": 42,
+          "frame": 84,
           "rot": 6.55,
           "cam": {
             "pos": [
@@ -116,5 +117,6 @@
         }
       ]
     }
-  }
+  },
+  "_shift": "shift = Linsenverschiebung (Anteil der Bildhöhe, um den das Bild nach oben rückt), ohne die Kamera zu kippen: Desktop-Start frontal wie am Handy, Flasche aber über dem Titel."
 }

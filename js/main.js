@@ -9,11 +9,22 @@ import './timeline.js';                              // Geschichte am Handy: akt
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
+// Aufruf mit Sprungmarke (#…): der Inhalt bleibt bis dahin unsichtbar (Klasse css-wait aus dem Head-Skript),
+// danach wird genau an die Stelle gesprungen – so verrutscht nichts, wenn das Stylesheet greift.
 const css = document.getElementById('css-main');
 if (css) {
-  const activate = () => { css.media = 'all'; };
+  const activate = () => {
+    css.media = 'all';
+    const root = document.documentElement;
+    if (!root.classList.contains('css-wait')) return;
+    root.classList.remove('css-wait');
+    try { document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView(); } catch (e) { /* ungültige Marke */ }
+  };
   if (css.sheet) activate();
-  else css.addEventListener('load', activate, { once: true });
+  else {
+    css.addEventListener('load', activate, { once: true });
+    css.addEventListener('error', activate, { once: true });
+  }
 }
 
 const START_DELAY = 1200;   // ms nach dem Laden, falls der Besucher nichts tut

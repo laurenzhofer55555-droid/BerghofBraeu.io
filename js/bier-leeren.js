@@ -25,6 +25,7 @@ export function createBeer(hero) {
   let foamFirst = true;              // Desktop: Schaum ist beim Start oben zu sehen; Handy: reines Gold, Schaum kommt von oben
 
   function measure() {
+    if (hero.clientWidth === W && hero.clientHeight === H) return;   // nur bei echter Größenänderung (nicht bei der Adressleiste)
     W = hero.clientWidth;
     H = hero.clientHeight;
     foamH = Math.min(100, Math.max(56, H * 0.09));          // Schaumkrone ca. zwei Finger breit

@@ -19,8 +19,10 @@ Dann http://localhost:5173 öffnen.
 - `js/main.js` – kleiner Starter: lädt die Scroll-Sequenz erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase);
   bei „Bewegung reduzieren“ bleibt das Standbild
 - `js/sequenz.js` – Scroll-Sequenz: zeichnet die vorgerenderten Bilder aus `assets/sequenz/` auf ein Canvas,
-  Scroll-Stufen mit Einrasten (Blick von oben bis Zoom auf den Kronkorken). Die letzte Stufe (das Bier leert sich)
+  Scroll-Stufen mit Einrasten (Flasche frontal · Vogelperspektive · Zoom auf den Kronkorken). Die letzte Stufe (das Bier leert sich)
   zeichnet `js/bier-leeren.js` als SVG über dem letzten Bild (`.beer` in `index.html`): Welle, Schaumkrone, Bläschen.
+  Die Länge des Startbereichs steht allein im CSS (`.intro` mit `--steps`, `.hero` klebt per `sticky`, kein Pin):
+  `--steps` muss zur Zahl der Stufen in `js/sequenz.js` passen. Geladen wird zuerst rund um die aktuelle Scrollposition.
   Zum Einstellen lokal kurz `markers: true` setzen, so nicht veröffentlichen.
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
 - Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
@@ -29,7 +31,8 @@ Dann http://localhost:5173 öffnen.
 ## Sequenz neu rendern
 
 Kamerafahrt und Stationen stehen in `tools/sequenz.json`, getrennt für Desktop (`sets.desktop`, Querformat) und Handy
-(`sets.mobil`, Hochformat), je Station: Bildnummer, Drehung, Kamera. Beide brauchen gleich viele Stationen.
+(`sets.mobil`, Hochformat), je Station: Bildnummer, Drehung, Kamera, optional `shift` (Linsenverschiebung: Bild rückt
+um diesen Anteil der Höhe nach oben, ohne die Kamera zu kippen). Beide brauchen gleich viele Stationen.
 Licht und Material in `js/config.js`.
 
 1. Lokalen Aufnahme-Server starten, der `POST /__shot?dir=…&name=…` als PNG speichert, und

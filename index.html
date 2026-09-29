@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
        GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-lLSUit1wnJyGhb9frODM3WG1JJKqi7SGXb2iywq2qxY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gkOJ3A35FVxJXGV/wLRNLWQU1TW/VEe3qcw3X9dPxBc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
@@ -93,8 +93,13 @@
       var ok = false;
       try { ok = Number(localStorage.getItem('berghof-ab16')) > Date.now(); } catch (e) {}
       if (!ok) document.documentElement.classList.add('age-gate');
-      // Scroll-Sequenz läuft (nicht bei „Bewegung reduzieren“): Titel erst am Ende zeigen, am Start Pfeil nach unten
+      // Scroll-Sequenz läuft (nicht bei „Bewegung reduzieren“): hoher Startbereich (CSS), Titel am Handy erst am Ende
       try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('seq'); } catch (e) {}
+      // Neu laden startet sauber oben (der Browser stellt keine alte Scrollposition her); Sprungmarken (#…) bleiben
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      if (!location.hash) window.scrollTo(0, 0);
+      // Aufruf mit Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
+      else document.documentElement.classList.add('css-wait');
     })();
   </script>
 
@@ -104,15 +109,18 @@
     @font-face { font-family: 'Playfair Display'; src: url('vendor/fonts/playfair-display-latin-wght-normal.woff2') format('woff2'); font-weight: 400 900; font-style: normal; font-display: swap; }
     @font-face { font-family: 'Playfair Display'; src: url('vendor/fonts/playfair-display-latin-wght-italic.woff2') format('woff2'); font-weight: 400 900; font-style: italic; font-display: swap; }
     @font-face { font-family: 'Source Serif 4'; src: url('vendor/fonts/source-serif-4-latin-wght-normal.woff2') format('woff2'); font-weight: 200 900; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
+    @font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
+    @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
     :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #46644B; --gold: #B8913A; --ink: #22301f;
-      --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; background: var(--cream); color: var(--ink); }
     body { font-family: var(--font-text); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-    #sequenz, .poster { position: fixed; inset: 0; width: 100%; height: 100%; }
+    #sequenz, .poster { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100lvh; }
     #sequenz { display: block; z-index: 0; opacity: 0; }
     .cap-title { position: absolute; left: 0; right: 0; top: 50%; margin: 0; transform: translateY(-50%); opacity: 0; }
     /* Handy (Hochformat): Start ohne Titel, Pfeil nach unten; Desktop unverändert mit Titel am Start */
@@ -139,6 +147,8 @@
     .age__card { position: relative; max-width: 30rem; }
     .age__logo { display: block; width: 168px; height: auto; margin: 0 auto 18px; opacity: .9; }
     .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4.4vw, 46px); line-height: 1.15; color: var(--green); }
+    .age__title::after { content: ''; display: block; width: 180px; height: 12px; margin: 22px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .age__actions { display: flex; gap: 14px; justify-content: center; margin: clamp(22px, 4vh, 34px) 0 0; }
     .age__btn { min-width: 124px; padding: 13px 30px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
       font: 500 14px/1 var(--font-text); letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }
@@ -157,12 +167,17 @@
       .age__actions { gap: 10px; } .age__btn { min-width: 104px; padding: 12px 20px; } }
     @media (prefers-reduced-motion: reduce) { .age { transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
-    .poster picture { position: absolute; left: 50%; top: 16.72%; height: 56.44%; aspect-ratio: 564 / 1411; transform: translateX(-50%); display: block; }
+    .poster picture { position: absolute; left: 50%; top: 9.52%; height: 57%; aspect-ratio: 528 / 1425; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
     @media (max-aspect-ratio: 4/5) { .poster picture { top: 14.33%; height: 73.08%; aspect-ratio: 742 / 2025; } }
     main { position: relative; z-index: 2; }
-    .site-header { position: absolute; inset: 0 0 auto; z-index: 3; pointer-events: none; }
-    .site-header__brand { position: absolute; top: var(--frame-inset); left: 50%; transform: translate(-50%, -50%); margin: 0; padding: 0 18px;
+    /* Scroll-Sequenz: Startbereich klebt in einem hohen Container, finale Seitenhöhe ohne JavaScript (Kopie aus css/style.css) */
+    :root { --steps: 3; --stage: max(100svh, 540px); }
+    .seq .intro { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
+    .seq .hero { position: sticky; top: 0; }
+    .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
+    .seq .site-header { height: calc(4 * 100vh); height: calc((var(--steps) + 1) * var(--stage)); }
+    .site-header__brand { position: sticky; top: var(--frame-inset); width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
       background: var(--cream); font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
     .hero { position: relative; height: 100vh; height: 100svh; min-height: 540px; display: flex; flex-direction: column; justify-content: flex-end;
       align-items: center; padding: 0 24px calc(var(--frame-inset) + 4.5vh + env(safe-area-inset-bottom)); text-align: center; }
@@ -174,11 +189,12 @@
     .hero__heading { margin: 0; font-weight: 400; }
     .hero__title { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(46px, min(9.6vw, 11.5vh), 136px);
       line-height: 1; letter-spacing: -.005em; color: var(--green); white-space: nowrap; }
-    .hero__title em { font-style: italic; font-weight: 400; }
+    .hero__title em { font-style: italic; font-weight: 400; line-height: 0; }
     .hero__claim { display: block; font-size: 14px; line-height: 1.4; letter-spacing: .26em; text-transform: uppercase; color: var(--green-soft); }
     .hero__claim::before { content: ''; display: block; width: clamp(160px, 18vw, 240px); height: 14px; margin: clamp(14px, 2.2vh, 22px) auto;
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .section { position: relative; z-index: 2; background: var(--cream); }
+    .css-wait main { visibility: hidden; animation: css-wait 0s 3s forwards; } @keyframes css-wait { to { visibility: visible; } }
     @media (max-width: 767px) { body { font-size: 17px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
@@ -259,7 +275,7 @@
     <picture>
       <source media="(max-aspect-ratio: 4/5)" sizes="27vh" width="419" height="1143"
               srcset="assets/img/flasche-berghof-hell-hoch-285.webp 285w, assets/img/flasche-berghof-hell-hoch.webp 419w, assets/img/flasche-berghof-hell-hoch-586.webp 586w" />
-      <img src="assets/img/flasche-berghof-hell.webp" sizes="23vh" width="474" height="1186" fetchpriority="high"
+      <img src="assets/img/flasche-berghof-hell.webp" sizes="22vh" width="474" height="1279" fetchpriority="high"
            srcset="assets/img/flasche-berghof-hell-322.webp 322w, assets/img/flasche-berghof-hell.webp 474w, assets/img/flasche-berghof-hell-701.webp 701w"
            alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
@@ -271,6 +287,8 @@
 
   <main>
     <!-- ── Start ─────────────────────────────── -->
+    <!-- hoher Container: der Startbereich klebt darin, während die Scroll-Sequenz läuft (Höhe in CSS, .seq) -->
+    <div class="intro">
     <section class="hero" id="start" aria-labelledby="hero-title">
       <!-- Letzte Stufe der Scroll-Sequenz: das Bier leert sich (js/bier-leeren.js) – nur Dekoration -->
       <div class="beer" aria-hidden="true">
@@ -325,6 +343,7 @@
       <!-- Desktop: Schriftzug auf dem goldenen Kronkorken am Ende der Sequenz (nur Dekoration, die Überschrift steht oben) -->
       <p class="cap-title" aria-hidden="true">Berghof <em>Hell</em></p>
     </section>
+    </div>
 
     <!-- ── Zutaten ───────────────────────────── -->
     <section class="section" id="zutaten" aria-labelledby="zutaten-title">
