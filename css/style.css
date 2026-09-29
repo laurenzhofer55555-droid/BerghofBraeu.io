@@ -108,12 +108,13 @@ main { position: relative; z-index: 2; }
   width: max-content; margin: var(--frame-inset) auto 0;
   transform: translateY(-50%);
   padding: 0 18px;
-  background: var(--cream);
   font-size: 13px; font-weight: 500;
   letter-spacing: .32em; text-transform: uppercase;
   color: var(--green);
   white-space: nowrap;
 }
+/* Creme-Fläche hinter dem Namen: unterbricht die Rahmenlinie und blendet mit dem Rahmen aus (js/sequenz.js setzt --frame-o) */
+.site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
 .site-header__brand span { margin-right: -.32em; }
 
 /* ── Start ───────────────────────────── */
@@ -151,25 +152,8 @@ main { position: relative; z-index: 2; }
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { will-change: transform, opacity; }
 
-/* Schriftzug auf dem goldenen Kronkorken (Desktop, Ende der Sequenz) – wie eingeprägt */
-.cap-title {
-  position: absolute; left: 0; right: 0; top: 50%;
-  margin: 0; padding: 0 24px;
-  transform: translateY(-50%);
-  opacity: 0;
-  font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(52px, min(12vw, 16vh), 176px); line-height: 1;
-  color: var(--green);
-  text-align: center; white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(255, 244, 214, .55), 0 -1px 0 rgba(90, 60, 10, .25);
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-.cap-title em { font-style: italic; font-weight: 400; }
-
-/* Handy: Gold-Phase am Kronkorken (Klasse aus js/sequenz.js) – ganze Seite in Gold, „Hofer Bräu“ ohne beige Fläche */
+/* Gold-Phase am Kronkorken (Klasse aus js/sequenz.js, alle Geräte) – ganze Seite in Gold, auch hinter Statusleiste, Adressleiste und beim Überscrollen */
 html.gold-page, html.gold-page body { background: var(--gold-beer); }
-html.gold-page .site-header__brand { background: transparent; }
 
 /* Handy (Hochformat, gleiche Bedingung wie die Handy-Bildfolge): Start ohne Titel, Pfeil nach unten;
    der Titel erscheint erst am Ende der Sequenz (Klasse .seq aus dem Head-Skript). Desktop bleibt mit Titel am Start. */
@@ -193,7 +177,7 @@ html.gold-page .site-header__brand { background: transparent; }
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
-.beer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
+.beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }   /* Rand zu Rand, Höhe 100lvh: auch unter der eingeklappten Adressleiste */
 .beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); will-change: transform; }   /* PAD + BELOW in js/bier-leeren.js */
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }

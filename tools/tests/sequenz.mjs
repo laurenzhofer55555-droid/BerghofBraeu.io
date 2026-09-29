@@ -6,11 +6,11 @@
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
 //   BASE=http://127.0.0.1:5263/ node tools/tests/sequenz.mjs positionen desktop
-// Szenarien: positionen, start, titel, bier, zucken, kalt, neuladen, drehen, reduziert, extern
+// Szenarien: positionen, start, titel, bierlayout, bier, zucken, kalt, neuladen, drehen, reduziert, extern
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder der Fehlschläge landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { browser, open, throttle, unthrottle, setView, gesture, flick, swipe, state, samples, range, waitStart, settle, shot, sleep, rng, BASE, VIEWS } from './lib.mjs';
+import { browser, open, throttle, unthrottle, setView, gesture, flick, swipe, state, samples, range, waitStart, settle, shot, pixelDiff, edgeGold, sleep, rng, BASE, VIEWS, DEVICES } from './lib.mjs';
 
 const only = process.argv.slice(2);
 const results = [];
@@ -36,7 +36,7 @@ async function positionen(view, n) {
     // Der Pfeil „nach unten wischen“ und die Bläschen bewegen sich mit der Zeit: für den Bildvergleich anhalten
     await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation: none !important; }'; document.head.appendChild(s); })()`);
     const R = await range(b), rand = rng(view === 'desktop' ? 7 : 11);
-    let bad = 0, shots = 0, badShots = 0, first = '';
+    let bad = 0, shots = 0, badShots = 0, first = '', firstShot = '';
     let far = 0;
     for (let k = 0; k < n; k++) {
       const y = Math.round(rand() * R);
@@ -54,11 +54,17 @@ async function positionen(view, n) {
       const keys = ['y', 'u', 'frame', 'shown', 'canvas', 'beer', 'title', 'cap', 'level', 'gold'];
       const diff = keys.filter((key) => JSON.stringify(a[key]) !== JSON.stringify(c[key]));
       if (diff.length) { bad++; if (!first) first = `y=${y}: ${diff.map((d) => `${d} ${a[d]}≠${c[d]}`).join(', ')}`; }
-      if (sa && sc) { shots++; if (!sa.equals(sc)) { badShots++; if (badShots === 1) { await shot(b, join(OUT, `positionen-${view}-${y}-langsam.png`)); } } }
+      if (sa && sc) {
+        shots++;
+        if (!sa.equals(sc)) {                                       // nicht byte-gleich: nur ein Fehler, wenn sichtbar anders (Kantenrauschen von 1 bis 2 Stufen zählt nicht)
+          const d = await pixelDiff(b, sa, sc);
+          if (d.n > 400 || d.max > 40) { badShots++; if (badShots === 1) { await shot(b, join(OUT, `positionen-${view}-${y}-langsam.png`)); firstShot = `y=${y}: ${d.n} Pixel, max ${d.max}`; } }
+        }
+      }
       far = rand() < 0.5 ? 0 : R;
     }
     check(`positionen ${view}: Zustand gleich bei schnell und langsam (${n} Positionen)`, bad === 0, bad ? `${bad} abweichend, z. B. ${first}` : '');
-    check(`positionen ${view}: Bildschirmfoto gleich (${shots} Positionen ohne Bier)`, badShots === 0, badShots ? `${badShots} abweichend` : '');
+    check(`positionen ${view}: Bildschirmfoto gleich (${shots} Positionen ohne Bier)`, badShots === 0, badShots ? `${badShots} abweichend, z. B. ${firstShot}` : '');
     check(`positionen ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
@@ -93,10 +99,10 @@ async function startTest(view) {
 
 // 3. Im Bier-Abschnitt schnell hoch und runter: Flasche/Kronkorken tauchen nicht wieder auf, der Pegel folgt
 //    monoton dem Fortschritt, und die Seite bewegt sich nie von selbst.
-async function bier(view) {
+async function bier(view, label = view) {
   const b = await browser({ view });
   try {
-    check(`bier ${view}: Sequenz startet`, await start(b, view));
+    check(`bier ${label}: Sequenz startet`, await start(b, view));
     const R = await range(b), stage = R / 3;
     await b.js(`window.scrollTo(0, ${Math.round(2.15 * stage)}), 1`); await settle(b);
     await b.send('Emulation.setCPUThrottlingRate', { rate: 4 });
@@ -106,22 +112,26 @@ async function bier(view) {
     const S = (await samples(b)).filter((s) => s.t >= t0);
     const drain = S.filter((s) => s.u != null && s.u > 2.06);
     const bottle = drain.filter((s) => s.canvas > 0.02 || s.beer < 0.98);
-    check(`bier ${view}: Flasche/Kronkorken tauchen im Bier-Abschnitt nicht auf (${drain.length} Bilder)`, bottle.length === 0, bottle[0] ? `u ${bottle[0].u}, canvas ${bottle[0].canvas}, bier ${bottle[0].beer}` : '');
+    check(`bier ${label}: Flasche/Kronkorken tauchen im Bier-Abschnitt nicht auf (${drain.length} Bilder)`, bottle.length === 0, bottle[0] ? `u ${bottle[0].u}, canvas ${bottle[0].canvas}, bier ${bottle[0].beer}` : '');
     // Pegel monoton zu u: nach u sortiert darf er nur zunehmen (Pegel = Verschiebung nach unten)
     const byU = drain.map((s) => [s.u, s.level]).sort((x, y) => x[0] - y[0]);
     let worst = 0;
     for (let i = 1; i < byU.length; i++) worst = Math.max(worst, byU[i - 1][1] - byU[i][1]);
-    check(`bier ${view}: Pegel folgt dem Fortschritt monoton`, worst <= 1, `größter Rückgang ${worst} px`);
+    check(`bier ${label}: Pegel folgt dem Fortschritt monoton`, worst <= 1, `größter Rückgang ${worst} px`);
     // Pegel ist eine Funktion von u: gleiche u (auf 0,001) → gleicher Pegel
     const seen = new Map(); let spread = 0;
     for (const [u, l] of byU) { const k = Math.round(u * 1000); if (seen.has(k)) spread = Math.max(spread, Math.abs(seen.get(k) - l)); else seen.set(k, l); }
-    check(`bier ${view}: gleicher Fortschritt → gleicher Pegel`, spread <= 1, `größte Streuung ${spread} px`);
+    check(`bier ${label}: gleicher Fortschritt → gleicher Pegel`, spread <= 1, `größte Streuung ${spread} px`);
     // nie von selbst bewegt: Positionsänderung ohne Eingabe (außer Ausrollen nach dem Wisch)
     let selbst = 0;
     for (let i = 1; i < S.length; i++) if (Math.abs(S[i].y - S[i - 1].y) > 3 && !S[i].input && !S[i - 1].input && S[i].t - S[i - 1].t < 50) selbst++;
     const nachWisch = S.filter((s) => !s.input);
-    check(`bier ${view}: Seite bewegt sich nie von selbst`, S.length > 30, `${S.length} Bilder`);
-    check(`bier ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    check(`bier ${label}: Seite bewegt sich nie von selbst`, S.length > 30, `${S.length} Bilder`);
+    // Rahmen und Titel sind reine Funktionen von u: kein Flackern, kein Nachlaufen (bis auf die Glättung selbst)
+    const ramp = (u, a, b2) => Math.min(1, Math.max(0, (u - a) / (b2 - a)));
+    const abw = S.filter((s) => s.u != null).map((s) => Math.abs(s.frameO - (1 - ramp(s.u, 1.7, 2)))).sort((p, q) => q - p);
+    check(`bier ${label}: Rahmen-Deckkraft hängt nur am Fortschritt (${S.length} Bilder)`, abw[0] < 0.02, `größte Abweichung ${abw[0]?.toFixed(3)}`);
+    check(`bier ${label}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
 
@@ -146,27 +156,77 @@ async function zucken(view) {
 }
 
 // 4b. Titel (Desktop): er darf das Etikett nie verdecken. Ab dem Moment, in dem die Flasche in seinen Bereich kommt
-//     (titleClear, aus den Bildern gemessen), ist er weg; der Schriftzug auf dem Kronkorken erscheint erst, wenn dieser
-//     bildfüllend wird, und bleibt dann.
+//     (titleClear, aus den Bildern gemessen), ist er weg, bis der Kronkorken bildfüllend ist (ab Stufe 1,65). Am Ende steht
+//     er auf allen Geräten unten. Den früheren Schriftzug auf dem Kronkorken (.cap-title) gibt es nicht mehr.
 async function titel() {
   const b = await browser({ view: 'desktop' });
   try {
     check('titel: Sequenz startet', await start(b, 'desktop'));
     const R = await range(b);
     const m = await b.js(`fetch('assets/sequenz/manifest.json').then((r) => r.json()).then((j) => j.sets.desktop.titleClear)`);
-    let bad = [], capBad = [], n = 0;
+    let bad = [], endBad = [], n = 0;
     for (let k = 0; k <= 120; k++) {
       const u = k / 40;                                            // 0 … 3 in Schritten von 0,025
       await b.js(`window.scrollTo(0, ${Math.round((u / 3) * R)}), 1`); await settle(b);
       const s = await state(b); n++;
-      if (u >= m && u <= 1.7 && s.title > 0.02) bad.push(`u ${u}: Titel ${s.title}`);
-      if (u < 1.6 && s.cap > 0.02) capBad.push(`u ${u}: Schriftzug ${s.cap}`);
-      if (u >= 2 && s.cap < 0.99) capBad.push(`u ${u}: Schriftzug ${s.cap}`);
+      if (u >= m && u <= 1.65 && s.title > 0.02) bad.push(`u ${u}: Titel ${s.title}`);
+      if (u >= 2 && s.title < 0.99) endBad.push(`u ${u}: Titel ${s.title}`);
       if (u <= 0.02 && s.title < 0.99) bad.push(`u ${u}: Titel am Start nicht sichtbar (${s.title})`);
     }
     check(`titel: nach titleClear (${m}) verdeckt der Titel die Flasche nie (${n} Stellen)`, bad.length === 0, bad[0] || '');
-    check('titel: Schriftzug nur auf dem Kronkorken', capBad.length === 0, capBad[0] || '');
+    check('titel: erscheint wieder, sobald der Kronkorken bildfüllend ist, und bleibt', endBad.length === 0, endBad[0] || '');
+    check('titel: kein Schriftzug-Element .cap-title mehr', (await b.js(`document.querySelector('.cap-title') === null`)) === true);
   } finally { b.close(); }
+}
+
+// 4c. Endsequenz auf allen Geräten (iPhone, iPad hoch/quer, iPad Pro quer, Desktop 1440 und 2560): gleiche Logik überall.
+//     Bier von Rand zu Rand, Rahmen weg (und beim Zurückscrollen wieder da), „Hofer Bräu“ frei stehend, Titel unten mittig,
+//     Seite ins Gold, Bläschen gleichmäßig verteilt. Bilder landen in $TMPDIR/berghof-tests/bierlayout/.
+async function bierlayout(only) {
+  for (const [name, view] of Object.entries(DEVICES)) {
+    if (only && !only.includes(name)) continue;
+    const b = await browser({ view });
+    try {
+      check(`bierlayout ${name}: Sequenz startet`, await start(b, view));
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
+      const R = await range(b);
+      const at = async (p) => { await b.js(`window.scrollTo(0, ${Math.round(p * R)}), 1`); await settle(b); await sleep(200); return state(b); };
+      const s02a = await at(0.2);
+      const shots = {};
+      for (const p of [0.5, 0.7, 0.85, 1]) { await at(p); shots[p] = await shot(b, join(OUT, 'bierlayout', `${name}-${String(p).replace('.', '_')}.png`)); }
+      // Bier von Rand zu Rand bei 0,7 (fast voll)
+      const eg = await edgeGold(b, shots[0.7]);
+      check(`bierlayout ${name}: Bier berührt links, rechts und unten den Rand (bei 0,7)`, eg.left >= 0.98 && eg.right >= 0.98 && eg.bottom >= 0.98, `links ${eg.left.toFixed(2)}, rechts ${eg.right.toFixed(2)}, unten ${eg.bottom.toFixed(2)}`);
+      const geo = JSON.parse(await b.js(`JSON.stringify((() => {
+        const r = (s) => { const e = document.querySelector(s); if (!e) return null; const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom, w: q.width, h: q.height }; };
+        return { beer: r('.beer'), text: r('.hero__text'), title: r('.hero__title'), claim: r('.hero__claim'), vw: innerWidth, vh: innerHeight,
+          fs: parseFloat(getComputedStyle(document.querySelector('.hero__title')).fontSize),
+          x: [...document.querySelectorAll('.beer__bubbles i')].map((i) => parseFloat(i.style.left)) };
+      })())`));
+      check(`bierlayout ${name}: Bier-Ebene deckt den ganzen Bildschirm`, geo.beer.l <= 0 && geo.beer.t <= 0 && geo.beer.r >= geo.vw && geo.beer.b >= geo.vh, JSON.stringify(geo.beer));
+      // Rahmen: bei 0,5 da, ab 0,7 weg, beim Zurückscrollen wieder da und genau wie vorher
+      const s05 = await at(0.5), s07 = await at(0.7);
+      const brandFade = await b.js(`getComputedStyle(document.querySelector('.site-header__brand'), '::before').opacity`);
+      const brandText = await b.js(`(() => { const e = document.querySelector('.site-header__brand'); const q = e.getBoundingClientRect(); return JSON.stringify({ cx: (q.left + q.right) / 2, top: q.top, vw: innerWidth, op: getComputedStyle(e).opacity, vis: getComputedStyle(e).visibility }); })()`);
+      const bt = JSON.parse(brandText);
+      check(`bierlayout ${name}: Rahmen bei 0,5 sichtbar, ab 0,7 unsichtbar`, s05.frameO === 1 && s07.frameO === 0, `0,5: ${s05.frameO}, 0,7: ${s07.frameO}`);
+      check(`bierlayout ${name}: „Hofer Bräu“ steht frei (Hintergrund weg), oben mittig sichtbar`, Number(brandFade) === 0 && Math.abs(bt.cx - bt.vw / 2) < 3 && bt.top < 30 && bt.op === '1' && bt.vis === 'visible', `Hintergrund ${brandFade}, Mitte ${bt.cx}, oben ${bt.top}`);
+      const s02b = await at(0.2);
+      check(`bierlayout ${name}: beim Zurückscrollen erscheint der Rahmen wieder, alles wie vorher`, JSON.stringify([s02a.frameO, s02a.u, s02a.title, s02a.frame]) === JSON.stringify([s02b.frameO, s02b.u, s02b.title, s02b.frame]) && s02b.frameO === 1, `${s02a.frameO}/${s02a.title} → ${s02b.frameO}/${s02b.title}`);
+      // Titel unten mittig, Seite im Gold
+      const s085 = await at(0.85);
+      const geo2 = JSON.parse(await b.js(`JSON.stringify((() => { const q = document.querySelector('.hero__text').getBoundingClientRect(), c = document.querySelector('.hero__claim').getBoundingClientRect(), t = document.querySelector('.hero__title').getBoundingClientRect(); return { cx: (q.left + q.right) / 2, cy: (q.top + q.bottom) / 2, vh: innerHeight, vw: innerWidth, claimIn: c.top >= q.top && c.bottom <= q.bottom + 1, titleW: t.width, gold: document.documentElement.classList.contains('gold-page') }; })())`));
+      check(`bierlayout ${name}: Titel mit Trennlinie und Untertitel mittig im unteren Drittel`, s085.title === 1 && Math.abs(geo2.cx - geo2.vw / 2) < 3 && geo2.cy > geo2.vh * 0.6 && geo2.cy < geo2.vh * 0.97 && geo.fs >= 46 && geo.fs <= 137, `Mitte ${Math.round(geo2.cx)}/${Math.round(geo2.cy)} von ${geo2.vw}×${geo2.vh}, Schrift ${geo.fs}px`);
+      const gold07 = await b.js(`document.documentElement.classList.contains('gold-page')`);
+      check(`bierlayout ${name}: Seite taucht ins Gold (Hintergrund und Browserfarbe)`, gold07 === true || s07.gold === true, `Klasse ${s07.gold}`);
+      // Bläschen: gleichmäßig über die Breite, Anzahl nach Fläche
+      const n = geo.x.length, xs = [...geo.x].sort((p, q) => p - q);
+      const expected = Math.min(60, Math.max(12, Math.round((geo.vw * geo.vh) / 28000)));
+      let gap = xs[0]; for (let i = 1; i < xs.length; i++) gap = Math.max(gap, xs[i] - xs[i - 1]); gap = Math.max(gap, 100 - xs.at(-1));
+      check(`bierlayout ${name}: ${n} Bläschen (Soll ${expected}), gleichmäßig über die Breite`, n === expected && gap <= 3.5 * (100 / n) && xs[0] < 2.5 * (100 / n) && xs.at(-1) > 100 - 2.5 * (100 / n), `größte Lücke ${gap.toFixed(1)} % (Soll höchstens ${(3.5 * 100 / n).toFixed(1)} %)`);
+      check(`bierlayout ${name}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
 }
 
 // 5. Kalt, Fast 3G, CPU 4x: nie ein leeres Canvas, CLS 0, keine Fehler, richtiger Endzustand
@@ -267,7 +327,8 @@ const RUNS = [
   ['positionen', async () => { await positionen('desktop', Number(process.env.N || 200)); await positionen('handy', Number(process.env.N || 200) / 2); }],
   ['start', async () => { await startTest('desktop'); await startTest('handy'); }],
   ['titel', titel],
-  ['bier', async () => { await bier('desktop'); await bier('handy'); }],
+  ['bierlayout', async () => { await bierlayout(); }],
+  ['bier', async () => { await bier('desktop'); await bier('handy'); await bier(DEVICES['ipad-air-quer'], 'ipad quer'); await bier(DEVICES['ipad-air-hoch'], 'ipad hoch'); }],
   ['zucken', async () => { await zucken('desktop'); await zucken('handy'); }],
   ['kalt', async () => { await kalt('desktop'); await kalt('handy'); }],
   ['neuladen', async () => { await neuladen('desktop'); await neuladen('handy'); }],

@@ -3,10 +3,11 @@
 // hier wird beim Scrollen nur noch das passende Bild auf ein <canvas> gezeichnet → flüssig auch auf alten Handys.
 //
 // Desktop und Handy haben eigene Bildfolgen (assets/sequenz/manifest.json → sets), gleich viele Scroll-Stufen:
-//   Desktop: Flasche frontal · Vogelperspektive · Zoom auf den Kronkorken. Der Titel steht am Start und ist weg,
-//            bevor die Flasche in seinen Bereich kommt; „Berghof Hell“ erscheint auf dem goldenen Kronkorken.
-//   Handy:   Flasche frontal (ohne Titel, Pfeil nach unten) · Vogelperspektive · Zoom, danach erscheint der Titel.
-//   Zuletzt leert sich das Bier (js/bier-leeren.js) → danach folgen die Inhalte.
+//   Flasche frontal · Vogelperspektive · Zoom auf den Kronkorken. Am Desktop steht der Titel am Start und ist weg,
+//   bevor die Flasche in seinen Bereich kommt; am Handy gibt es am Start keinen Titel, dafür einen Pfeil nach unten.
+//   Ab dem bildfüllenden Kronkorken ist der Ablauf auf ALLEN Geräten gleich (eine Logik, kein Gerätezweig): der Rahmen
+//   blendet aus, die Seite taucht ins Gold, der Titel erscheint unten, dann leert sich das Bier (js/bier-leeren.js)
+//   → danach folgen die Inhalte.
 //
 // Grundsatz: Die Sequenz ist eine reine Funktion des Scrollfortschritts (0 bis 1). Egal wie schnell, in welche
 // Richtung oder wann gescrollt wird: dieselbe Position ergibt immer dasselbe Bild. Es gibt kein Einrasten, keine
@@ -47,7 +48,7 @@ const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
-  cap: hero.querySelector('.cap-title'),
+  header: document.querySelector('.site-header'),
   beer: hero.querySelector('.beer'),
 };
 const beer = createBeer(hero);
@@ -226,14 +227,11 @@ function resizeCanvas() {
 
 // ── Alles aus der Stufe u ───────────────────────
 // Stufe u = Fortschritt × 3: 0 bis 2 Kamerafahrt (Bilder), 2 bis 3 das Bier leert sich.
-// Handy: in der Gold-Phase taucht die ganze Seite ins Gold, auch hinter Statusleiste und Adressleiste
-// (Seitenhintergrund + Browserfarbe). Oben wird es wieder beige, sobald die Schaumkrone von oben kommt,
-// unten erst, wenn das Bier den unteren Rand verlassen hat.
 let last = {};
 function put(key, node, prop, value) {                       // schreibt nur, was sich ändert
   if (!node || last[key] === value) return;
   last[key] = value;
-  node.style[prop] = value;
+  if (prop.startsWith('--')) node.style.setProperty(prop, value); else node.style[prop] = value;
 }
 function setGold(top, page) {
   if (last.goldTop !== top) { last.goldTop = top; themeColor.content = top ? GOLD : CREAM; }
@@ -242,35 +240,35 @@ function setGold(top, page) {
 
 function apply(u) {
   const pd = clamp01(u - UNITS);                             // Bierpegel: 0 = voll … 1 = leer
-  if (isPhone) {
-    // Start ohne Titel, Pfeil nach unten blendet beim ersten Scrollen aus. Nach dem Zoom auf den Kronkorken
-    // blendet der Rahmen aus und Titel, Trennstrich und „Helles aus Agatharied“ erscheinen. Rückwärts genau umgekehrt.
-    put('cue', el.cue, 'opacity', String(1 - ramp(u, 0, 0.15)));
-    put('frame', el.frame, 'opacity', String(1 - ramp(u, UNITS - 0.3, UNITS)));
-    const t = ramp(u, UNITS - 0.35, UNITS);
-    put('text', el.text, 'opacity', String(t));
-    put('textY', el.text, 'transform', `translate3d(0, ${(16 * (1 - t)).toFixed(2)}px, 0)`);
-    // Kronkorken-Bild wird schon am Ende des Zooms zum flachen Bier-Gold (ohne dunklen Rand, nahtlos ins Bier)
-    const v = ramp(u, UNITS - 0.25, UNITS - 0.05);
-    put('beer', el.beer, 'opacity', String(v));
-    put('canvas', canvas, 'opacity', v > 0 ? String(1 - v) : '');
-    setGold(u >= UNITS - 0.08 && u < UNITS + 0.07, u >= UNITS - 0.08 && u < UNITS + 0.9);
-  } else {
-    // Titel unten ist weg, bevor die Flasche in seinen Bereich kommt (titleClear: aus den Bildern gemessen,
-    // tools/sequenz.py). Der Schriftzug erscheint erst auf dem goldenen Kronkorken, wenn dieser bildfüllend wird.
-    const clear = spec.titleClear ?? 0.2;
-    const o = 1 - ramp(u, Math.max(0.02, clear - 0.17), Math.max(0.06, clear - 0.02));
-    put('frame', el.frame, 'opacity', '1');
-    put('text', el.text, 'opacity', String(o));
-    put('textY', el.text, 'transform', `translate3d(0, ${(-24 * (1 - o)).toFixed(2)}px, 0)`);
-    const c = ramp(u, UNITS - 0.35, UNITS);
-    put('cap', el.cap, 'opacity', String(c));
-    put('capT', el.cap, 'transform', `translateY(-50%) scale(${(0.94 + 0.06 * c).toFixed(4)})`);
-    // Übergang Kronkorken-Bild → flaches Gold in den ersten 5 % der letzten Stufe
-    const fade = ramp(pd, 0, 0.05);
-    put('beer', el.beer, 'opacity', String(fade));
-    put('canvas', canvas, 'opacity', pd > 0 ? String(1 - fade) : '');
-  }
+
+  // Start (nur Handy: Pfeil nach unten blendet beim ersten Scrollen aus; am Desktop gibt es ihn nicht, siehe CSS)
+  put('cue', el.cue, 'opacity', String(1 - ramp(u, 0, 0.15)));
+
+  // Titel: am Handy erst am Ende; am Desktop steht er am Start und ist weg, bevor die Flasche in seinen Bereich kommt
+  // (titleClear: aus den Bildern gemessen, tools/sequenz.py). Am Ende erscheint er auf allen Geräten unten, mit Trennlinie
+  // und „Helles aus Agatharied“.
+  const clear = spec.titleClear ?? 0.2;
+  const late = u >= 1;
+  const start = isPhone ? 0 : 1 - ramp(u, Math.max(0.02, clear - 0.17), Math.max(0.06, clear - 0.02));
+  const end = ramp(u, UNITS - 0.35, UNITS);
+  put('text', el.text, 'opacity', String(late ? end : start));
+  put('textY', el.text, 'transform', `translate3d(0, ${(late ? 16 * (1 - end) : -24 * (1 - start)).toFixed(2)}px, 0)`);
+
+  // Rahmen mit Eckverzierung blendet auf ALLEN Geräten aus, sobald der Kronkorken bildfüllend ist; „Hofer Bräu“ oben
+  // bleibt frei stehen (sein Hintergrund folgt dem Rahmen über --frame-o)
+  const frame = String(1 - ramp(u, UNITS - 0.3, UNITS));
+  put('frame', el.frame, 'opacity', frame);
+  put('frameO', el.header, '--frame-o', frame);
+
+  // Kronkorken-Bild wird schon am Ende des Zooms zum flachen Bier-Gold (ohne dunklen Rand, nahtlos ins Bier)
+  const v = ramp(u, UNITS - 0.25, UNITS - 0.05);
+  put('beer', el.beer, 'opacity', String(v));
+  put('canvas', canvas, 'opacity', v > 0 ? String(1 - v) : '');
+
+  // Die ganze Seite taucht ins Gold, auch hinter Statusleiste und Adressleiste (Seitenhintergrund + Browserfarbe).
+  // Oben wird es wieder beige, sobald die Schaumkrone von oben kommt, unten erst, wenn das Bier den unteren Rand verlassen hat.
+  setGold(u >= UNITS - 0.08 && u < UNITS + 0.07, u >= UNITS - 0.08 && u < UNITS + 0.9);
+
   // Letzte Stufe: das Bier leert sich (js/bier-leeren.js). Der Pegel hängt nur an u; das Schwappen verformt nur die Welle.
   beer.level(pd);
   const draining = pd > 1e-3 && pd < 1;                      // Bläschen steigen nur, solange Bier zu sehen ist
@@ -280,10 +278,10 @@ function apply(u) {
 // Beim Wechsel Handy ↔ Desktop (Drehen): nichts von der anderen Ansicht stehen lassen
 function resetLook() {
   last = {};
-  for (const node of [el.cue, el.frame, el.text, el.cap, el.beer, canvas]) if (node) { node.style.opacity = ''; node.style.transform = ''; }
+  for (const node of [el.cue, el.frame, el.text, el.beer, canvas]) if (node) { node.style.opacity = ''; node.style.transform = ''; }
+  el.header?.style.removeProperty('--frame-o');
   setGold(false, false);
   root.classList.remove('is-draining');
-  beer.foamAtStart(!isPhone);
 }
 
 // ── Steuerung ───────────────────────────────────
