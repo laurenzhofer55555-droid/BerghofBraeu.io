@@ -1,6 +1,7 @@
 // Starter: Die Seite (Text, Rahmen, Standbild der Flasche) erscheint sofort.
-// Die Scroll-Sequenz ist Zugabe und wird geladen, sobald die Seite fertig ist:
-// bei der ersten Interaktion (Maus, Scrollen, Tippen, Tastatur) oder nach einer kurzen Ruhephase.
+// Die Scroll-Sequenz (js/sequenz.js, ohne Bibliothek) ist Zugabe und wird geladen, sobald die Seite fertig ist:
+// bei der ersten Interaktion (Maus, Scrollen, Tippen, Tastatur) oder gleich nach dem Laden.
+// Weil die Höhe des Startbereichs allein im CSS steht, spielt es keine Rolle, wann sie startet.
 // Beim ersten Besuch wartet sie auf die Altersabfrage (js/altersabfrage.js) und startet direkt nach „Ja“.
 // Bei „Bewegung reduzieren“ bleibt es beim Standbild, die Inhalte folgen direkt darunter.
 
@@ -27,15 +28,7 @@ if (css) {
   }
 }
 
-const START_DELAY = 1200;   // ms nach dem Laden, falls der Besucher nichts tut
-
-const loadScript = (src) => new Promise((resolve, reject) => {
-  const s = document.createElement('script');
-  s.src = src;
-  s.onload = resolve;
-  s.onerror = reject;
-  document.head.appendChild(s);
-});
+const START_DELAY = 300;   // ms nach dem Laden, falls der Besucher nichts tut
 
 let started = false;
 async function start() {
@@ -43,8 +36,6 @@ async function start() {
   started = true;
   events.forEach((type) => window.removeEventListener(type, start));
   try {
-    await loadScript('vendor/gsap.min.js');
-    await loadScript('vendor/ScrollTrigger.min.js');
     await import('./sequenz.js');
   } catch (e) {
     console.warn('Scroll-Sequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);

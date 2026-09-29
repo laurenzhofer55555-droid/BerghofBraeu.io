@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
        GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gkOJ3A35FVxJXGV/wLRNLWQU1TW/VEe3qcw3X9dPxBc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vlc/ovQZUwCBonIysez2mmMyEQ9go12EKjwPQI2B+3U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
@@ -95,11 +95,10 @@
       if (!ok) document.documentElement.classList.add('age-gate');
       // Scroll-Sequenz läuft (nicht bei „Bewegung reduzieren“): hoher Startbereich (CSS), Titel am Handy erst am Ende
       try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('seq'); } catch (e) {}
-      // Neu laden startet sauber oben (der Browser stellt keine alte Scrollposition her); Sprungmarken (#…) bleiben
-      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-      if (!location.hash) window.scrollTo(0, 0);
+      // Die Scrollposition gehört dem Browser (Neu laden und Zurück stellen die Stelle wieder her, kein scrollTo):
+      // die Höhe des Startbereichs steht allein im CSS, die Sequenz zeigt danach genau das passende Bild.
       // Aufruf mit Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
-      else document.documentElement.classList.add('css-wait');
+      if (location.hash) document.documentElement.classList.add('css-wait');
     })();
   </script>
 

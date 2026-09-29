@@ -95,13 +95,25 @@ export function createBeer(hero) {
     if (on) { last = performance.now(); requestAnimationFrame(frame); }
   }
 
+  // Ruhestellung: außerhalb des Bier-Abschnitts steht die Welle immer gleich, egal wie man dorthin gekommen ist
+  // (gleiche Scrollposition = gleiches Bild)
+  let calm = false;
+  function rest() {
+    t = 0; scrollV = 0; smoothV = 0; tilt = 0; tiltV = 0; foamTilt = 0; foamAmp = 10;
+    draw();
+    calm = true;
+  }
+
   window.addEventListener('resize', () => requestAnimationFrame(measure), { passive: true });
   measure();
 
   return {
     level(p) {
       setLevel(p);
-      run(p > 0 && p < 1);                                        // Welle läuft nur, solange Bier zu sehen ist
+      const on = p > 0 && p < 1;
+      run(on);                                                    // Welle läuft nur, solange Bier zu sehen ist
+      if (on) calm = false;
+      else if (!calm) rest();
       if (still) draw();
     },
     velocity(v) { scrollV = v; },

@@ -1,7 +1,7 @@
 # Berghof Hell
 
-Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Scroll-Sequenz (Canvas + GSAP ScrollTrigger):
-Flasche dreht sich, Blick geht nach oben in die Vogelperspektive, Zoom auf den goldenen Kronkorken.
+Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Scroll-Sequenz (Canvas, ohne Bibliothek):
+Flasche frontal auf Augenhöhe, Blick geht nach oben in die Vogelperspektive, Zoom auf den goldenen Kronkorken, dann leert sich das Bier.
 
 Live: https://berghof-hell.de
 
@@ -16,17 +16,36 @@ Dann http://localhost:5173 öffnen.
 ## Aufbau
 
 - `index.html` – alle Inhalte als echter HTML-Text (für Google lesbar), Meta-Tags, strukturierte Daten (JSON-LD)
-- `js/main.js` – kleiner Starter: lädt die Scroll-Sequenz erst nach dem ersten Rendern (bei Interaktion oder nach kurzer Ruhephase);
+- `js/main.js` – kleiner Starter: lädt die Scroll-Sequenz gleich nach dem Laden der Seite (oder bei der ersten Interaktion);
   bei „Bewegung reduzieren“ bleibt das Standbild
-- `js/sequenz.js` – Scroll-Sequenz: zeichnet die vorgerenderten Bilder aus `assets/sequenz/` auf ein Canvas,
-  Scroll-Stufen mit Einrasten (Flasche frontal · Vogelperspektive · Zoom auf den Kronkorken). Die letzte Stufe (das Bier leert sich)
-  zeichnet `js/bier-leeren.js` als SVG über dem letzten Bild (`.beer` in `index.html`): Welle, Schaumkrone, Bläschen.
-  Die Länge des Startbereichs steht allein im CSS (`.intro` mit `--steps`, `.hero` klebt per `sticky`, kein Pin):
-  `--steps` muss zur Zahl der Stufen in `js/sequenz.js` passen. Geladen wird zuerst rund um die aktuelle Scrollposition.
-  Zum Einstellen lokal kurz `markers: true` setzen, so nicht veröffentlichen.
+- `js/sequenz.js` – Scroll-Sequenz, eine **reine Funktion des Scrollfortschritts** (0 bis 1, aus der Scrollposition im `.intro`):
+  Bildnummer, Titel, Rahmen, Pfeil, Goldphase und Bierpegel werden pro Bildschirmbild (requestAnimationFrame) daraus berechnet.
+  Kein Einrasten, keine Zeitleiste, keine Bibliothek. Die Länge des Startbereichs steht allein im CSS (`.intro` mit `--steps`,
+  `.hero` klebt per `sticky`, kein Pin): `--steps` muss zur Zahl der Stufen in `js/sequenz.js` passen; die Scrollposition gehört dem Browser.
+  Bilder: winzige Ersatzbilder (`mini/`) für die ganze Strecke, scharfe Bilder in einem Fenster um die Position (dekodiert per
+  `createImageBitmap`, danach wieder freigegeben – schont den Speicher am Handy), Ruhebild der Startstation pixelgleich zum Standbild.
+  Die letzte Stufe (das Bier leert sich) zeichnet `js/bier-leeren.js` als SVG über dem letzten Bild (`.beer` in `index.html`): Welle,
+  Schaumkrone, Bläschen. Der Pegel hängt nur am Fortschritt, das Schwappen verformt nur die Welle.
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
+- `tools/tests/` – automatische Tests der Sequenz (siehe unten), werden nicht ausgeliefert
 - Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
   `js/stage.js` – Studio, Boden, Schatten · `js/config.js` – Licht, Glas, Farben · `js/scene.js` – frühere Live-3D-Szene
+
+## Sequenz testen
+
+Prüft in Headless Chrome (Node ≥ 22, Google Chrome), dass dieselbe Scrollposition immer dasselbe Bild ergibt:
+200 zufällige Positionen (schnell und langsam angefahren), Scrollen in den ersten 500 ms, schnelles Hoch und Runter im Bier-Abschnitt,
+Trackpad-Zucken beim Loslassen, kalter Cache mit Fast 3G und CPU 4x, Neu laden mitten in der Sequenz, Handy drehen,
+„Bewegung reduzieren“, keine externen Anfragen und Cookies.
+
+```bash
+python3 tools/tests/serve.py . 5263 &          # Testserver (gzip, Cache wie GitHub Pages)
+node tools/tests/sequenz.mjs                   # alle Tests; einzelne: node tools/tests/sequenz.mjs positionen titel
+node tools/tests/schnell-scrollen-gif.mjs      # GIF vom schnellen Scrollen (desktop oder handy)
+```
+
+Zusätzlich vor dem Veröffentlichen: `python3 .github/scripts/check-site.py`, Lighthouse (Handy und Desktop) und ein Blick im echten Safari
+(iPhone-Simulator: Wischen mit kleiner Gegenbewegung beim Loslassen, schneller Schwung, Neu laden).
 
 ## Sequenz neu rendern
 
@@ -37,8 +56,9 @@ Licht und Material in `js/config.js`.
 
 1. Lokalen Aufnahme-Server starten, der `POST /__shot?dir=…&name=…` als PNG speichert, und
    `tools/sequenz-rendern.html` darüber öffnen, „Rendern“ klicken (dauert einige Minuten).
-2. `python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]` (ohne Angabe beide Formate) → WebP-Bilder in `assets/sequenz/`, `manifest.json`
-   und neue Standbilder `assets/img/flasche-berghof-hell*.webp`.
+2. `python3 tools/sequenz.py <Ordner mit sequenz-roh-*> [desktop|mobil]` (ohne Angabe beide Formate) → WebP-Bilder in `assets/sequenz/`,
+   Mini-Ersatzbilder (`mini/`), `manifest.json` (mit `titleClear`: ab dieser Stufe kommt die Flasche in den Titelbereich, der Titel ist dann weg)
+   und neue Standbilder `assets/img/flasche-berghof-hell*.webp`. Nur Mini-Bilder und `titleClear` neu berechnen: `python3 tools/sequenz.py --minis`.
 3. Die ausgegebenen Werte (top, height, aspect-ratio) bei `.poster picture` in `index.html` und `css/style.css`
    eintragen, sonst springt die Flasche beim Übergang vom Standbild zur Sequenz.
 

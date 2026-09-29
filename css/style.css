@@ -396,10 +396,6 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
 /* Platzhalter, die noch ausgefüllt werden müssen */
 .todo { color: #a33a1f; border-bottom: 1px dashed currentColor; }
 
-/* Inhaltsabschnitte nach der Sequenz rasten sanft ein (Klasse setzt js/sequenz.js am Ende der Sequenz) */
-html.snap-sections { scroll-snap-type: y proximity; }
-.section { scroll-snap-align: start; }
-
 /* ── Tablet & Handy ─────────────────── */
 @media (max-width: 900px) {
   .berghof, .location { grid-template-columns: 1fr; }
