@@ -210,6 +210,8 @@ function measureDy() {
   const bPad = hero.getBoundingClientRect().bottom - pad.getBoundingClientRect().bottom;
   probe.remove(); pad.remove();
   textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
+  const lead = hero.querySelector('.hero__lead');   // Zone für die Herde: unter der Einleitung, mit 16 px Abstand zum Text
+  if (lead) hero.style.setProperty('--zone', Math.max(0, hero.clientHeight - (lead.offsetTop + lead.offsetHeight) - 16 - 28) + 'px');
 }
 const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * (p - 1) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
@@ -327,7 +329,7 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') unlock();
+  if (to === 'C') { unlock(); measureDy(); root.classList.add('herde-an'); }
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -342,6 +344,7 @@ function skipToContent() {                                     // Überspringen,
   release();
   unlock();
   el.poster.style.visibility = 'hidden';
+  measureDy();
 }
 
 // ── Eingaben ────────────────────────────────────

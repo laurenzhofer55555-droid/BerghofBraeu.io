@@ -151,36 +151,14 @@
     .hero__lead { position: relative; margin: 0 auto; max-width: 38ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
     @media (min-width: 768px) { .hero__lead { max-width: 60ch; font-size: 19px; } }
 
-    /* Bildgestaltung um Titel und Text (drei Varianten zur Auswahl; html[data-art="a|b|c"] schaltet um) */
-    .art { display: none; }
-    [data-art="a"] .art--a, [data-art="b"] .art--b, [data-art="c"] .art--c { display: block; }
-    .art--a { position: relative; flex: 1 1 auto; min-height: 120px; width: calc(100% + 48px); max-width: 1100px; margin: clamp(14px, 2.4vh, 26px) -24px -28px; }
-    .art--a img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 66%; display: block;
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 86%, transparent 100%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
-      -webkit-mask-composite: source-in;
-      mask-image: linear-gradient(to bottom, transparent 0, #000 30%, #000 86%, transparent 100%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
-      mask-composite: intersect; }
-    .art--b { position: absolute; inset: 0; pointer-events: none; }
-    .sheep { position: absolute; display: block; height: auto; max-width: none; filter: drop-shadow(0 7px 5px rgba(70, 60, 25, .2)); }
-    .sheep--links { width: clamp(60px, 8vw, 118px); left: -8px; bottom: 11%; }
-    .sheep--grast { width: clamp(88px, 11vw, 176px); right: -10px; bottom: 5%; }
-    .sheep--stehend { display: none; }
-    .art--c { position: absolute; inset: 0; pointer-events: none; }
-    .vine { position: absolute; width: auto; height: min(26vh, 220px); top: calc(var(--hero-top) - 14px); opacity: .92; }
-    .vine--l { left: 2px; }
-    .vine--r { right: 2px; transform: scaleX(-1); }
-    @media (min-width: 768px) {
-      .vine { width: clamp(54px, 9vw, 112px); height: auto; top: calc(var(--hero-top) - 10px); }
-      .vine--l { left: clamp(8px, 4vw, 90px); } .vine--r { right: clamp(8px, 4vw, 90px); }
-      .sheep--links { left: 9%; bottom: auto; top: calc(var(--hero-top) - 4px); width: clamp(66px, 6.4vw, 108px); }
-      .sheep--grast { right: 8%; bottom: auto; top: calc(var(--hero-top) + 6px); width: clamp(96px, 10vw, 160px); }
-      .sheep--stehend { display: block; left: 17%; bottom: 7%; width: clamp(76px, 6.6vw, 118px); }
-    }
+    /* Herde (Zustand C): Schafe liegen absolut über dem Hero, die Anordnung steht in css/style.css (hier nur die Grundlage, damit nichts springt) */
+    .herd { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
 
-    /* Weiter-Knopf: zwei gefüllte Pfeile (Chevrons) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
+    /* Weiter-Knopf: ein gefüllter Pfeil mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
        Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
        Breite --cue-w: Handy 44 px, Desktop bis 56 px (schrumpft mit niedrigen Fenstern). */
-    .seq { --cue-w: 44px; --cue-h: calc(var(--cue-w) * 42 / 56); }
+    .seq { --cue-w: 44px; --cue-h: calc(var(--cue-w) * 61 / 56); }
     .scroll-cue { display: none; }
     .seq .scroll-cue {
       display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
@@ -192,11 +170,8 @@
     .seq.frei .scroll-cue { display: none; }
     .scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
     .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-    .scroll-cue .cue-chev path { fill: #1F4D2B; stroke: #1F4D2B; stroke-width: 1.5px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-    .scroll-cue .cue-arrow { display: none; height: calc(var(--cue-w) * 61 / 56); }
-    .scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 2.5px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-    html[data-cue="umriss"] .cue-chev { display: none; }
-    html[data-cue="umriss"] .cue-arrow { display: block; }
+    .scroll-cue .cue-arrow rect, .scroll-cue .cue-arrow polygon { fill: #1F4D2B; }
+    .scroll-cue .cue-arrow polygon { stroke: #1F4D2B; stroke-width: 4; stroke-linejoin: round; }
     @keyframes cue { 50% { transform: translateY(8px); } }
     /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
     .scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
@@ -281,24 +256,6 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="ranke" viewBox="0 0 120 460">
-      <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
-      <path d="M60 310C74 300 90 302 92 316C94 328 82 332 76 324C72 318 78 312 83 316"/>
-      <path d="M62 182C46 172 30 176 28 190C27 202 40 204 44 196C47 190 40 185 36 189"/>
-      <path d="M58 58C72 54 84 60 82 72C80 81 70 80 70 73"/>
-      <path d="M52 404C40 390 22 388 10 396C18 400 22 408 18 416C30 414 40 410 46 404C42 416 44 426 52 432C56 420 56 412 52 404Z" fill="#F7F4EC"/>
-      <path d="M52 404L20 402M36 403L26 394M38 406L30 414" stroke-width=".9"/>
-      <path d="M64 254C78 242 96 242 108 250C100 254 96 262 100 270C88 268 78 264 72 258C76 270 74 280 66 286C62 274 62 264 64 254Z" fill="#F7F4EC"/>
-      <path d="M64 254L98 256M82 255L92 246M80 258L88 266" stroke-width=".9"/>
-      <path d="M64 124C52 112 36 112 26 118C33 122 36 128 33 135C43 133 51 130 57 125C54 135 56 143 62 148C65 138 66 130 64 124Z" fill="#F7F4EC"/>
-      <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
-      <path d="M78 322C82 328 86 332 86 338"/>
-      <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
-      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
-      <path d="M40 196C38 202 36 206 36 212"/>
-      <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
-      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
-    </symbol></svg>
 
   <!-- Altersabfrage 16+: liegt nur über der Seite, alle Inhalte bleiben im HTML (js/altersabfrage.js) -->
   <div class="age" id="altersabfrage" role="dialog" aria-modal="true" aria-labelledby="age-title" tabindex="-1" data-nosnippet>
@@ -416,35 +373,26 @@
       <div class="hero__more">
         <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
 
-        <!-- Variante A: das Gemälde als ruhiges, breites Bild mit weichem Verlauf ins Beige -->
-        <figure class="art art--a">
-          <img src="assets/img/berghof-gemaelde-1030.webp" srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
-               sizes="(min-width: 1030px) 1030px, 100vw" width="1030" height="687" loading="lazy" decoding="async" fetchpriority="low"
-               alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge" />
-        </figure>
-
-        <!-- Variante B: freigestellte Lämmer und ein grasendes Schaf aus dem Gemälde, locker am Rand verteilt -->
-        <div class="art art--b" aria-hidden="true">
-          <img class="sheep sheep--links" src="assets/img/lamm-links-2x.webp" srcset="assets/img/lamm-links-1x.webp 53w, assets/img/lamm-links-2x.webp 107w" sizes="110px" width="107" height="139" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--grast" src="assets/img/schaf-grast-2x.webp" srcset="assets/img/schaf-grast-1x.webp 93w, assets/img/schaf-grast-2x.webp 187w" sizes="170px" width="187" height="147" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--stehend" src="assets/img/lamm-stehend-2x.webp" srcset="assets/img/lamm-stehend-1x.webp 73w, assets/img/lamm-stehend-2x.webp 146w" sizes="120px" width="146" height="149" loading="lazy" decoding="async" alt="" />
-        </div>
-
-        <!-- Variante C: zwei feine Hopfenranken wie in der Altersabfrage -->
-        <div class="art art--c" aria-hidden="true">
-          <svg class="vine vine--l" viewBox="0 0 120 460" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#ranke"/></svg>
-          <svg class="vine vine--r" viewBox="0 0 120 460" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#ranke"/></svg>
+        <!-- Kleine Herde aus dem Etikettenbild (Gemälde von J. Stallhofer): zehn einzeln freigestellte Schafe, Anordnung per CSS (css/style.css) -->
+        <div class="herd" role="img" aria-label="Eine kleine Herde aus dem Etikettenbild: weiße und braune Schafe und Lämmer auf der Weide">
+          <img class="sheep sheep--kalb-braun" style="--i:0" src="assets/img/herde-kalb-braun-2x.webp" srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--rotbraun" style="--i:1" src="assets/img/herde-rotbraun-2x.webp" srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-stehend" style="--i:2" src="assets/img/herde-lamm-stehend-2x.webp" srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--schaf-grast" style="--i:3" src="assets/img/herde-schaf-grast-2x.webp" srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="(max-width: 767px) 120px, 190px" width="224" height="160" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--gefleckt" style="--i:4" src="assets/img/herde-gefleckt-2x.webp" srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--ruhend-hell" style="--i:5" src="assets/img/herde-ruhend-hell-2x.webp" srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--schaf-weide" style="--i:6" src="assets/img/herde-schaf-weide-2x.webp" srcset="assets/img/herde-schaf-weide-1x.webp 86w, assets/img/herde-schaf-weide-2x.webp 172w" sizes="(max-width: 767px) 120px, 190px" width="172" height="153" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--ruhend-braun" style="--i:7" src="assets/img/herde-ruhend-braun-2x.webp" srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="(max-width: 767px) 120px, 190px" width="132" height="102" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-zwei" style="--i:8" src="assets/img/herde-lamm-zwei-2x.webp" srcset="assets/img/herde-lamm-zwei-1x.webp 54w, assets/img/herde-lamm-zwei-2x.webp 108w" sizes="(max-width: 767px) 120px, 190px" width="108" height="120" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-links" style="--i:9" src="assets/img/herde-lamm-links-2x.webp" srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="(max-width: 767px) 120px, 190px" width="124" height="153" loading="lazy" decoding="async" alt="" />
         </div>
       </div>
 
       <!-- Weiter-Knopf (im Start und im Bier sichtbar, sonst aus; Klick = dieselbe Geste; js/sequenz.js) -->
       <button class="scroll-cue aus" type="button" aria-label="Weiter" data-weiter>
-        <svg class="cue-chev" viewBox="0 0 56 42" focusable="false" aria-hidden="true">
-          <path d="M4 4L28 20L52 4V10L28 26L4 10Z"/>
-          <path d="M4 17L28 33L52 17V23L28 39L4 23Z"/>
-        </svg>
         <svg class="cue-arrow" viewBox="4 0 56 61" focusable="false" aria-hidden="true">
-          <path d="M28.75 6A3.25 3.25 0 0 1 35.25 6V46.15L51.7 29.7A3.25 3.25 0 0 1 56.3 34.3L32 58.6L7.7 34.3A3.25 3.25 0 0 1 12.3 29.7L28.75 46.15Z"/>
+          <rect x="28" y="3" width="8" height="38" rx="4"/>
+          <polygon points="8,33 56,33 32,58"/>
         </svg>
         <span class="scroll-cue__text" aria-hidden="true"><span class="scroll-cue__touch">Wischen</span><span class="scroll-cue__mouse">Scrollen</span></span>
       </button>
@@ -584,7 +532,7 @@
           <div class="timeline__hint" aria-hidden="true">
             <span class="timeline__dots"><i></i><i></i><i></i><i></i></span>
             <span class="timeline__swipe">
-              <svg viewBox="0 0 42 56" focusable="false"><path d="M4 4L20 28L4 52H10L26 28L10 4Z"/><path d="M17 4L33 28L17 52H23L39 28L23 4Z"/></svg>
+              <svg viewBox="1.5 2.5 61 56" focusable="false"><g transform="rotate(-90 32 30.5)"><rect x="28" y="3" width="8" height="38" rx="4"/><polygon points="8,33 56,33 32,58"/></g></svg>
               <span>Wischen</span>
             </span>
           </div>
