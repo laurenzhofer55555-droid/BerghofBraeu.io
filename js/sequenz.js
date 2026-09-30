@@ -55,6 +55,7 @@ const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
+  more: hero.querySelector('.hero__more'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -196,6 +197,20 @@ function setGold(top, page) {
   if (last.goldTop !== top) { last.goldTop = top; themeColor.content = top ? GOLD : CREAM; }
   if (last.goldPage !== page) { last.goldPage = page; root.classList.toggle('gold-page', page); }
 }
+// Titel: in C steht er oben (normales Layout), in A und B unten im Bild. textDy ist der Weg dazwischen in px (gemessen);
+// beim Leeren rutscht der Titel mit demselben Fortschritt wie der Bierspiegel nach oben.
+let textDy = 0;
+function measureDy() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;left:0;top:0;width:0;height:100svh;pointer-events:none;visibility:hidden';
+  const pad = document.createElement('div');
+  pad.style.cssText = 'position:absolute;left:0;width:0;height:0;bottom:var(--b-pad)';
+  hero.append(probe, pad);
+  const H = probe.getBoundingClientRect().height;
+  const bPad = hero.getBoundingClientRect().bottom - pad.getBoundingClientRect().bottom;
+  probe.remove(); pad.remove();
+  textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
+}
 const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * (p - 1) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
 
@@ -216,7 +231,7 @@ function drawCanvas(pv) {
 
 // Alles außer dem Canvas: eine reine Funktion von P
 function overlays(pv) {
-  const g = Math.min(1, pv), f = frameOf(pv);
+  const g = Math.min(1, pv), h = Math.max(0, pv - 1), f = frameOf(pv);
 
   // Titel: am Handy erst mit dem Bier; am Desktop steht er am Start und ist weg, bevor die Flasche in seinen Bereich kommt
   // (titleClear: aus den Bildern gemessen, tools/sequenz.py). Mit dem Bier erscheint er auf allen Geräten unten.
@@ -225,7 +240,12 @@ function overlays(pv) {
   const end = ramp(g, 0.85, 1);
   const late = g >= 0.5;
   put('text', el.text, 'opacity', String(late ? end : start));
-  put('textY', el.text, 'transform', `translate3d(0, ${(late ? 16 * (1 - end) : -24 * (1 - start)).toFixed(2)}px, 0)`);
+  put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + textDy * (1 - h)).toFixed(2)}px, 0)`);
+
+  // Einleitung und Bildgestaltung erscheinen in der zweiten Hälfte des Leerens, unter dem Titel
+  const more = ramp(h, 0.5, 0.9);
+  put('more', el.more, 'opacity', String(more));
+  put('moreV', el.more, 'visibility', more > 0 ? 'visible' : 'hidden');
 
   // Rahmen mit Eckverzierung blendet auf allen Geräten aus; „Hofer Bräu“ oben bleibt frei (Hintergrund folgt über --frame-o)
   const frame = String(1 - ramp(g, 0.5, 0.72));                // noch während des Zooms, vor dem flachen Bier-Gold
@@ -403,6 +423,8 @@ function onKey(e) {
 
 // ── Start ───────────────────────────────────────
 resizeCanvas();
+measureDy();
+if (document.fonts?.ready) document.fonts.ready.then(() => { measureDy(); if (!busy && state !== 'C') render(P); });
 // Direktlink (#…) oder Neuladen/Zurück mit Position über 0: sofort Inhalt, ohne Animation. Der Browser stellt die Position
 // beim Laden wieder her, deshalb erst danach entscheiden (die Seite ist bis dahin nicht gesperrt, .frei).
 if (root.classList.contains('frei') && !location.hash && document.readyState !== 'complete') {
@@ -427,7 +449,7 @@ window.addEventListener('keydown', onKey);
 window.addEventListener('scroll', () => { if (state !== 'C' && window.scrollY !== 0) window.scrollTo(0, 0); }, { passive: true });   // Fokus/Anker dürfen die gesperrte Seite nicht verschieben
 el.skip?.addEventListener('click', skipToContent);
 el.cue.addEventListener('click', () => request(1));           // Tippen/Klick auf die Pfeile = dieselbe Geste wie Wischen nach unten
-window.addEventListener('resize', () => { resizeCanvas(); stale = true; if (state !== 'C' && !busy) render(P); }, { passive: true });
+window.addEventListener('resize', () => { resizeCanvas(); measureDy(); stale = true; if (state !== 'C' && !busy) render(P); }, { passive: true });
 portrait.addEventListener('change', () => { useSet(); if (loadStarted) loadAll(); if (!busy) { render(P); } });
 
 // Nur lesend bzw. für tools/tests/
