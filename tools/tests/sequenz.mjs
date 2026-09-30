@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, pfeil, neuladen, drehen, tasten, skip, reduziert, extern
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -34,7 +34,7 @@ const EINGABEN = {
 // Pfeil blendet nach der Animation in 200 ms ein: vor dem Vergleich abwarten
 const snap = async (b) => { await sleep(260); const s = await state(b); return JSON.stringify({ z: s.z, P: s.P, cv: s.cv, frameO: s.frameO, beer: s.beer, title: s.title, cue: s.cue, level: s.level, gold: s.gold, frei: s.frei }); };
 
-// 1. Genau 2 Gesten von A bis C, genau 2 Gesten von C zurück bis A (Mausrad, Touch, Tastatur)
+// 1. Genau 2 Gesten von A bis C; der Rückweg gilt nur innerhalb des Intros (B → A), in C ist das Intro vorbei (Mausrad, Touch, Tastatur)
 async function gesten() {
   for (const [label, view, arten] of [['desktop', 'desktop', ['wheel', 'tasten']], ['handy', 'handy', ['touch']]]) {
     for (const art of arten) {
@@ -45,20 +45,23 @@ async function gesten() {
         await g(b, 1);
         check(`gesten ${label}/${art}: Geste 1 führt nach B`, await waitZustand(b, 'B') && await idle(b));
         const sB = await state(b);
+        await g(b, -1);
+        check(`gesten ${label}/${art}: Geste nach oben in B spielt Übergang 1 rückwärts → A`, await waitZustand(b, 'A') && await idle(b));
+        await g(b, 1);
+        check(`gesten ${label}/${art}: erneut Geste 1 → B`, await waitZustand(b, 'B') && await idle(b));
+        const sB2 = await state(b);
         await g(b, 1);
         check(`gesten ${label}/${art}: Geste 2 führt nach C (Seite frei)`, await waitZustand(b, 'C') && await idle(b) && (await state(b)).frei === true && (await state(b)).overflow !== 'hidden');
         await b.js(`window.scrollTo(0, 500)`); await sleep(300);
         const y500 = (await state(b)).y;
         await b.js(`window.scrollTo(0, 0)`); await sleep(700);
         check(`gesten ${label}/${art}: in C normal scrollbar`, y500 >= 400, `y ${y500}`);
-        await g(b, -1);
-        check(`gesten ${label}/${art}: Geste nach oben in C ganz oben → B (Bier füllt sich)`, await waitZustand(b, 'B') && await idle(b) && (await state(b)).frei === false);
-        const sB2 = await state(b);
-        await g(b, -1);
-        check(`gesten ${label}/${art}: noch eine Geste nach oben → A`, await waitZustand(b, 'A') && await idle(b));
+        const n0 = await starts(b);
+        for (let k = 0; k < 3; k++) { await g(b, -1); await sleep(150); }
+        check(`gesten ${label}/${art}: Geste nach oben in C löst nichts mehr aus (Intro ist einmalig)`, (await starts(b)) === n0 && (await state(b)).z === 'C' && (await state(b)).y === 0);
         const n = await starts(b);
-        check(`gesten ${label}/${art}: genau 4 Übergänge (2 hin, 2 zurück)`, n === 4, `${n} Übergänge`);
-        check(`gesten ${label}/${art}: Zustand B beim Rückweg wie beim Hinweg`, JSON.stringify([sB.P, sB.frameO, sB.level, sB.beer, sB.title]) === JSON.stringify([sB2.P, sB2.frameO, sB2.level, sB2.beer, sB2.title]));
+        check(`gesten ${label}/${art}: genau 4 Übergänge (A→B, B→A, A→B, B→C)`, n === 4, `${n} Übergänge`);
+        check(`gesten ${label}/${art}: Zustand B beim zweiten Mal wie beim ersten`, JSON.stringify([sB.P, sB.frameO, sB.level, sB.beer, sB.title]) === JSON.stringify([sB2.P, sB2.frameO, sB2.level, sB2.beer, sB2.title]));
         check(`gesten ${label}/${art}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
       } finally { b.close(); }
     }
@@ -122,7 +125,7 @@ async function hinundher() {
   const b = await browser({ view: 'desktop' });
   try {
     await start(b, 'desktop');
-    const wege = [['B', 1], ['C', 1], ['B', -1], ['A', -1], ['B', 1], ['C', 1], ['B', -1], ['C', 1], ['B', -1], ['A', -1]];   // [Ziel, Richtung]
+    const wege = [['B', 1], ['A', -1], ['B', 1], ['A', -1], ['B', 1], ['A', -1], ['B', 1], ['A', -1], ['B', 1], ['C', 1]];   // [Ziel, Richtung]: nur A ↔ B, am Ende nach C
     const ref = {}, bad = [];
     ref.A = await snap(b);
     for (const [ziel, dir] of wege) {
@@ -250,7 +253,7 @@ async function zustandB() {
 }
 
 // Geste 2: Bier leeren. Zustand B ist volle Bierfläche (Spiegel über dem Bildrand), der Spiegel sinkt ins Bild, erst dabei kommt die Schaumkrone.
-// Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung, Rückweg gleich lang. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
+// Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
 async function geste2() {
   for (const [name, view] of Object.entries(DEVICES)) {
@@ -272,7 +275,7 @@ async function geste2() {
       check(`geste2 ${name}: 50 % Schaumkrone im Bild, 90 % fast leer, 100 % leer`, anteile[50].oben < 0.9 && anteile[50].gesamt < 0.75 && anteile[90].gesamt < 0.3 && anteile[100].alles < 0.02,
         `50 %: ${anteile[50].oben.toFixed(2)}/${anteile[50].gesamt.toFixed(2)}, 90 %: ${anteile[90].gesamt.toFixed(2)}, 100 %: ${anteile[100].alles.toFixed(3)}`);
     } finally { b.close(); }
-    // echte Animation: Dauer, kein Sprung, Rückweg
+    // echte Animation: Dauer, kein Sprung
     const b2 = await browser({ view });
     try {
       await start(b2, view);
@@ -288,41 +291,256 @@ async function geste2() {
       let rueck = 0, maxStep = 0;
       for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
       check(`geste2 ${name}: Pegel sinkt gleichmäßig (kein Zurück, größter Schritt ${maxStep.toFixed(1)} px, Start ${vorher} px)`, S.length > 20 && rueck === 0 && maxStep < view.h * 0.06, `${S.length} Messpunkte`);
-      // Rückweg (Bier füllt sich) gleich lang
-      await b2.js('window.scrollTo(0, 0)'); await sleep(300);
-      const n1 = (await log(b2)).length;
-      await gesture(b2, -1);
-      check(`geste2 ${name}: Rückweg führt nach B`, await waitZustand(b2, 'B', 12000) && await idle(b2, 12000));
-      ev = (await log(b2)).slice(n1).filter((e) => e.art === 'start' || e.art === 'ende');
-      const rueckDauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
-      check(`geste2 ${name}: Rückweg gleich lang (${rueckDauer} ms) und endet wieder in voller Bierfläche`, Math.abs(rueckDauer - dauer) < 150 && (await state(b2)).level === vorher, `Pegel ${(await state(b2)).level} statt ${vorher}`);
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
   }
 }
 
-// Weiter-Pfeile: zwei Chevrons als Knopf, sichtbar in A und B, aus während der Animation und in C, Klick löst die Geste aus
-async function pfeil() {
-  for (const name of ['iphone15', 'ipad-air-hoch', 'ipad-air-quer', 'desktop-1440']) {
-    const view = DEVICES[name];
+// Geräte für die Inhalts-Tests in Zustand C
+const GERAETE = { 'iphone-se': { w: 375, h: 667, mobile: true }, iphone15: DEVICES.iphone15, 'ipad-hoch': DEVICES['ipad-air-hoch'], 'ipad-quer': DEVICES['ipad-air-quer'],
+  'desktop-1440': DEVICES['desktop-1440'], 'desktop-2560': DEVICES['desktop-2560'] };
+// Bis Zustand C mit genau zwei Gesten (Standardweg der Nutzer), danach Ruhe
+async function nachC(b, view) {
+  await start(b, view);
+  await gesture(b, 1); await waitZustand(b, 'B'); await idle(b);
+  await gesture(b, 1); await waitZustand(b, 'C', 12000); await idle(b, 12000);
+  await sleep(1200);                                            // Schafe und Einblenden fertig
+}
+const textRects = `(() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+  const G = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); return R(rg); };
+  return { titel: G('.hero__title'), claim: G('.hero__claim'), lead: R(document.querySelector('.hero__lead')), vw: innerWidth, vh: innerHeight }; })()`;
+
+// Nach genau 2 Gesten: Titel oben, Einleitung und Herde im ersten Bildschirm; der Titel rutscht flüssig, ohne Sprung
+async function titel() {
+  for (const [name, view] of Object.entries(GERAETE)) {
     const b = await browser({ view });
     try {
       await start(b, view);
-      const info = () => b.js(`(() => { const c = document.querySelector('.scroll-cue'), cs = getComputedStyle(c), r = c.getBoundingClientRect(), sv = c.querySelector('svg').getBoundingClientRect();
-        const path = getComputedStyle(c.querySelector('path')); const q = (s) => { const e = document.querySelector(s); const x = e.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
-        const title = q('.hero__title'), claim = q('.hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__text')).opacity;
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b);
+      const sB = await state(b);
+      const n0 = (await samples(b)).length;
+      await gesture(b, 1);
+      check(`titel ${name}: genau 2 Gesten führen nach C`, await waitZustand(b, 'C', 12000) && await idle(b, 12000) && (await starts(b)) === 2);
+      await sleep(1200);
+      const r = await b.js(textRects);
+      const l = await b.js(`(() => { const e = document.querySelector('.hero__lead'), c = getComputedStyle(e); return { op: +getComputedStyle(document.querySelector('.hero__more')).opacity, vis: c.visibility, fs: parseFloat(c.fontSize), w: e.getBoundingClientRect().width, text: e.textContent.trim().length }; })()`);
+      check(`titel ${name}: Titel oben (${Math.round(r.titel.t)} px), Einleitungstext ganz im ersten Bildschirm (Ende ${Math.round(r.lead.b)} von ${r.vh} px)`, r.titel.t < r.vh * 0.22 && r.lead.t > r.titel.b && r.lead.b <= r.vh - 8 && l.op === 1 && l.vis === 'visible', JSON.stringify({ titelTop: Math.round(r.titel.t), leadEnde: Math.round(r.lead.b) }));
+      const zeichen = Math.round(l.w / (l.fs * 0.5));          // grob: Breite / halbe Schriftgröße = Zeichen je Zeile
+      check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, sonst ≈ 60 Zeichen)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : 74), `${zeichen} Zeichen`);
+      const herde = await b.js(`JSON.stringify([...document.querySelectorAll('.sheep')].filter((e) => getComputedStyle(e).display !== 'none').map((e) => { const x = e.getBoundingClientRect(); return [Math.round(x.top), Math.round(x.bottom), Math.round(x.left), Math.round(x.right)]; }))`);
+      const H = JSON.parse(herde);
+      check(`titel ${name}: Herde (${H.length} Schafe) im ersten Bildschirm`, H.length >= 5 && H.every(([t, bo, le, ri]) => bo <= r.vh + 1 && t >= 0), JSON.stringify(H.slice(0, 2)));
+      // Flüssigkeit: Titelposition während Geste 2
+      const S = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.P < 2 && x.z !== 'C');
+      let auf = 0, maxStep = 0, dy = 0;
+      for (let i = 1; i < S.length; i++) { const d = S[i].textY - S[i - 1].textY; if (d > 0.6) auf++; maxStep = Math.max(maxStep, -d); }
+      dy = S.length ? S[0].textY : 0;
+      const ende = await state(b);
+      const letzter = S.length ? S.at(-1).textY : 0;
+      check(`titel ${name}: Titel gleitet von unten (${Math.round(sB.textY)} px) nach oben, nie zurück, größter Schritt ${maxStep.toFixed(1)} px`, S.length > 20 && auf === 0 && dy > 0 && maxStep < r.vh * 0.06, `${S.length} Messpunkte, Start ${dy}`);
+      check(`titel ${name}: kein Sprung am Ende von Geste 2 (letzter Wert ${letzter} px, danach ${ende.textY} px)`, Math.abs(letzter - ende.textY) <= Math.max(maxStep, 2) + 0.5 && Math.abs(ende.textY) < 0.5, `Ende ${ende.textY}`);
+      check(`titel ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
+    } finally { b.close(); }
+  }
+}
+
+// Herde: einzeln freigestellte Schafe (Handy 5, sonst 8), keines überdeckt Text (Abstand ≥ 16 px), kein horizontaler Scroll, feste Maße, Einblenden ≤ 0,8 s
+async function herde() {
+  for (const [name, view] of Object.entries(GERAETE)) {
+    const b = await browser({ view });
+    try {
+      await nachC(b, view);
+      const t = await b.js(textRects);
+      const info = JSON.parse(await b.js(`JSON.stringify((() => {
+        const M = 16, R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+        const T = ${JSON.stringify(t)}; const texts = [['Titel', T.titel], ['Untertitel', T.claim], ['Einleitung', T.lead]];
+        const all = [...document.querySelectorAll('.sheep')], sheep = all.filter((e) => getComputedStyle(e).display !== 'none'), bad = [];
+        for (const e of sheep) { const r = R(e); for (const [n, x] of texts) if (!(r.b + M <= x.t || r.t >= x.b + M || r.r + M <= x.l || r.l >= x.r + M)) bad.push(e.className.replace('sheep sheep--', '') + ' × ' + n); }
+        const g = document.querySelector('.herd');
+        const dauer = sheep.map((e) => { const c = getComputedStyle(e); return parseFloat(c.animationDelay) + parseFloat(c.animationDuration); });
+        return { n: sheep.length, alle: all.length, bad, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
+          geladen: sheep.every((e) => e.complete && e.naturalWidth > 0), attr: all.every((e) => e.getAttribute('alt') === '' && e.width > 0 && e.height > 0 && e.getAttribute('srcset')),
+          gruppe: g.getAttribute('role') === 'img' && g.getAttribute('aria-label').length > 20, dauer: Math.max(0, ...dauer), name: sheep.map((e) => getComputedStyle(e).animationName)[0],
+          farben: { weiss: sheep.filter((e) => /lamm|hell|grast/.test(e.className)).length, braun: sheep.filter((e) => /braun|kalb/.test(e.className)).length } }; })())`));
+      const soll = view.w / view.h <= 0.8 && view.w < 768 ? 5 : 8;
+      check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 2 && info.farben.braun >= 2, JSON.stringify(info.farben));
+      check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel oder Text (Abstand ≥ 16 px), kein horizontaler Scroll`, info.bad.length === 0 && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
+      check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe && info.alle === 8);
+      check(`herde ${name}: Einblenden nacheinander, insgesamt höchstens 0,8 s (${info.dauer.toFixed(2)} s)`, info.dauer <= 0.801 && info.name === 'schaf-ein', `${info.name}`);
+      check(`herde ${name}: keine externen Anfragen, keine Fehler, CLS 0`, b.external.length === 0 && b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.external[0] || b.errors[0] || '');
+    } finally { b.close(); }
+  }
+  // „Bewegung reduzieren“: Schafe sofort sichtbar, ohne Einblenden; Neuladen in C: ebenfalls sofort
+  for (const reduced of [true, false]) {
+    const view = GERAETE['desktop-1440'];
+    const b = await browser({ view, reducedMotion: reduced });
+    try {
+      await setView(b, view);
+      if (!reduced) { await b.send('Page.navigate', { url: BASE }); await waitReady(b); await b.js('window.__sequenz.skip()'); await sleep(600); await b.js('window.scrollTo(0, 700)'); await sleep(400); await b.send('Page.reload'); }
+      else await b.send('Page.navigate', { url: BASE });
+      await sleep(3500);
+      if (!reduced) await b.js('window.scrollTo(0, 0)');
+      const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('.sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1; }).length, an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), herdeAn: document.documentElement.classList.contains('herde-an') })`));
+      check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'}: alle 8 Schafe sofort sichtbar, ohne Einblenden`, r.n === 8 && !r.an, JSON.stringify(r));
+    } finally { b.close(); }
+  }
+}
+
+// Timeline: Tablet und Desktop komplett sichtbar in einer Reihe (kein Scrollen, Bild „Stallhofer“ weg); Handy mit Peek, Punkten, Hinweis „Wischen“ und Anstupsen
+async function timeline() {
+  for (const [name, view] of Object.entries(GERAETE)) {
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      await b.js(`window.__sequenz.skip()`); await sleep(500);
+      await b.js(`document.querySelector('#berghof .berghof').scrollIntoView({ block: 'center' })`); await sleep(1800);
+      const handy = view.w <= 768;
+      const m = JSON.parse(await b.js(`JSON.stringify((() => {
+        const ol = document.querySelector('.timeline'), li = [...ol.children], R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; };
+        const cs = (e, p) => getComputedStyle(e, p);
+        const yr = li.map((e) => R(e.querySelector('.timeline__year'))), tx = li.map((e) => R(e.querySelector('p'))), rows = new Set(li.map((e) => Math.round(R(e).t)));
+        const dot = cs(li[0], '::after'), line = cs(li[1], '::before'), hint = document.querySelector('.timeline__swipe');
+        return { n: li.length, kein: !document.querySelector('.painting') && !document.querySelector('.berghof img'), sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, tsw: ol.scrollWidth, tcw: ol.clientWidth,
+          innen: li.every((e) => R(e).l >= -1 && R(e).r <= innerWidth + 1), eineReihe: rows.size === 1, ordnung: yr.every((y, i) => y.b <= tx[i].t), jahre: li.map((e) => e.querySelector('.timeline__year').textContent.trim()).join(','),
+          linie: line.backgroundColor, linieH: line.height, punkt: dot.borderRadius, punktBreite: dot.width, l2: R(li[1]).l, l1: R(li[0]).l, l2r: R(li[1]).r,
+          hintSichtbar: hint && cs(hint.parentElement).display !== 'none', dots: document.querySelectorAll('.timeline__dots i').length, aktiv: document.querySelectorAll('.timeline__dots i.is-active').length,
+          hintText: hint ? hint.textContent.trim() : '', hintFs: hint ? parseFloat(cs(hint).fontSize) : 0, nudge: li[0].className, anim: cs(li[0]).animationName }; })())`));
+      check(`timeline ${name}: vier Stationen mit Jahreszahlen, Bild „Stallhofer“ entfernt`, m.n === 4 && m.kein && m.jahre === '1556,1909,1935,Heute', m.jahre);
+      if (!handy) {
+        check(`timeline ${name}: komplett sichtbar in einer Reihe, kein horizontaler Scroll (Seite ${m.sw}/${m.cw}, Timeline ${m.tsw}/${m.tcw})`, m.innen && m.eineReihe && m.sw === m.cw && m.tsw <= m.tcw + 1);
+        check(`timeline ${name}: Jahreszahl über der goldenen Linie, Text darunter, Punkt je Station`, m.ordnung && m.linie === 'rgb(184, 145, 58)' && m.linieH === '1px' && m.punkt.includes('50%') || m.punkt === '50%', JSON.stringify({ linie: m.linie, h: m.linieH, punkt: m.punkt }));
+        check(`timeline ${name}: Handy-Hinweis (Punkte, „Wischen“) ist hier aus`, !m.hintSichtbar);
+      } else {
+        const peek = (view.w - m.l2) / view.w;
+        check(`timeline ${name}: nächste Karte ragt sichtbar herein (Peek ${(peek * 100).toFixed(0)} %)`, peek >= 0.12 && peek <= 0.24, `Peek ${peek.toFixed(2)}`);
+        check(`timeline ${name}: Punkte-Anzeige (4, erster aktiv) und Hinweis „Wischen“ (${m.hintFs} px)`, m.hintSichtbar && m.dots === 4 && m.aktiv === 1 && /wischen/i.test(m.hintText) && m.hintFs >= 13, JSON.stringify({ dots: m.dots, aktiv: m.aktiv, text: m.hintText }));
+        check(`timeline ${name}: Seite ohne horizontalen Scroll`, m.sw === m.cw, `${m.sw}/${m.cw}`);
+        // Anstupsen: einmal, sobald die Timeline ins Bild kommt; Hinweis verschwindet nach dem ersten Wischen
+        await b.js(`document.querySelector('.timeline').scrollBy({ left: 220, behavior: 'instant' })`); await sleep(900);
+        const nach = JSON.parse(await b.js(`JSON.stringify({ weg: +getComputedStyle(document.querySelector('.timeline__swipe')).opacity, aktiv: [...document.querySelectorAll('.timeline__dots i')].findIndex((i) => i.classList.contains('is-active')), hell: document.querySelectorAll('.timeline li.is-active').length })`));
+        check(`timeline ${name}: nach dem ersten Wischen verschwindet „Wischen“, der aktive Punkt wandert`, nach.weg === 0 && nach.aktiv >= 1 && nach.hell === 1, JSON.stringify(nach));
+      }
+      check(`timeline ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
+    } finally { b.close(); }
+  }
+  // Anstupsen genau messen (Handy): die Karten verschieben sich auf ca. 30 px nach links und zurück; bei „Bewegung reduzieren“ nicht
+  for (const reduced of [false, true]) {
+    const view = GERAETE.iphone15;
+    const b = await browser({ view, reducedMotion: reduced });
+    try {
+      await setView(b, view); await b.send('Page.navigate', { url: BASE });
+      if (!reduced) { await waitReady(b); await b.js('window.__sequenz.skip()'); } else await sleep(2500);
+      await sleep(500);
+      await b.js(`window.__liTx = []; (function m() { const t = getComputedStyle(document.querySelector('.timeline li')).transform; window.__liTx.push(t === 'none' ? 0 : +t.split(',')[4]); requestAnimationFrame(m); })();`);
+      await b.js(`document.querySelector('#berghof .berghof').scrollIntoView({ block: 'center' })`); await sleep(2600);
+      const tx = await b.js('window.__liTx');
+      const min = Math.min(0, ...tx), ende = tx.at(-1);
+      if (!reduced) check('timeline iphone15: Anstupsen gleitet ca. 30 px nach links und zurück (einmal)', min <= -24 && min >= -36 && Math.abs(ende) < 0.5, `kleinster Wert ${min.toFixed(1)} px, Ende ${ende}`);
+      else check('timeline iphone15: bei „Bewegung reduzieren“ keine Anstupsbewegung', min > -0.5, `kleinster Wert ${min.toFixed(1)} px`);
+    } finally { b.close(); }
+  }
+}
+
+// Intro ist einmalig: in C ist die Steuerung weg (keine Listener, keine Sperre, Canvas und Bilder aus dem Speicher), Gesten nach oben lösen nichts aus
+async function einmalig() {
+  for (const name of ['desktop-1440', 'iphone15', 'ipad-quer']) {
+    const view = GERAETE[name];
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const vorher = await b.send('Runtime.evaluate', { expression: 'window', returnByValue: false });
+      const listen = async () => {
+        const l = (await b.send('DOMDebugger.getEventListeners', { objectId: vorher.result.result.objectId })).result.listeners;
+        // die Messfühler-Listener des Tests sind Capture-Listener; die der Sequenz nicht
+        return l.filter((x) => !x.useCapture && ['wheel', 'touchstart', 'touchmove', 'keydown', 'scroll'].includes(x.type)).map((x) => x.type);
+      };
+      const inA = await listen();
+      check(`einmalig ${name}: in A sind die Gesten-Listener aktiv (${inA.join(', ')})`, ['wheel', 'touchstart', 'touchmove', 'keydown'].every((t) => inA.includes(t)) && (await b.js('window.__sequenz.aktiv')) === true);
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b);
+      await gesture(b, 1); await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(800);
+      const inC = await listen();
+      const sp = await b.js(`JSON.stringify({ sp: window.__sequenz.speicher, aktiv: window.__sequenz.aktiv, cv: getComputedStyle(document.getElementById('sequenz')).display, cw: document.getElementById('sequenz').width })`);
+      const r = JSON.parse(sp);
+      check(`einmalig ${name}: in C keine Gesten-Listener der Sequenz mehr (wheel, touch, keydown, scroll)`, inC.length === 0 && r.aktiv === false, inC.join(', ') || 'keine');
+      check(`einmalig ${name}: Canvas (${r.cv}, ${r.cw} px) und Bilder aus dem Speicher (Bitmaps ${r.sp.bitmaps}, Dateien ${r.sp.dateien}, Standbild ${r.sp.standbild})`, r.cv === 'none' && r.cw === 0 && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.sp.standbild === false);
+      const s = await state(b);
+      check(`einmalig ${name}: Seitensperre aufgehoben, Inhalt nicht mehr inert`, s.overflow !== 'hidden' && s.frei === true && (await b.js(`document.querySelectorAll('[inert]').length`)) === 0, JSON.stringify({ ov: s.overflow }));
+      await b.js('window.scrollTo(0, 0)'); await sleep(500);
+      const n0 = await starts(b), l0 = (await log(b)).length;
+      for (let k = 0; k < 10; k++) {
+        const art = k % 4;
+        if (art === 0) await flick(b, -900);
+        else if (art === 1) await keyPress(b, 'ArrowUp');
+        else if (art === 2) await keyPress(b, 'PageUp');
+        else if (view.mobile) await touchSwipe(b, -220, { ms: 90 }); else await wheelNotch(b, -400);
+        await sleep(80);
+      }
+      await sleep(700);
+      const e = await state(b);
+      check(`einmalig ${name}: 10 schnelle Gesten nach oben in C: keine Animation, keine Sperre, Seite bleibt oben`, (await starts(b)) === n0 && (await log(b)).length === l0 && e.z === 'C' && e.overflow !== 'hidden' && e.y === 0 && e.busy === false, JSON.stringify({ z: e.z, y: e.y, ov: e.overflow, log: (await log(b)).length - l0 }));
+      await b.js('window.scrollTo(0, 400)'); await sleep(300);
+      check(`einmalig ${name}: Seite scrollt danach ganz normal`, (await state(b)).y === 400);
+      check(`einmalig ${name}: nichts im Browser gespeichert (Intro-Zustand), keine Fehler`, (await b.js(`(() => { const k = Object.keys(localStorage).filter((x) => x !== 'berghof-ab16'); return k.length + sessionStorage.length + document.cookie.length; })()`)) === 0 && b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+}
+
+// „Intro nochmal ansehen“ im Fuß: scrollt nach oben und spielt A → B → C erneut ab, danach wieder einmalig
+async function replay() {
+  for (const name of ['desktop-1440', 'iphone15']) {
+    const view = GERAETE[name];
+    const b = await browser({ view });
+    try {
+      await nachC(b, view);
+      await b.js('window.scrollTo(0, document.documentElement.scrollHeight)'); await sleep(600);
+      const link = JSON.parse(await b.js(`JSON.stringify((() => { const a = document.querySelector('[data-intro]'), r = a.getBoundingClientRect(), c = getComputedStyle(a); return { text: a.textContent.trim(), up: c.textTransform, fs: parseFloat(c.fontSize), color: c.color, h: r.height, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, sichtbar: r.top >= 0 && r.bottom <= innerHeight }; })())`));
+      check(`replay ${name}: Link „${link.text}“ im Fuß: kleine Versalien (${link.fs} px), dunkelgrün, Tippfläche ≥ 44 px`, /Intro nochmal ansehen/i.test(link.text) && link.up === 'uppercase' && link.fs <= 13 && link.color === 'rgb(31, 77, 43)' && link.h >= 44 && link.sichtbar, JSON.stringify(link));
+      await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: link.x, y: link.y, button: 'left', clickCount: 1 });
+      await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: link.x, y: link.y, button: 'left', clickCount: 1 });
+      check(`replay ${name}: Klick scrollt nach oben und startet das Intro in Zustand A (gesperrt)`, await waitZustand(b, 'A', 15000) && (await state(b)).y === 0 && (await state(b)).overflow === 'hidden');
+      await waitReady(b); await sleep(500);
+      check(`replay ${name}: Steuerung wieder aktiv, Bilder neu geladen`, (await b.js('window.__sequenz.aktiv')) === true && (await b.js('window.__sequenz.bereit')) === true);
+      await gesture(b, 1);
+      check(`replay ${name}: Geste 1 → B`, await waitZustand(b, 'B', 12000) && await idle(b));
+      await gesture(b, 1);
+      check(`replay ${name}: Geste 2 → C`, await waitZustand(b, 'C', 12000) && await idle(b, 12000));
+      await sleep(800);
+      const r = JSON.parse(await b.js(`JSON.stringify({ aktiv: window.__sequenz.aktiv, sp: window.__sequenz.speicher, ov: getComputedStyle(document.documentElement).overflow, herde: document.documentElement.classList.contains('herde-an') })`));
+      check(`replay ${name}: danach wieder einmalig (Listener weg, Speicher frei, Seite frei, Herde erscheint erneut)`, r.aktiv === false && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.ov !== 'hidden' && r.herde);
+      check(`replay ${name}: nie ein leeres Canvas, keine Fehler`, (await b.js('window.__blank')) === 0 && b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+}
+
+// Weiter-Pfeil: ein einzelner, vollflächig dunkelgrüner Pfeil ↓ (Schaft = Rechteck mit runden Enden, Spitze = Dreieck) mit „Wischen“/„Scrollen“ rechts
+// daneben; sichtbar in A und B, aus während der Animation und in C, Klick löst die Geste aus
+async function pfeil() {
+  for (const name of ['se', 'iphone15', 'ipad-air-hoch', 'ipad-air-quer', 'desktop-1440', 'desktop-2560']) {
+    const view = name === 'se' ? { w: 375, h: 667, mobile: true } : DEVICES[name];
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const info = () => b.js(`(() => { const c = document.querySelector('.scroll-cue'), cs = getComputedStyle(c), r = c.getBoundingClientRect(), svg = c.querySelector('svg'), sv = svg.getBoundingClientRect(), tx = c.querySelector('.scroll-cue__text');
+        const rect = getComputedStyle(svg.querySelector('rect')), poly = getComputedStyle(svg.querySelector('polygon')), tcs = getComputedStyle(tx), tr = tx.getBoundingClientRect();
+        const q = (s) => { const e = document.querySelector(s); const x = e.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
+        const G = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); const x = rg.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
+        const title = G('.hero__title'), claim = G('.hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__text')).opacity;
         const hit = (x) => titleOp > 0.05 && !(r.bottom <= x.t || r.top >= x.b || r.right <= x.l || r.left >= x.r);
         const mid = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
-        return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width, stroke: path.stroke, sw: parseFloat(path.strokeWidth),
-          join: path.strokeLinejoin, fill: path.fill, color: cs.color, unten: innerHeight - r.bottom, mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(c.querySelector('svg')).animationDuration, text: c.innerText.trim(), n: c.querySelectorAll('path').length, cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
+        return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width,
+          rectFill: rect.fill, polyFill: poly.fill, polyStroke: poly.stroke, join: poly.strokeLinejoin, rx: svg.querySelector('rect').getAttribute('rx'), shapes: svg.children.length,
+          mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), unten: innerHeight - r.bottom, ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(svg).animationDuration,
+          text: c.innerText.trim(), fs: parseFloat(tcs.fontSize), ls: parseFloat(tcs.letterSpacing), tcolor: tcs.color, tup: tcs.textTransform,
+          rechts: tr.left >= sv.right - 1, vz: Math.abs((svg.offsetTop + svg.offsetHeight / 2) - (tx.offsetTop + tx.offsetHeight / 2)), cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
       await sleep(400);                                            // Einblenden (200 ms) abwarten
       const a = await info();
-      const breit = view.w / view.h > 0.8, soll = breit ? Math.min(48, Math.max(34, view.h * 0.062)) : 44;
-      check(`pfeil ${name}: Knopf „Weiter“, Pfeil ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.n === 1 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW }));
-      check(`pfeil ${name}: nur der Umriss (innen offen, ungefüllt), Tannengrün, Linie 2 bis 3 px, runde Ecken, Schleife 1,6 s`, a.fill === 'none' && a.stroke === 'rgb(31, 77, 43)' && a.sw >= 2 && a.sw <= 3 && a.join === 'round' && a.anim === '1.6s', JSON.stringify({ fill: a.fill, stroke: a.stroke, sw: a.sw, join: a.join, anim: a.anim }));
-      check(`pfeil ${name}: Zustand A sichtbar (Deckkraft 0,8), unten mittig, Text „${a.text}“`, a.vis === 'visible' && Math.abs(a.op - 0.8) < 0.02 && a.mitte < 2 && a.unten >= 8 && /^(wischen|scrollen)$/i.test(a.text), JSON.stringify({ op: a.op, unten: a.unten, mitte: a.mitte }));
+      const breit = view.w / view.h > 0.8, soll = breit ? Math.min(56, Math.max(40, view.h * 0.062)) : 44;
+      const gruen = 'rgb(31, 77, 43)';
+      check(`pfeil ${name}: Knopf „Weiter“ mit einem einzelnen Pfeil, ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.shapes === 2 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW, shapes: a.shapes }));
+      check(`pfeil ${name}: vollflächig dunkelgrün gefüllt (Schaft und Spitze), nicht umrahmt, runde Enden und Ecken`, a.rectFill === gruen && a.polyFill === gruen && a.polyStroke === gruen && a.join === 'round' && +a.rx >= 3, JSON.stringify({ r: a.rectFill, p: a.polyFill, s: a.polyStroke, join: a.join, rx: a.rx }));
+      check(`pfeil ${name}: „${a.text}“ rechts neben dem Pfeil, Versalien, weite Laufweite, dunkelgrün, ${a.fs} px, vertikal mittig`, /^(wischen|scrollen)$/i.test(a.text) && a.rechts && a.tup === 'uppercase' && a.fs >= 13 && a.ls >= 3 && a.tcolor === gruen && a.vz <= 2, JSON.stringify({ fs: a.fs, ls: a.ls, color: a.tcolor, vz: a.vz, rechts: a.rechts }));
+      check(`pfeil ${name}: Zustand A sichtbar, unten mittig, Schleife 1,6 s`, a.vis === 'visible' && Math.abs(a.op - 0.9) < 0.03 && a.mitte < 2 && a.unten >= 8 && a.anim === '1.6s', JSON.stringify({ op: a.op, unten: a.unten, mitte: a.mitte, anim: a.anim }));
       check(`pfeil ${name}: liegt oben auf (klickbar)`, a.treffer);
-      // Klick auf den Pfeil = Geste 1
       const start0 = await starts(b);
       await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.cx, y: a.cy });
       await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.cx, y: a.cy, button: 'left', clickCount: 1 });
@@ -333,8 +551,7 @@ async function pfeil() {
       check(`pfeil ${name}: Klick führt nach B`, await waitZustand(b, 'B') && await idle(b));
       await sleep(500);
       const bb = await info();
-      check(`pfeil ${name}: Zustand B sichtbar, ohne Überlappung mit Titel und Untertitel`, bb.vis === 'visible' && Math.abs(bb.op - 0.8) < 0.02 && !bb.ueber, JSON.stringify({ op: bb.op, ueber: bb.ueber }));
-      // Klick in B = Geste 2
+      check(`pfeil ${name}: Zustand B sichtbar, ohne Überlappung mit Titel und Untertitel`, bb.vis === 'visible' && Math.abs(bb.op - 0.9) < 0.03 && !bb.ueber, JSON.stringify({ op: bb.op, ueber: bb.ueber }));
       await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: bb.cx, y: bb.cy, button: 'left', clickCount: 1 });
       await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: bb.cx, y: bb.cy, button: 'left', clickCount: 1 });
       await sleep(450);
@@ -393,23 +610,26 @@ async function drehen() {
   } finally { b.close(); }
 }
 
-// 11. Tastatur: Pfeil, Bild, Leertaste (auch mit Umschalttaste zurück)
+// 11. Tastatur: Pfeil, Bild, Leertaste (auch mit Umschalttaste zurück); der Rückweg gilt nur in B
 async function tasten() {
   const b = await browser({ view: 'desktop' });
   try {
     await start(b, 'desktop');
-    const folge = [['PageDown', 'B'], ['ArrowDown', 'C'], ['ArrowUp', 'B'], ['PageUp', 'A'], [' ', 'B'], [' ', 'C']];
+    const folge = [['PageDown', 'B'], ['PageUp', 'A'], [' ', 'B'], ['ArrowUp', 'A'], ['ArrowDown', 'B'], ['ArrowDown', 'C']];
     let ok = true, detail = '';
     for (const [taste, ziel] of folge) {
-      if ((await state(b)).z === 'C') { await b.js(`window.scrollTo(0, 0)`); await sleep(500); }
       await keyPress(b, taste);
       if (!(await waitZustand(b, ziel)) || !(await idle(b))) { ok = false; detail = `${taste} → ${ziel} nicht erreicht`; break; }
     }
-    check('tasten: Bild ab/auf, Pfeil, Leertaste bewegen A ↔ B ↔ C', ok, detail);
-    await b.js(`window.scrollTo(0, 0)`); await sleep(500);
-    await keyPress(b, ' ', 8);   // Umschalt + Leertaste = zurück
-    check('tasten: Umschalt + Leertaste geht zurück', await waitZustand(b, 'B'));
+    check('tasten: Bild ab/auf, Pfeil, Leertaste bewegen A ↔ B → C', ok, detail);
   } finally { b.close(); }
+  const b2 = await browser({ view: 'desktop' });
+  try {
+    await start(b2, 'desktop');
+    await keyPress(b2, 'ArrowDown'); await waitZustand(b2, 'B'); await idle(b2);
+    await keyPress(b2, ' ', 8);   // Umschalt + Leertaste = zurück
+    check('tasten: Umschalt + Leertaste geht in B zurück nach A', await waitZustand(b2, 'A'));
+  } finally { b2.close(); }
 }
 
 // 12. Überspringen: fokussierbarer Knopf springt direkt zu C; sichtbarer Hinweis unten
@@ -460,7 +680,7 @@ async function extern() {
 }
 
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['geste2', geste2], ['pfeil', pfeil], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
+  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

@@ -2,7 +2,8 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
-Geste 2: das Bier leert sich (2,7 s, ruhig), danach normal scrollbare Seite.
+Geste 2: das Bier leert sich (2,7 s, ruhig), der Titel rutscht nach oben, darunter erscheinen Einleitung und eine kleine Schafherde.
+Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Intro nochmal ansehen“ im Fuß).
 
 Live: https://berghof-hell.de
 
@@ -21,16 +22,20 @@ Dann http://localhost:5173 öffnen.
   bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite
 - `js/sequenz.js` – **Zustandsautomat mit drei Zuständen und zwei Übergängen**, gleich auf Handy, iPad und Desktop:
   A Start (Flasche auf Augenhöhe, Rahmen) → Geste 1 (2,8 s) → B Bier (ganzer Bildschirm Bier, Spiegel über dem Bildrand, keine Schaumkrone,
-  kein Rahmen) → Geste 2 (2,7 s, sine.inOut: der Spiegel sinkt ins Bild, erst dabei kommt die Schaumkrone; Rückweg gleich lang) → C Inhalt
-  (normal scrollbar). Rückweg: Geste nach oben spielt rückwärts (B → A; in C ganz oben: C → B).
+  kein Rahmen) → Geste 2 (2,7 s, sine.inOut: der Spiegel sinkt ins Bild, erst dabei kommt die Schaumkrone; der Titel rutscht im selben
+  Takt von unten nach oben, die Einleitung blendet erst ein, wenn er oben angekommen ist) → C Inhalt (Titel oben, Einleitung, Herde; normal scrollbar). Rückweg nur innerhalb des
+  Intros: Geste nach oben in B spielt Übergang 1 rückwärts (B → A). In C gibt es keinen Rückweg mehr.
   Alles hängt an einem Wert P (0 bis 2), der per Zeit animiert wird; jeder Zustand ist eine reine Funktion von P (`render`), am Ende
   jeder Animation wird der Zielzustand ausdrücklich gesetzt. Kein Einrasten, kein Scroll-Fortschritt, keine Bibliothek.
   Die Seite ist in A und B per CSS gesperrt (`.seq` ohne `.frei`, ab dem ersten Pixel, kein `scrollTo`); die Gesten erkennt das Skript
   selbst: Mausrad (Summe über 50 ms ≥ 30), Touch (ab 40 px senkrecht), Tastatur (Pfeil, Bild, Leertaste). Eingabesperre während der
   Animation, danach 400 ms und bis das Trackpad-Nachlaufen (Mausrad-Ereignisse ohne 150 ms Pause) abgeklungen ist. Reload oder
-  Direktlink (#…) mit Position über 0 landen ohne Animation in C. Knopf „Überspringen“ (Tastatur) springt direkt zu C, der Inhalt ist
-  in A und B `inert`. Unten mittig steht der Knopf „Weiter“ (`.scroll-cue`, zwei Pfeile als Inline-SVG, Tannengrün, darunter „Wischen“ bzw.
+  Direktlink (#…) mit Position über 0 landen ohne Animation in C (ein neuer Aufruf ganz oben zeigt das Intro wieder, nichts wird im Browser gespeichert). Knopf „Überspringen“ (Tastatur) springt direkt zu C, der Inhalt ist
+  in A und B `inert`. Unten mittig steht der Knopf „Weiter“ (`.scroll-cue`: ein gefüllter dunkelgrüner Pfeil als Inline-SVG, rechts daneben „Wischen“ bzw.
   „Scrollen“): sichtbar in A und B, während einer Animation und in C aus (Klasse `.aus`, 200 ms), Klick oder Tippen löst dieselbe Geste aus.
+  **Aufräumen in C (`teardown`)**: alle Gesten-Listener (wheel, touch, keydown, scroll) werden entfernt, Bitmaps, Dateien und Standbild
+  freigegeben, das Canvas ausgeblendet und auf 0 px verkleinert (die Seite läuft danach am Handy flüssiger). `replay()` (Link „Intro nochmal
+  ansehen“ im Fuß) scrollt nach oben, baut A neu auf (Bilder kommen aus dem Browser-Cache) und räumt in C wieder auf.
   Bilder: alle Dateien werden nach dem Startbild geladen, dekodiert (`createImageBitmap`) wird ein Fenster um die Position und nach
   jeder Animation wieder freigegeben (Speicher am Handy). Fehlt ein Bild, hält die Zeit an (nie ein fehlender Frame); Geste zu früh:
   der Pfeil pulsiert und die Animation startet von selbst. Der Kronkorken geht während des Zooms von der Mitte aus in Bierfarbe über.
@@ -38,6 +43,13 @@ Dann http://localhost:5173 öffnen.
   wächst mit der Breite), Schaumkrone, Bläschen (nach Fläche gezählt, gleichmäßig verteilt). Pegel nur aus P, das Schwappen verformt nur
   die Welle. Nur der Start unterscheidet sich: Handy ohne Titel und mit Pfeil, Desktop mit Titel, der ausblendet, bevor die Flasche in
   seinen Bereich kommt (`titleClear`).
+- Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel oben, darunter Einleitung
+  (`.hero__lead`) und die Herde (`.herd`: acht einzeln aus dem Etikettenbild freigestellte Schafe, `assets/img/herde-*.webp` mit 1x/2x; unten im
+  Bereich unter der Einleitung, `--zone` misst `js/sequenz.js`, bei Tablet und Desktop vier kleine neben dem Titel; erscheinen nacheinander,
+  insgesamt 0,8 s). In A und B sitzt der Titel unten im Bild (`--dy`), ohne Sequenz (Bewegung reduzieren, ohne JavaScript) zeigt der erste
+  Bildschirm nur das Standbild.
+- Geschichte: `.timeline` ist auf Tablet und Desktop eine waagerechte Timeline über die ganze Inhaltsbreite (goldene Linie, Punkte, Jahreszahl
+  darüber, Text darunter); am Handy seitlich wischbar mit Peek der nächsten Karte, Punkten, Hinweis „Wischen“ und einmaligem Anstupsen (`js/timeline.js`)
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild
 - `tools/tests/` – automatische Tests der Sequenz (siehe unten), werden nicht ausgeliefert
 - Nur für das Rendern (werden nicht ausgeliefert): `js/bottle.js` – Flasche, Etiketten, Kronkorken ·
@@ -45,8 +57,10 @@ Dann http://localhost:5173 öffnen.
 
 ## Sequenz testen
 
-Prüft in Headless Chrome (Node ≥ 22, Google Chrome) mit echten Mausrad-, Touch- und Tastaturereignissen: genau 2 Gesten von A bis C
-und 2 zurück, ein starker Trackpad-Flick löst nur Übergang 1 aus, Gesten während der Animation und in der Sperre werden ignoriert,
+Prüft in Headless Chrome (Node ≥ 22, Google Chrome) mit echten Mausrad-, Touch- und Tastaturereignissen: genau 2 Gesten von A bis C,
+der Rückweg nur in B, in C keine Animation mehr (10 schnelle Gesten nach oben; keine Listener, Canvas und Bilder aus dem Speicher),
+„Intro nochmal ansehen“ spielt A → B → C erneut ab, Titel oben und Einleitung und Herde im ersten Bildschirm nach 2 Gesten, der Titel gleitet
+ohne Sprung, Schafe überdecken keinen Text, Timeline komplett sichtbar (Tablet/Desktop) bzw. mit Peek, Punkten und Hinweis (Handy), Pfeil gefüllt, ein starker Trackpad-Flick löst nur Übergang 1 aus, Gesten während der Animation und in der Sperre werden ignoriert,
 Endzustände sind jedes Mal exakt gleich, Scrollen direkt nach dem Laden (auch kalt, Fast 3G, CPU 4x), zu frühe Geste wartet und startet
 von selbst, Bilder von Geste 1 bei 50 bis 100 % (Farbwechsel Kronkorken → Bier), Zustand B auf iPhone, iPad und Desktop (Bier von Rand
 zu Rand, kein Rahmen, Titel, Bläschen), Neu laden und Direktlink, Drehen, Tastatur, Überspringen, „Bewegung reduzieren“, keine externen

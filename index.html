@@ -153,6 +153,7 @@
 
     /* Herde (Zustand C): Schafe liegen absolut über dem Hero, die Anordnung steht in css/style.css (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .seq:not(.frei) .herd { display: none; }     /* in A und B nicht darstellen: die Bilder laden erst, wenn js/sequenz.js sie nach den Sequenzbildern vorwärmt */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
 
     /* Weiter-Knopf: ein gefüllter Pfeil mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
@@ -373,18 +374,16 @@
       <div class="hero__more">
         <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
 
-        <!-- Kleine Herde aus dem Etikettenbild (Gemälde von J. Stallhofer): zehn einzeln freigestellte Schafe, Anordnung per CSS (css/style.css) -->
+        <!-- Kleine Herde aus dem Etikettenbild (Gemälde von J. Stallhofer): einzeln freigestellte Schafe, Anordnung per CSS (css/style.css) -->
         <div class="herd" role="img" aria-label="Eine kleine Herde aus dem Etikettenbild: weiße und braune Schafe und Lämmer auf der Weide">
-          <img class="sheep sheep--kalb-braun" style="--i:0" src="assets/img/herde-kalb-braun-2x.webp" srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--rotbraun" style="--i:1" src="assets/img/herde-rotbraun-2x.webp" srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--lamm-stehend" style="--i:2" src="assets/img/herde-lamm-stehend-2x.webp" srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-links" style="--i:0" src="assets/img/herde-lamm-links-2x.webp" srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="(max-width: 767px) 120px, 190px" width="124" height="153" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--gefleckt" style="--i:1" src="assets/img/herde-gefleckt-2x.webp" srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--ruhend-braun" style="--i:2" src="assets/img/herde-ruhend-braun-2x.webp" srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="(max-width: 767px) 120px, 190px" width="132" height="102" loading="lazy" decoding="async" alt="" />
           <img class="sheep sheep--schaf-grast" style="--i:3" src="assets/img/herde-schaf-grast-2x.webp" srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="(max-width: 767px) 120px, 190px" width="224" height="160" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--gefleckt" style="--i:4" src="assets/img/herde-gefleckt-2x.webp" srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--ruhend-hell" style="--i:5" src="assets/img/herde-ruhend-hell-2x.webp" srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--schaf-weide" style="--i:6" src="assets/img/herde-schaf-weide-2x.webp" srcset="assets/img/herde-schaf-weide-1x.webp 86w, assets/img/herde-schaf-weide-2x.webp 172w" sizes="(max-width: 767px) 120px, 190px" width="172" height="153" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--ruhend-braun" style="--i:7" src="assets/img/herde-ruhend-braun-2x.webp" srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="(max-width: 767px) 120px, 190px" width="132" height="102" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--lamm-zwei" style="--i:8" src="assets/img/herde-lamm-zwei-2x.webp" srcset="assets/img/herde-lamm-zwei-1x.webp 54w, assets/img/herde-lamm-zwei-2x.webp 108w" sizes="(max-width: 767px) 120px, 190px" width="108" height="120" loading="lazy" decoding="async" alt="" />
-          <img class="sheep sheep--lamm-links" style="--i:9" src="assets/img/herde-lamm-links-2x.webp" srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="(max-width: 767px) 120px, 190px" width="124" height="153" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--ruhend-hell" style="--i:4" src="assets/img/herde-ruhend-hell-2x.webp" srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-stehend" style="--i:5" src="assets/img/herde-lamm-stehend-2x.webp" srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--kalb-braun" style="--i:6" src="assets/img/herde-kalb-braun-2x.webp" srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" loading="lazy" decoding="async" alt="" />
+          <img class="sheep sheep--rotbraun" style="--i:7" src="assets/img/herde-rotbraun-2x.webp" srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" loading="lazy" decoding="async" alt="" />
         </div>
       </div>
 
@@ -600,6 +599,7 @@
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
+    <p class="site-footer__intro"><a href="#start" data-intro>Intro nochmal ansehen</a></p>
   </footer>
 
 </body>

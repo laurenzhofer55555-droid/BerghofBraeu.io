@@ -1,5 +1,5 @@
 // Nimmt den Ablauf mit den zwei Gesten als animiertes GIF auf (Headless Chrome, Bildschirmaufnahme über das DevTools-Protokoll):
-// A → Geste 1 → B → Geste 2 → C → zurück nach oben → Geste nach oben → B → Geste nach oben → A. Einblendung: Zustand und P.
+// A → Geste 1 → B → Geste 2 → C (Titel rutscht nach oben, Einleitung und Schafe erscheinen). Einblendung: Zustand und P.
 // Aufruf:  node tools/tests/gif.mjs [handy|ipad|desktop|alle] [Ausgabeordner]   (je Gerät: ablauf-<gerät>.gif und geste2-<gerät>.gif)
 // Benötigt Python 3 mit Pillow (pip install pillow) zum Zusammensetzen.
 import { execFileSync } from 'node:child_process';
@@ -36,10 +36,8 @@ for (const name of welche) {
     await b.send('Page.startScreencast', { format: 'jpeg', quality: 62, maxWidth: breite, everyNthFrame: 1 });
     await sleep(700);
     await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(900);
-    await gesture(b, 1); await waitZustand(b, 'C'); await idle(b); await sleep(600);
-    await b.js(`window.scrollTo(0, 0)`); await sleep(700);
-    await gesture(b, -1); await waitZustand(b, 'B'); await idle(b); await sleep(900);
-    await gesture(b, -1); await waitZustand(b, 'A'); await idle(b); await sleep(700);
+    await gesture(b, 1); await waitZustand(b, 'C'); await idle(b); await sleep(1800);   // Titel oben, Einleitung, Schafe erscheinen nacheinander
+    await gesture(b, -1); await sleep(700);                                              // in C löst das nichts mehr aus (das Intro ist einmalig)
     await b.send('Page.stopScreencast');
     const S = await samples(b);
     const wall = await b.js('Date.now() - performance.now()');
@@ -76,7 +74,7 @@ print(len(imgs), 'Bilder im GIF')
   const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
   const i0 = meta.findIndex((m) => m.P > 1.001), i1 = meta.findIndex((m, k) => k >= i0 && m.P >= 1.999);
   if (i0 > 0 && i1 > i0) {
-    execFileSync('python3', ['-c', py, dir, join(outDir, `geste2-${name}.gif`), String(Math.max(0, i0 - 8)), String(i1 + 10)], { stdio: 'inherit' });
+    execFileSync('python3', ['-c', py, dir, join(outDir, `geste2-${name}.gif`), String(Math.max(0, i0 - 8)), String(i1 + 24)], { stdio: 'inherit' });
     console.log('GIF Geste 2:', join(outDir, `geste2-${name}.gif`));
   }
 }

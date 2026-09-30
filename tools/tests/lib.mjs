@@ -42,7 +42,7 @@ window.__state = () => {
     y: Math.round(scrollY), z: q ? q.zustand : null, P: q ? +q.P.toFixed(4) : null, busy: q ? q.busy : null, bereit: q ? q.bereit : null,
     wartet: q ? q.wartet : null, frame: q ? q.frame : null, stalls: q ? q.stalls : 0, geladen: q ? q.geladen : 0,
     cv: c ? getComputedStyle(c).visibility : null, beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cue: num(cs('.scroll-cue')?.opacity),
-    frameO: num(cs('#start > .frame')?.opacity), level: Math.round(ty(document.querySelector('.beer__liquid'))),
+    frameO: num(cs('#start > .frame')?.opacity), level: Math.round(ty(document.querySelector('.beer__liquid'))), textY: Math.round(ty(document.querySelector('.hero__text')) * 10) / 10, more: num(cs('.hero__more')?.opacity),
     gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei'),
     overflow: getComputedStyle(document.documentElement).overflow, height: document.documentElement.scrollHeight,
   };

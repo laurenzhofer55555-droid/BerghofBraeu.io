@@ -5,10 +5,12 @@
 //      den Kronkorken; während des Zooms geht der Kronkorken von der Mitte aus in die Bierfarbe über (kein Goldbildschirm), daraus
 //      entsteht die Bierfläche mit Bläschen, der Rahmen blendet aus, die Schaumkrone senkt sich, der Titel erscheint.
 //   B  Bier: Bild voll Bier von Rand zu Rand, Schwappen aktiv, kein Rahmen
-//   ── Geste 2: das Bier leert sich (ca. 1,3 s)
-//   C  Inhalt: normal scrollbare Seite ab „Das Bier“
+//   ── Geste 2: das Bier leert sich (ca. 2,7 s), der Titel rutscht mit dem Bierspiegel nach oben, Einleitung und Schafe erscheinen
+//   C  Inhalt: normal scrollbare Seite, Titel oben, darunter Einleitung und Herde
 //
-// Rückweg: Geste nach oben spielt den Übergang rückwärts (B → A; in C ganz oben: C → B).
+// Rückweg: nur innerhalb des Intros (Geste nach oben in B spielt Übergang 1 rückwärts: B → A). Das Intro läuft EINMAL: in C sind alle
+// Gesten-Listener entfernt, die Seitensperre ist aufgehoben, Canvas und Bilder sind aus dem Speicher (teardown). Nichts wird im Browser
+// gespeichert. Der Link „Intro nochmal ansehen“ im Fuß scrollt nach oben und spielt das Intro ab A erneut ab (replay), danach wieder einmalig.
 //
 // Grundsätze
 //   · Die Seite ist in A und B gesperrt (CSS .seq ohne .frei, ab dem ersten Pixel). Die Gesten erkennt dieses Skript selbst.
@@ -65,7 +67,6 @@ const el = {
 const beer = createBeer(hero);
 const themeColor = document.querySelector('meta[name="theme-color"]');
 const CREAM = themeColor.content;
-const t0 = performance.now();
 
 // ── Format (Handy/Desktop) ──────────────────────
 let isPhone = portrait.matches, set, spec, ST, N;
@@ -83,7 +84,7 @@ let P = 0, state = 'A', busy = false, lockUntil = 0, pending = null, animId = 0,
 const log = [];                                                // für tools/tests: Übergänge
 
 // ── Bilder ──────────────────────────────────────
-let blobs = [], bmp = [], still = null, ready = false, run = 0, loadedCount = 0, loadStarted = false;
+let blobs = [], bmp = [], still = null, ready = false, run = 0, loadedCount = 0, loadStarted = false, tLoad = performance.now();
 const decoding = new Map();
 const pad = (n) => String(n).padStart(3, '0');
 const urlOf = (i) => `${BASE}${set}/${pad(i + 1)}.webp`;
@@ -121,7 +122,7 @@ async function prepare(f, dir) {                              // vor dem Start: 
 }
 
 async function loadAll() {
-  loadStarted = true;
+  loadStarted = true; tLoad = performance.now();
   const my = ++run;
   bmp.forEach((b) => b?.close?.());
   blobs = new Array(N); bmp = new Array(N); ready = false; loadedCount = 0; decoding.clear();
@@ -150,9 +151,14 @@ async function loadAll() {
   }
   if (!blobs.some(Boolean)) { skipToContent(); return; }
   ready = true;
+  setTimeout(warmHerd, 300);
   if (pending) { const to = pending; pending = null; root.classList.remove('wartet'); begin(to); }
 }
 function ensureLoaded() { if (!loadStarted) loadAll(); }
+// Die Schafe (Zustand C) laden erst, wenn alle Sequenzbilder da sind (sie konkurrieren sonst am Handy mit dem Start): vorwärmen
+function warmHerd() {
+  document.querySelectorAll('.sheep').forEach((img) => { const w = new Image(); w.sizes = img.sizes; w.srcset = img.srcset; w.src = img.getAttribute('src'); });
+}
 
 // ── Zeichnen ────────────────────────────────────
 let shown = null, stale = true, isReady = false;
@@ -244,8 +250,8 @@ function overlays(pv) {
   put('text', el.text, 'opacity', String(late ? end : start));
   put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + textDy * (1 - h)).toFixed(2)}px, 0)`);
 
-  // Einleitung und Bildgestaltung erscheinen in der zweiten Hälfte des Leerens, unter dem Titel
-  const more = ramp(h, 0.5, 0.9);
+  // Der Titel gleitet durch den Bereich der Einleitung nach oben; sie blendet erst ein, wenn er darüber angekommen ist (letzte 7 % des Wegs)
+  const more = ramp(h, 0.93, 1);
   put('more', el.more, 'opacity', String(more));
   put('moreV', el.more, 'visibility', more > 0 ? 'visible' : 'hidden');
 
@@ -322,14 +328,13 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   const from = state, usesFrames = from === 'A' || to === 'A';
   busy = true;
   setCue(false);
-  if (from === 'C') { root.classList.remove('frei'); lock(true); }
   if (usesFrames) await prepare(to === 'A' ? N - 1 : 0, to === 'A' ? -1 : 1);
   busy = false;
   const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : DUR2, usesFrames ? ease : easeSine);
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') { unlock(); measureDy(); root.classList.add('herde-an'); }
+  if (to === 'C') { unlock(); measureDy(); root.classList.add('herde-an'); teardown(); }
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -345,7 +350,44 @@ function skipToContent() {                                     // Überspringen,
   unlock();
   el.poster.style.visibility = 'hidden';
   measureDy();
+  teardown();
 }
+
+// ── Aufräumen nach dem Intro (Zustand C) und Wiederholen ──
+// In C ist das Intro vorbei: Gesten-Listener weg, Bilder und Canvas aus dem Speicher (die restliche Seite läuft flüssiger).
+function teardown() {
+  detach();
+  run++;                                                       // laufende Ladevorgänge verwerfen
+  release();
+  still?.close?.(); still = null;
+  blobs = []; bmp = []; decoding.clear();
+  ready = false; loadStarted = false; loadedCount = 0; shown = null; stale = true; pending = null;
+  canvas.style.display = 'none'; canvas.width = 0; canvas.height = 0;
+  el.poster.style.visibility = 'hidden';
+}
+const scrollToTop = () => new Promise((ok) => {
+  if (window.scrollY < 2) return ok();
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  const t = performance.now();
+  (function wait() { if (window.scrollY < 2 || performance.now() - t > 2000) ok(); else requestAnimationFrame(wait); })();
+});
+async function replay() {                                      // „Intro nochmal ansehen“: nach oben, dann das Intro ab A erneut
+  if (state !== 'C' || busy || replaying) return;
+  replaying = true;
+  await scrollToTop();
+  window.scrollTo(0, 0);
+  root.classList.remove('frei', 'herde-an', 'wartet');
+  lock(true);
+  state = 'A'; P = 0; busy = false; pending = null; lockUntil = performance.now() + LOCK_AFTER;
+  canvas.style.display = ''; resizeCanvas(); useSet();
+  isReady = false; root.classList.remove('is-ready'); el.poster.style.visibility = 'visible';
+  measureDy(); overlays(0); setCue(true);
+  attach();
+  loadAll();
+  replaying = false;
+}
+let replaying = false;
 
 // ── Eingaben ────────────────────────────────────
 function request(dir) {                                        // dir: +1 nach unten (weiter), −1 nach oben (zurück)
@@ -357,14 +399,13 @@ function request(dir) {                                        // dir: +1 nach u
   let to = null;
   if (state === 'A' && dir > 0) to = 'B';
   else if (state === 'B') to = dir > 0 ? 'C' : 'A';
-  else if (state === 'C' && dir < 0 && window.scrollY <= 0) to = 'B';
   if (!to) return ignore('kein Übergang');
   const usesFrames = state === 'A' || to === 'A';
   if (usesFrames && !ready) {                                 // Bilder laden noch: Pfeil pulsiert, Start von selbst danach
     pending = to;
     root.classList.add('wartet');
     ensureLoaded();
-    setTimeout(() => { if (pending) skipToContent(); }, Math.max(0, LOAD_TIMEOUT - (performance.now() - t0)));
+    setTimeout(() => { if (pending) skipToContent(); }, Math.max(0, LOAD_TIMEOUT - (performance.now() - tLoad)));
     return;
   }
   if (usesFrames) ensureLoaded();
@@ -424,6 +465,26 @@ function onKey(e) {
   if (!e.repeat) request(dir);
 }
 
+const onScroll = () => { if (state !== 'C' && window.scrollY !== 0) window.scrollTo(0, 0); };   // Fokus/Anker dürfen die gesperrte Seite nicht verschieben
+let attached = false;
+function attach() {
+  if (attached) return;
+  attached = true;
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('scroll', onScroll, { passive: true });
+}
+function detach() {
+  attached = false;
+  window.removeEventListener('wheel', onWheel);
+  window.removeEventListener('touchstart', onTouchStart);
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('keydown', onKey);
+  window.removeEventListener('scroll', onScroll);
+}
+
 // ── Start ───────────────────────────────────────
 resizeCanvas();
 measureDy();
@@ -441,25 +502,24 @@ if (location.hash || window.scrollY > 0) {
   lock(true);
   overlays(0);
   setCue(true);
+  attach();
   // Bilder laden nach dem Startbild (dessen Übertragung geht vor)
   if (document.readyState === 'complete') loadAll(); else window.addEventListener('load', () => { if (!loadStarted) loadAll(); }, { once: true });
 }
 
-window.addEventListener('wheel', onWheel, { passive: false });
-window.addEventListener('touchstart', onTouchStart, { passive: true });
-window.addEventListener('touchmove', onTouchMove, { passive: false });
-window.addEventListener('keydown', onKey);
-window.addEventListener('scroll', () => { if (state !== 'C' && window.scrollY !== 0) window.scrollTo(0, 0); }, { passive: true });   // Fokus/Anker dürfen die gesperrte Seite nicht verschieben
 el.skip?.addEventListener('click', skipToContent);
 el.cue.addEventListener('click', () => request(1));           // Tippen/Klick auf die Pfeile = dieselbe Geste wie Wischen nach unten
-window.addEventListener('resize', () => { resizeCanvas(); measureDy(); stale = true; if (state !== 'C' && !busy) render(P); }, { passive: true });
-portrait.addEventListener('change', () => { useSet(); if (loadStarted) loadAll(); if (!busy) { render(P); } });
+document.querySelector('[data-intro]')?.addEventListener('click', (e) => { e.preventDefault(); replay(); });   // Link im Fuß
+window.addEventListener('resize', () => { measureDy(); if (state === 'C') return; resizeCanvas(); stale = true; if (!busy) render(P); }, { passive: true });
+portrait.addEventListener('change', () => { useSet(); if (state === 'C') return; if (loadStarted) loadAll(); if (!busy) { render(P); } });
 
 // Nur lesend bzw. für tools/tests/
 window.__sequenz = {
   get zustand() { return state; }, get P() { return P; }, get busy() { return busy; }, get bereit() { return ready; },
   get wartet() { return !!pending; }, get stalls() { return stalls; }, get frame() { return frameOf(P); },
   get geladen() { return loadedCount; }, get anzahl() { return N; }, log,
+  get aktiv() { return attached; }, get speicher() { return { bitmaps: bmp.filter(Boolean).length, dateien: blobs.filter(Boolean).length, standbild: !!still, canvas: canvas.style.display !== 'none' && canvas.width > 0 }; },
+  replay,
   get gestenbereit() { return !busy && !pending && performance.now() >= lockUntil; },   // Eingabesperre vorbei?
   async zeige(pv) {                                            // Zustand zu P ohne Animation zeigen (Screenshots)
     if (busy) return false;
