@@ -7,20 +7,26 @@ import { CONFIG } from './config.js';
 const MM = 0.01;
 
 // Außenprofil der Flasche [Radius, Höhe] in Millimetern, von der Bodenmitte nach oben.
-// Maße: Höhe 228 mm, Körper Ø 70,5 mm, Hals Ø ≈ 26 mm, Mündung für 26-mm-Kronkorken (DIN 6094-1),
-// Boden 4,5 mm nach innen gewölbt. Schulter- und Halsverlauf aus dem Referenzfoto (IMG_6256) ausgelesen.
+// Standard-0,5-l-Euroflasche (Mehrweg, Mündung CC 26 / DIN 6094-1): Höhe 228 mm, Körper Ø 70,5 mm, Hals Ø ≈ 26 mm.
+// Boden, Ferse und Schulterbogen nach der Herstellerzeichnung „500 ml Eurobier CCA-26“ (Hillebrandt Glas, Art. 00181):
+// Körper zylindrisch bis 16,5 mm über dem Boden, Ferse mit R 57 und R 5, Standring Ø 56–62 mit Rändelung, Bodenwölbung 3 mm,
+// Schulter: R 50 tangential in den geraden Kegel. Hals und Kegel aus dem Referenzfoto (IMG_6256).
 const PROFILE_MM = [
-  [0, 4.5], [6, 4.2], [12, 3.2], [18, 1.6], [23, 0.5], [26.5, 0],          // gewölbter Boden
-  [29.5, 0], [31.8, 0.6], [33.2, 2.2], [33.7, 5], [34, 8], [34.4, 12],       // Standring + Fuß
-  [35, 15], [35.25, 17.5], [35.25, 60], [35.25, 100], [35.25, 136],           // Körper Ø 70,5
-  [35.1, 140], [34.7, 143], [33.9, 146.5], [33.3, 150.7], [31.3, 156],       // Schulter (Foto)
+  [0, 3], [7, 2.81], [13, 2.36], [18, 1.77], [22.5, 1.07], [25.5, 0.52], [27.3, 0.15],   // Bodenwölbung 3 mm (Kugelkappe)
+  [28.2, 0], [29.5, 0], [30.8, 0],                                                     // Standring (Rändelung, siehe stippling)
+  [31.15, 0.25], [31.5, 0.55], [31.95, 1], [32.4, 1.5], [32.9, 2], [33.3, 2.5],         // Ferse: enger Radius (R 5) …
+  [33.6, 3], [33.85, 3.5], [34.05, 4], [34.25, 5], [34.45, 6], [34.8, 8],               // … in flachen Bogen (R 57)
+  [35, 10], [35.15, 12], [35.25, 14], [35.25, 16.5],
+  [35.25, 60], [35.25, 100], [35.25, 136.5],                                           // Körper Ø 70,5, überall gleich
+  [35.11, 140.26], [34.68, 144], [33.97, 147.71], [32.99, 151.35], [31.73, 154.9],     // Schulter: Bogen R 50, ohne Knick
+  [31.3, 156],                                                                         // ab hier gerader Kegel (Foto)
   [29.2, 161.3], [27.1, 166.6], [25, 171.9], [22.9, 177.2], [20.7, 182.5],
   [18.5, 187.7], [16.5, 193], [15.3, 196.6], [14.6, 199],
-  [13.9, 202], [13.35, 205], [13.3, 208],                                    // Hals Ø ≈ 26,5
-  [13.8, 210.2], [14.6, 211.5], [14.75, 214], [14.6, 217.5], [13.6, 219.2],  // Halsring
-  [12.55, 220.6], [12.7, 221.6], [13.15, 222.8], [13.2, 225.8],              // Rille + Mündungswulst Ø 26,3
-  [12.85, 227.3], [12.1, 228], [9.5, 228], [8.3, 227.6],                     // Mündungsrand
-  [8, 226.5], [8, 214], [0, 214],                                            // Bohrung Ø 16
+  [13.9, 202], [13.35, 205], [13.3, 208],                                              // Hals Ø ≈ 26,5
+  [13.8, 210.2], [14.6, 211.5], [14.75, 214], [14.6, 217.5], [13.6, 219.2],            // Halsring
+  [12.55, 220.6], [12.7, 221.6], [13.15, 222.8], [13.2, 225.8],                        // Rille + Mündungswulst Ø 26,3
+  [12.85, 227.3], [12.1, 228], [9.5, 228], [8.3, 227.6],                               // Mündungsrand
+  [8, 226.5], [8, 214], [0, 214],                                                      // Bohrung Ø 16
 ];
 const CAP_BASE_MM = 222.9;        // Unterkante Kronkorken
 const CAP_HEIGHT_MM = 6.3;
@@ -46,7 +52,7 @@ export function createBottle(renderer, manager, { radialSegments = 128, plainCap
   const curve = new THREE.CatmullRomCurve3(
     PROFILE_MM.map(([r, y]) => new THREE.Vector3(r * MM, y * MM, 0)), false, 'centripetal'
   );
-  const outer = curve.getPoints(320).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
+  const outer = curve.getPoints((PROFILE_MM.length - 1) * 5).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
   outer[0].x = 0;
   outer[outer.length - 1].x = 0;
   const radiusAt = makeRadiusLookup(outer);
@@ -61,7 +67,11 @@ export function createBottle(renderer, manager, { radialSegments = 128, plainCap
 
   const filledMat = createGlassMaterial(g.filled);
   const emptyMat = createGlassMaterial(g.empty);
-  const glassFilled = new THREE.Mesh(new THREE.LatheGeometry(lower, radialSegments), filledMat);
+  // Rändelung am Standring braucht viele Spalten (88 Noppen à 12): nur in der hohen Auflösung fürs Rendern
+  const rändeln = radialSegments >= 256;
+  const filledGeo = new THREE.LatheGeometry(lower, rändeln ? STIPPLING.count * 12 : radialSegments);
+  if (rändeln) addStippling(filledGeo, lower.length);
+  const glassFilled = new THREE.Mesh(filledGeo, filledMat);
   const glassEmpty = new THREE.Mesh(new THREE.LatheGeometry(upper, radialSegments), emptyMat);
   glassFilled.name = 'GlassFilled';
   glassEmpty.name = 'GlassEmpty';
@@ -102,6 +112,28 @@ export function createBottle(renderer, manager, { radialSegments = 128, plainCap
   pivot.traverse((o) => { if (o.isMesh) o.layers.enable(SHADOW_LAYER); });
 
   return { pivot, body, glass: [glassFilled, glassEmpty], cap, labels, materials: { filledMat, emptyMat } };
+}
+
+// Rändelung (Stippling) auf der Unterseite des Standrings, wie bei Mehrwegflaschen: 88 schräg stehende Noppen,
+// dazwischen 0,45 mm tiefe Rillen (Herstellerzeichnung: Ring Ø 56–64 mm, Noppen gegen die Radialrichtung geneigt)
+const STIPPLING = { count: 88, depthMm: 0.45, slantDeg: 35, rIn: 28.2, rOut: 30.8, share: 0.6 };
+
+function addStippling(geo, rows) {
+  const S = STIPPLING;
+  const pos = geo.attributes.position;
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const perMm = (S.count * Math.tan((S.slantDeg * Math.PI) / 180)) / (2 * Math.PI * ((S.rIn + S.rOut) / 2));   // Phasenversatz je mm Radius
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const r = Math.hypot(x, z) / MM;
+    if (y > 0.0005 || r < S.rIn - 0.01 || r > S.rOut + 0.01) continue;       // nur die ebene Aufstandsfläche
+    const w = smooth(S.rIn, S.rIn + 0.7, r) * (1 - smooth(S.rOut - 0.8, S.rOut, r));   // an den Rändern glatt auslaufen
+    const u = ((S.count * Math.atan2(x, z)) / (2 * Math.PI) + perMm * (r - (S.rIn + S.rOut) / 2)) % 1;
+    const c = Math.abs((u < 0 ? u + 1 : u) - 0.5) * 2;                          // 0 = Noppenmitte, 1 = Rillenmitte
+    pos.setY(i, y + S.depthMm * MM * w * smooth(S.share - 0.1, S.share + 0.15, c));
+  }
+  geo.computeVertexNormals();
+  smoothLatheSeam(geo, rows);
 }
 
 // Bernsteinglas: echte Transmission + dunklere Ränder

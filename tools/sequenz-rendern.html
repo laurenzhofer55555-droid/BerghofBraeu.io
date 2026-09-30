@@ -45,7 +45,8 @@
     scene.background = new THREE.Color(CONFIG.colors.background);
     scene.environment = createStudioEnvironment(renderer);
     scene.environmentIntensity = CONFIG.lights.envIntensity;
-    scene.add(createBackdrop(), createFloor(-BOTTLE_HEIGHT / 2));
+    const backdrop = createBackdrop(), floor = createFloor(-BOTTLE_HEIGHT / 2);
+    scene.add(backdrop, floor);
     createLights(scene);
 
     const manager = new THREE.LoadingManager();
@@ -158,6 +159,27 @@
       status('fertig');
     };
     document.getElementById('go').addEventListener('click', () => window.__render());
+    // Testbild der Flasche (Formkontrolle): Kamera auf gleicher Höhe wie die Flaschenmitte + Höhenversatz y (mm über der Flaschenmitte),
+    // Ausschnitt in mm (Höhe des sichtbaren Bereichs), tilt = Flasche nach hinten/vorn kippen (Grad, negativ: Boden zur Kamera; dann ohne Boden/Schatten)
+    window.__testbild = async (name, dir, w, h, { mitte = 0, ausschnitt = 250, tilt = 0, rot = 0, abstand = 6.5 } = {}) => {
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.fov = (2 * Math.atan(ausschnitt * MM_ / 2 / abstand) * 180) / Math.PI;
+      camera.clearViewOffset();
+      camera.updateProjectionMatrix();
+      camera.position.set(0, mitte * MM_, abstand);
+      camera.lookAt(0, mitte * MM_, 0);
+      bottle.pivot.rotation.set((tilt * Math.PI) / 180, (rot * Math.PI) / 180, 0);
+      const frei = tilt !== 0;
+      backdrop.visible = floor.visible = shadow.group.visible = !frei;
+      renderer.render(scene, camera);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const res = await fetch(`/__shot?dir=${dir}&name=${name}`, { method: 'POST', body: blob });
+      if (!res.ok) throw new Error('Upload fehlgeschlagen: ' + res.status);
+      backdrop.visible = floor.visible = shadow.group.visible = true;
+      bottle.pivot.rotation.set(0, 0, 0);
+    };
+    const MM_ = 0.01;
     window.__pose = pose;
     window.__shoot = shoot;   // für Testbilder aus der Konsole
     status('bereit');
