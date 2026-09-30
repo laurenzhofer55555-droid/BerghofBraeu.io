@@ -4,12 +4,12 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, neuladen, drehen, tasten, skip, reduziert, extern
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, pfeil, neuladen, drehen, tasten, skip, reduziert, extern
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { browser, open, throttle, setView, flick, touchSwipe, keyPress, wheelNotch, gesture, state, samples, log, waitReady, idle, waitZustand,
-  shot, edgeGold, sleep, BASE, VIEWS, DEVICES } from './lib.mjs';
+  shot, edgeGold, goldShare, sleep, BASE, VIEWS, DEVICES } from './lib.mjs';
 
 const only = process.argv.slice(2);
 const results = [];
@@ -31,7 +31,8 @@ const EINGABEN = {
   touch: (b, dir) => touchSwipe(b, dir * 220),
   tasten: (b, dir) => keyPress(b, dir > 0 ? 'ArrowDown' : 'ArrowUp'),
 };
-const snap = async (b) => { const s = await state(b); return JSON.stringify({ z: s.z, P: s.P, cv: s.cv, frameO: s.frameO, beer: s.beer, title: s.title, cue: s.cue, level: s.level, gold: s.gold, frei: s.frei }); };
+// Pfeil blendet nach der Animation in 200 ms ein: vor dem Vergleich abwarten
+const snap = async (b) => { await sleep(260); const s = await state(b); return JSON.stringify({ z: s.z, P: s.P, cv: s.cv, frameO: s.frameO, beer: s.beer, title: s.title, cue: s.cue, level: s.level, gold: s.gold, frei: s.frei }); };
 
 // 1. Genau 2 Gesten von A bis C, genau 2 Gesten von C zurück bis A (Mausrad, Touch, Tastatur)
 async function gesten() {
@@ -226,6 +227,8 @@ async function zustandB() {
       const buf = await shot(b, join(OUT, 'zustandB', `${name}.png`));
       const eg = await edgeGold(b, buf);
       check(`zustandB ${name}: Bier berührt links, rechts und unten den Rand`, eg.left >= 0.98 && eg.right >= 0.98 && eg.bottom >= 0.98, `links ${eg.left.toFixed(2)}, rechts ${eg.right.toFixed(2)}, unten ${eg.bottom.toFixed(2)}`);
+      const oben = await goldShare(b, buf, 0.06, 0.4), ganz = await goldShare(b, buf, 0.06, 0.86);
+      check(`zustandB ${name}: ganze Fläche Bier, keine Schaumkrone, kein Beige (oben ${oben.toFixed(2)}, gesamt ${ganz.toFixed(2)})`, oben >= 0.95 && ganz >= 0.9);
       const geo = JSON.parse(await b.js(`JSON.stringify((() => {
         const r = (q) => { const e = document.querySelector(q); if (!e) return null; const x = e.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom }; };
         const brand = document.querySelector('.site-header__brand'), bb = brand.getBoundingClientRect();
@@ -242,6 +245,106 @@ async function zustandB() {
       check(`zustandB ${name}: ${n} Bläschen (Soll ${expected}), gleichmäßig verteilt`, n === expected && gap <= 3.5 * (100 / n), `größte Lücke ${gap.toFixed(1)} %`);
       check(`zustandB ${name}: Seite gesperrt, Seite ins Gold, Schwappen aktiv (Bläschen laufen)`, s.overflow === 'hidden' && s.gold === true && (await b.js(`document.documentElement.classList.contains('is-draining')`)) === true);
       check(`zustandB ${name}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+}
+
+// Geste 2: Bier leeren. Zustand B ist volle Bierfläche (Spiegel über dem Bildrand), der Spiegel sinkt ins Bild, erst dabei kommt die Schaumkrone.
+// Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung, Rückweg gleich lang. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
+const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
+async function geste2() {
+  for (const [name, view] of Object.entries(DEVICES)) {
+    if (name === 'desktop-2560' && !only.length) continue;   // gleiche Logik wie 1440, spart Zeit im Gesamtlauf
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(300);
+      // Bilder zu festen Zeitpunkten (Zustand als Funktion von P)
+      const anteile = {};
+      for (const pct of [0, 10, 50, 90, 100]) {
+        await b.js(`window.__sequenz.zeige(${1 + easeSine(pct / 100)})`); await sleep(500);
+        const buf = await shot(b, join(OUT, 'geste2', `${name}-${pct}.png`));
+        anteile[pct] = { oben: await goldShare(b, buf, 0.06, 0.3), gesamt: await goldShare(b, buf, 0.06, 0.9), alles: await goldShare(b, buf, 0.0, 1.0, 40) };
+      }
+      check(`geste2 ${name}: 0 % und 10 % ohne Lücke oben, Bild komplett Bier`, anteile[0].oben >= 0.95 && anteile[0].gesamt >= 0.9 && anteile[10].oben >= 0.95 && anteile[10].gesamt >= 0.8,
+        `0 %: ${anteile[0].oben.toFixed(2)}/${anteile[0].gesamt.toFixed(2)}, 10 %: ${anteile[10].oben.toFixed(2)}/${anteile[10].gesamt.toFixed(2)}`);
+      check(`geste2 ${name}: 50 % Schaumkrone im Bild, 90 % fast leer, 100 % leer`, anteile[50].oben < 0.9 && anteile[50].gesamt < 0.75 && anteile[90].gesamt < 0.3 && anteile[100].alles < 0.02,
+        `50 %: ${anteile[50].oben.toFixed(2)}/${anteile[50].gesamt.toFixed(2)}, 90 %: ${anteile[90].gesamt.toFixed(2)}, 100 %: ${anteile[100].alles.toFixed(3)}`);
+    } finally { b.close(); }
+    // echte Animation: Dauer, kein Sprung, Rückweg
+    const b2 = await browser({ view });
+    try {
+      await start(b2, view);
+      await gesture(b2, 1); await waitZustand(b2, 'B'); await idle(b2); await sleep(300);
+      const vorher = (await state(b2)).level;
+      const n0 = (await log(b2)).length;
+      await gesture(b2, 1);
+      check(`geste2 ${name}: Geste 2 führt nach C`, await waitZustand(b2, 'C', 12000) && await idle(b2, 12000));
+      let ev = (await log(b2)).slice(n0).filter((e) => e.art === 'start' || e.art === 'ende');
+      const dauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
+      check(`geste2 ${name}: Dauer zwischen 2,5 und 3 s (${dauer} ms)`, dauer >= 2500 && dauer <= 3000);
+      const S = (await samples(b2)).filter((x) => x.P > 1 && x.P < 2 && x.z !== 'C');
+      let rueck = 0, maxStep = 0;
+      for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
+      check(`geste2 ${name}: Pegel sinkt gleichmäßig (kein Zurück, größter Schritt ${maxStep.toFixed(1)} px, Start ${vorher} px)`, S.length > 20 && rueck === 0 && maxStep < view.h * 0.06, `${S.length} Messpunkte`);
+      // Rückweg (Bier füllt sich) gleich lang
+      await b2.js('window.scrollTo(0, 0)'); await sleep(300);
+      const n1 = (await log(b2)).length;
+      await gesture(b2, -1);
+      check(`geste2 ${name}: Rückweg führt nach B`, await waitZustand(b2, 'B', 12000) && await idle(b2, 12000));
+      ev = (await log(b2)).slice(n1).filter((e) => e.art === 'start' || e.art === 'ende');
+      const rueckDauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
+      check(`geste2 ${name}: Rückweg gleich lang (${rueckDauer} ms) und endet wieder in voller Bierfläche`, Math.abs(rueckDauer - dauer) < 150 && (await state(b2)).level === vorher, `Pegel ${(await state(b2)).level} statt ${vorher}`);
+      check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
+    } finally { b2.close(); }
+  }
+}
+
+// Weiter-Pfeile: zwei Chevrons als Knopf, sichtbar in A und B, aus während der Animation und in C, Klick löst die Geste aus
+async function pfeil() {
+  for (const name of ['iphone15', 'ipad-air-hoch', 'ipad-air-quer', 'desktop-1440']) {
+    const view = DEVICES[name];
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const info = () => b.js(`(() => { const c = document.querySelector('.scroll-cue'), cs = getComputedStyle(c), r = c.getBoundingClientRect(), sv = c.querySelector('svg').getBoundingClientRect();
+        const path = getComputedStyle(c.querySelector('path')); const q = (s) => { const e = document.querySelector(s); const x = e.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
+        const title = q('.hero__title'), claim = q('.hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__text')).opacity;
+        const hit = (x) => titleOp > 0.05 && !(r.bottom <= x.t || r.top >= x.b || r.right <= x.l || r.left >= x.r);
+        const mid = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+        return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width, stroke: path.stroke, sw: parseFloat(path.strokeWidth),
+          cap: path.strokeLinecap, color: cs.color, unten: innerHeight - r.bottom, mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(c.querySelector('svg')).animationDuration, text: c.innerText.trim(), n: c.querySelectorAll('path').length, cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
+      await sleep(400);                                            // Einblenden (200 ms) abwarten
+      const a = await info();
+      const breit = view.w / view.h > 0.8;
+      check(`pfeil ${name}: Knopf „Weiter“, zwei Pfeile, ${breit ? 56 : 44} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.n === 2 && Math.abs(a.svgW - (breit ? 56 : 44)) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW }));
+      check(`pfeil ${name}: Tannengrün, Linie 2 bis 3 px, runde Enden, Schleife 1,6 s`, a.stroke === 'rgb(31, 77, 43)' && a.sw >= 2 && a.sw <= 3 && a.cap === 'round' && a.anim === '1.6s', JSON.stringify({ stroke: a.stroke, sw: a.sw, cap: a.cap, anim: a.anim }));
+      check(`pfeil ${name}: Zustand A sichtbar (Deckkraft 0,8), unten mittig, Text „${a.text}“`, a.vis === 'visible' && Math.abs(a.op - 0.8) < 0.02 && a.mitte < 2 && a.unten >= 8 && /^(wischen|scrollen)$/i.test(a.text), JSON.stringify({ op: a.op, unten: a.unten, mitte: a.mitte }));
+      check(`pfeil ${name}: liegt oben auf (klickbar)`, a.treffer);
+      // Klick auf den Pfeil = Geste 1
+      const start0 = await starts(b);
+      await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.cx, y: a.cy });
+      await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.cx, y: a.cy, button: 'left', clickCount: 1 });
+      await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: a.cx, y: a.cy, button: 'left', clickCount: 1 });
+      await sleep(450);
+      const w = await info();
+      check(`pfeil ${name}: Klick startet Geste 1, Pfeil während der Animation aus (Deckkraft 0, unsichtbar)`, (await starts(b)) === start0 + 1 && w.op === 0 && w.vis === 'hidden', JSON.stringify({ op: w.op, vis: w.vis }));
+      check(`pfeil ${name}: Klick führt nach B`, await waitZustand(b, 'B') && await idle(b));
+      await sleep(500);
+      const bb = await info();
+      check(`pfeil ${name}: Zustand B sichtbar, ohne Überlappung mit Titel und Untertitel`, bb.vis === 'visible' && Math.abs(bb.op - 0.8) < 0.02 && !bb.ueber, JSON.stringify({ op: bb.op, ueber: bb.ueber }));
+      // Klick in B = Geste 2
+      await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: bb.cx, y: bb.cy, button: 'left', clickCount: 1 });
+      await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: bb.cx, y: bb.cy, button: 'left', clickCount: 1 });
+      await sleep(450);
+      const w2 = await info();
+      check(`pfeil ${name}: Klick in B startet Geste 2, Pfeil aus`, (await starts(b)) === start0 + 2 && w2.op === 0 && w2.vis === 'hidden');
+      check(`pfeil ${name}: Geste 2 führt nach C`, await waitZustand(b, 'C', 12000) && await idle(b, 12000));
+      await sleep(500);
+      const c = await info();
+      check(`pfeil ${name}: in Zustand C nicht sichtbar`, c.disp === 'none' || c.vis === 'hidden' || c.op === 0, JSON.stringify({ disp: c.disp, vis: c.vis, op: c.op }));
+      check(`pfeil ${name}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
 }
@@ -314,7 +417,7 @@ async function skip() {
   const b = await browser({ view: 'desktop' });
   try {
     await start(b, 'desktop');
-    const cue = await b.js(`(() => { const c = document.querySelector('.scroll-cue'); const r = c.getBoundingClientRect(); return { sichtbar: getComputedStyle(c).display !== 'none' && +getComputedStyle(c).opacity > 0.9, unten: r.top > innerHeight * 0.85, text: c.innerText.trim() }; })()`);
+    const cue = await b.js(`(() => { const c = document.querySelector('.scroll-cue'); const r = c.getBoundingClientRect(); return { sichtbar: getComputedStyle(c).display !== 'none' && getComputedStyle(c).visibility === 'visible' && +getComputedStyle(c).opacity >= 0.75, unten: r.top > innerHeight * 0.85, text: c.innerText.trim() }; })()`);
     check('skip: Hinweis unten sichtbar (Desktop: „Scrollen“)', cue.sichtbar && cue.unten && /scrollen/i.test(cue.text), JSON.stringify(cue));
     await keyPress(b, 'Tab'); await sleep(200); // echte Tastatur: erst dann gilt :focus-visible
     const focus = await b.js(`(() => { const r = document.querySelector('[data-skip]').getBoundingClientRect(); return { sichtbar: r.top >= 0 && r.bottom > 0, focus: document.activeElement === document.querySelector('[data-skip]') }; })()`);
@@ -357,7 +460,7 @@ async function extern() {
 }
 
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
+  ['zustandB', zustandB], ['geste2', geste2], ['pfeil', pfeil], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

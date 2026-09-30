@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
-Geste 2: das Bier leert sich, danach normal scrollbare Seite.
+Geste 2: das Bier leert sich (2,7 s, ruhig), danach normal scrollbare Seite.
 
 Live: https://berghof-hell.de
 
@@ -20,15 +20,17 @@ Dann http://localhost:5173 öffnen.
 - `js/main.js` – kleiner Starter: startet die Steuerung sofort; Notausgang: kommt sie nicht in Gang, wird die Sperre aufgehoben;
   bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite
 - `js/sequenz.js` – **Zustandsautomat mit drei Zuständen und zwei Übergängen**, gleich auf Handy, iPad und Desktop:
-  A Start (Flasche auf Augenhöhe, Rahmen) → Geste 1 (2,8 s) → B Bier (Bild voll Bier, Schwappen aktiv, kein Rahmen) → Geste 2 (1,3 s,
-  das Bier leert sich) → C Inhalt (normal scrollbar). Rückweg: Geste nach oben spielt rückwärts (B → A; in C ganz oben: C → B).
+  A Start (Flasche auf Augenhöhe, Rahmen) → Geste 1 (2,8 s) → B Bier (ganzer Bildschirm Bier, Spiegel über dem Bildrand, keine Schaumkrone,
+  kein Rahmen) → Geste 2 (2,7 s, sine.inOut: der Spiegel sinkt ins Bild, erst dabei kommt die Schaumkrone; Rückweg gleich lang) → C Inhalt
+  (normal scrollbar). Rückweg: Geste nach oben spielt rückwärts (B → A; in C ganz oben: C → B).
   Alles hängt an einem Wert P (0 bis 2), der per Zeit animiert wird; jeder Zustand ist eine reine Funktion von P (`render`), am Ende
   jeder Animation wird der Zielzustand ausdrücklich gesetzt. Kein Einrasten, kein Scroll-Fortschritt, keine Bibliothek.
   Die Seite ist in A und B per CSS gesperrt (`.seq` ohne `.frei`, ab dem ersten Pixel, kein `scrollTo`); die Gesten erkennt das Skript
   selbst: Mausrad (Summe über 50 ms ≥ 30), Touch (ab 40 px senkrecht), Tastatur (Pfeil, Bild, Leertaste). Eingabesperre während der
   Animation, danach 400 ms und bis das Trackpad-Nachlaufen (Mausrad-Ereignisse ohne 150 ms Pause) abgeklungen ist. Reload oder
   Direktlink (#…) mit Position über 0 landen ohne Animation in C. Knopf „Überspringen“ (Tastatur) springt direkt zu C, der Inhalt ist
-  in A und B `inert`.
+  in A und B `inert`. Unten mittig steht der Knopf „Weiter“ (`.scroll-cue`, zwei Pfeile als Inline-SVG, Tannengrün, darunter „Wischen“ bzw.
+  „Scrollen“): sichtbar in A und B, während einer Animation und in C aus (Klasse `.aus`, 200 ms), Klick oder Tippen löst dieselbe Geste aus.
   Bilder: alle Dateien werden nach dem Startbild geladen, dekodiert (`createImageBitmap`) wird ein Fenster um die Position und nach
   jeder Animation wieder freigegeben (Speicher am Handy). Fehlt ein Bild, hält die Zeit an (nie ein fehlender Frame); Geste zu früh:
   der Pfeil pulsiert und die Animation startet von selbst. Der Kronkorken geht während des Zooms von der Mitte aus in Bierfarbe über.

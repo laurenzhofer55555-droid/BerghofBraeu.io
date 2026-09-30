@@ -214,6 +214,23 @@ export function edgeGold(b, buf, tol = 30) {
   })()`);
 }
 
+// Anteil der Pixel in Bier-Gold (#C5A149, Toleranz `tol`) im Streifen von y0 bis y1 (Anteile der Bildhöhe), über die ganze Breite.
+// Bläschen und Titel zählen nicht als Gold, deshalb liegt ein volles Bier bei etwa 0,95 bis 1.
+export function goldShare(b, buf, y0 = 0, y1 = 1, tol = 30) {
+  const mime = buf[0] === 0xff ? 'jpeg' : 'png';
+  return b.js(`(async () => {
+    const img = new Image(); img.src = 'data:image/${mime};base64,${buf.toString('base64')}'; await img.decode();
+    const w = img.naturalWidth, h = img.naturalHeight, c = new OffscreenCanvas(w, h), g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, w, h).data;
+    let n = 0, gold = 0;
+    for (let y = Math.round(h * ${y0}); y < Math.round(h * ${y1}); y += 2) for (let x = 0; x < w; x += 2) {
+      const i = (y * w + x) * 4; n++;
+      if (Math.abs(d[i] - 197) <= ${tol} && Math.abs(d[i + 1] - 161) <= ${tol} && Math.abs(d[i + 2] - 73) <= ${tol}) gold++;
+    }
+    return n ? gold / n : 0;
+  })()`);
+}
+
 // Seeded Zufall (wiederholbare Positionen)
 export function rng(seed) {
   return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };

@@ -159,33 +159,42 @@ html.gold-page, html.gold-page body { background: var(--gold-beer); }
 .skip:focus-visible { transform: none; outline: 2px solid var(--gold-text); outline-offset: 3px; }
 html:not(.seq) .skip, .frei .skip { display: none; }
 
-/* Hinweis unten: Handy (Hochformat, gleiche Bedingung wie die Handy-Bildfolge) groß und mittig, Desktop klein unten rechts
-   (der Titel steht mittig). Handy: Start ohne Titel, der Titel erscheint erst mit der ersten Geste. */
+/* Weiter-Knopf: zwei Pfeile (Chevrons) mit kleinem Text, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
+   Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms). */
 .scroll-cue { display: none; }
 .seq .scroll-cue {
-  display: flex; position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 1.2vh + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  flex-direction: column; align-items: center; gap: 6px;
-  font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--green); white-space: nowrap;
-  text-shadow: 0 0 6px var(--cream), 0 0 12px var(--cream);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 4px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  min-width: 44px; min-height: 44px; margin: 0; padding: 4px 20px; border: 0; background: none; font: inherit; cursor: pointer;
+  color: #1F4D2B; opacity: .8; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
 }
+.seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
 .seq.frei .scroll-cue { display: none; }
+.scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
+.scroll-cue svg { display: block; width: 44px; height: auto; overflow: visible; animation: cue 1.6s ease-in-out infinite; }
+.scroll-cue path { fill: none; stroke: #1F4D2B; stroke-width: 2.5px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+@keyframes cue { 50% { transform: translateY(8px); } }
+/* Text: gleiche Schrift wie „Helles aus Agatharied“ */
+.scroll-cue__text { font-family: var(--font-text); font-size: 12px; line-height: 1.4; letter-spacing: .2em; text-transform: uppercase; color: var(--green-soft); }
+.scroll-cue__mouse { display: none; }
+@media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
 @media (max-aspect-ratio: 4/5) {
   .seq .hero__text { opacity: 0; }
   .seq .hero { padding-bottom: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom)); }   /* Titel über dem Pfeil (auch in B und C, damit er nicht springt) */
 }
 @media not all and (max-aspect-ratio: 4/5) {
-  .seq .scroll-cue { left: auto; right: calc(var(--frame-inset) + 30px); bottom: calc(var(--frame-inset) + 20px); transform: none; flex-direction: row; gap: 10px; font-size: 13px; }
-  .scroll-cue svg { width: 26px; height: 26px; }
+  .scroll-cue svg { width: 56px; }
+  .scroll-cue__text { font-size: 14px; letter-spacing: .26em; }
+  .seq .hero { padding-bottom: calc(var(--frame-inset) + 4.5vh + 50px + env(safe-area-inset-bottom)); }    /* Platz für den Pfeil unter dem Titel */
 }
-.scroll-cue svg { width: 64px; height: 64px; animation: cue 2.4s ease-in-out infinite;
-      filter: drop-shadow(0 0 4px var(--cream)); }
-@keyframes cue { 50% { transform: translateY(10px); } }
+@media (min-aspect-ratio: 4001/5000) and (max-height: 700px) {   /* niedrige Fenster: nur die Pfeile, ohne Text */
+  .scroll-cue__text { display: none; }
+  .seq .hero { padding-bottom: calc(var(--frame-inset) + 4.5vh + 30px + env(safe-area-inset-bottom)); }
+}
 /* Geste zu früh (Bilder laden noch): Pfeil pulsiert, die Animation startet danach von selbst */
 .wartet .scroll-cue svg { animation: cue-warten 1.1s ease-in-out infinite; }
 @keyframes cue-warten { 50% { opacity: .3; } }
-.scroll-cue__mouse { display: none; }
-@media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue svg, .wartet .scroll-cue svg { animation: none; } }
 
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.

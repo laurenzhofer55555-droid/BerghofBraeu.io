@@ -35,8 +35,8 @@ const manifest = await (await fetch(BASE + 'manifest.json')).json();
 
 // ── Einstellungen ───────────────────────────────
 const DUR1 = 2800;            // ms, Geste 1 (Kamerafahrt bis zum Bier)
-const DUR2 = 1300;            // ms, Geste 2 (Bier leeren)
-const B_LEVEL = 0.2;          // Pegel im Zustand B (0 = Gold bis oben, 1 = leer): Schaumkrone steht oben im Bild
+const DUR2 = 2700;            // ms, Geste 2 (Bier leeren, ruhig; Rückweg gleich lang)
+const B_LEVEL = 0;            // Pegel im Zustand B (0 = Bierfläche über den ganzen Bildschirm, Spiegel über dem Bildrand, keine Schaumkrone; 1 = leer)
 const LOCK_AFTER = 400;       // ms Sperre nach jeder Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
 const WHEEL_WINDOW = 50, WHEEL_MIN = 30, WHEEL_TOTAL = 120;   // Summe über 50 ms ≥ 30 oder ganze Geste ≥ 120
@@ -48,7 +48,8 @@ const GOLD = '#C5A149', GOLD_RGB = '197,161,73';   // = --gold-beer
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const ramp = (g, a, b) => clamp01((g - a) / (b - a));         // 0 vor a, 1 nach b, dazwischen linear
 const smooth = (x) => x * x * (3 - 2 * x);
-const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);   // power2.inOut
+const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);   // power2.inOut (Geste 1)
+const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;                    // sine.inOut (Geste 2: sanfter Anfang, sanftes Auslaufen)
 
 const el = {
   cue: hero.querySelector('.scroll-cue'),
@@ -215,11 +216,7 @@ function drawCanvas(pv) {
 
 // Alles außer dem Canvas: eine reine Funktion von P
 function overlays(pv) {
-  const g = Math.min(1, pv), h = Math.max(0, pv - 1), f = frameOf(pv);
-
-  // Hinweis unten: im Start und im Bier sichtbar, in den Übergängen aus
-  const cue = pv <= 1 ? (g < 0.5 ? 1 - ramp(g, 0, 0.1) : ramp(g, 0.93, 1)) : 1 - ramp(h, 0, 0.1);
-  put('cue', el.cue, 'opacity', String(cue));
+  const g = Math.min(1, pv), f = frameOf(pv);
 
   // Titel: am Handy erst mit dem Bier; am Desktop steht er am Start und ist weg, bevor die Flasche in seinen Bereich kommt
   // (titleClear: aus den Bildern gemessen, tools/sequenz.py). Mit dem Bier erscheint er auf allen Geräten unten.
@@ -238,12 +235,13 @@ function overlays(pv) {
   // Bierfläche (mit Bläschen) legt sich über den Farbwechsel des Kronkorkens
   put('beer', el.beer, 'opacity', String(ramp(g, 0.6, 0.8)));
 
-  // Seite taucht ins Gold (Hintergrund + Browserfarbe); oben wieder beige, sobald die Schaumkrone kommt, unten erst beim leeren Glas
-  setGold(g >= 0.7 && g < 0.82 && pv <= 1, g >= 0.7 && pv < 1.9);
-
+  // Seite taucht ins Gold (Hintergrund + Browserfarbe); oben wieder beige, sobald die Schaumkrone ins Bild sinkt, unten erst beim leeren Glas
   const p = levelOf(pv);
-  beer.level(p);
-  const draining = p > 0 && p < 1;                             // Bläschen steigen, solange Bier zu sehen ist
+  setGold(g >= 0.7 && p < beer.foamIn(), g >= 0.7 && pv < 1.9);
+
+  const shown = g >= 0.8;                                      // ab hier deckt die Bierfläche alles (Canvas aus)
+  beer.level(p, shown);
+  const draining = shown && p < 1;                             // Bläschen steigen, solange Bier zu sehen ist (auch in B)
   if (last.draining !== draining) { last.draining = draining; root.classList.toggle('is-draining', draining); }
 }
 
@@ -255,7 +253,7 @@ function render(pv) {
 }
 
 // ── Animation ───────────────────────────────────
-function go(to, dur) {
+function go(to, dur, easing = ease) {
   const from = P, my = ++animId, dir = to > from ? 1 : -1;
   busy = true;
   stalls = 0;
@@ -265,7 +263,7 @@ function go(to, dur) {
     const step = (now) => {
       if (my !== animId) return resolve(false);                // abgebrochen (Überspringen)
       const dt = Math.min(64, now - prev); prev = now;
-      const nt = Math.min(dur, t + dt), pv = from + (to - from) * ease(nt / dur);
+      const nt = Math.min(dur, t + dt), pv = from + (to - from) * easing(nt / dur);
       if (render(pv)) {                                        // sonst: Zeit hält an, bis das Bild dekodiert ist
         t = nt; P = pv;
         const lv = levelOf(pv);
@@ -289,18 +287,28 @@ function go(to, dur) {
   });
 }
 
+// Weiter-Knopf (zwei Pfeile): in A und B sichtbar, während einer Animation und in C aus (Klasse .aus blendet in 200 ms)
+let cueOn = null;
+function setCue(on) {
+  if (cueOn === on) return;
+  cueOn = on;
+  el.cue.classList.toggle('aus', !on);
+}
+
 async function begin(to) {                                     // 'A' | 'B' | 'C'
   if (busy) return;
   const from = state, usesFrames = from === 'A' || to === 'A';
   busy = true;
+  setCue(false);
   if (from === 'C') { root.classList.remove('frei'); lock(true); }
   if (usesFrames) await prepare(to === 'A' ? N - 1 : 0, to === 'A' ? -1 : 1);
   busy = false;
-  const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : DUR2);
+  const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : DUR2, usesFrames ? ease : easeSine);
   if (!done) return;
   state = to;
   release();
   if (to === 'C') unlock();
+  else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
 function unlock() { lock(false); root.classList.add('frei'); }
@@ -308,6 +316,7 @@ function unlock() { lock(false); root.classList.add('frei'); }
 function skipToContent() {                                     // Überspringen, Notfall oder Direktlink: sofort Zustand C
   animId++; busy = false; pending = null;
   root.classList.remove('wartet');
+  setCue(false);
   state = 'C'; P = 2;
   render(2);
   release();
@@ -406,6 +415,7 @@ if (location.hash || window.scrollY > 0) {
   root.classList.remove('frei');                               // Zustand A: gesperrt
   lock(true);
   overlays(0);
+  setCue(true);
   // Bilder laden nach dem Startbild (dessen Übertragung geht vor)
   if (document.readyState === 'complete') loadAll(); else window.addEventListener('load', () => { if (!loadStarted) loadAll(); }, { once: true });
 }
@@ -416,6 +426,7 @@ window.addEventListener('touchmove', onTouchMove, { passive: false });
 window.addEventListener('keydown', onKey);
 window.addEventListener('scroll', () => { if (state !== 'C' && window.scrollY !== 0) window.scrollTo(0, 0); }, { passive: true });   // Fokus/Anker dürfen die gesperrte Seite nicht verschieben
 el.skip?.addEventListener('click', skipToContent);
+el.cue.addEventListener('click', () => request(1));           // Tippen/Klick auf die Pfeile = dieselbe Geste wie Wischen nach unten
 window.addEventListener('resize', () => { resizeCanvas(); stale = true; if (state !== 'C' && !busy) render(P); }, { passive: true });
 portrait.addEventListener('change', () => { useSet(); if (loadStarted) loadAll(); if (!busy) { render(P); } });
 

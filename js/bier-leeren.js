@@ -5,6 +5,7 @@
 // Oberfläche, eine gedämpfte Feder lässt sie danach ruhig ausschwingen. Der Schaum folgt leicht verzögert.
 // Der Pegel selbst wird nur per transform verschoben (level() aus js/sequenz.js, allein aus dem Scrollfortschritt).
 // Das Bier füllt auf allen Geräten den ganzen Bildschirm von Rand zu Rand (Höhe 100lvh, siehe .beer in css/style.css).
+// Zustand B: Pegel 0 = der Spiegel steht 70 px über dem Bildrand, das Bild ist ganz Bier. Beim Leeren sinkt er ins Bild, dabei erscheint die Schaumkrone.
 // Die Wellenamplitude ist in Pixeln fest; die Wellenlänge wächst mit der Bildschirmbreite (2 bis 3 Wellenberge). Die Bläschen
 // werden nach Fläche gezählt und gleichmäßig über die Breite verteilt.
 
@@ -138,14 +139,16 @@ export function createBeer(hero) {
   measure();
 
   return {
-    level(p) {
+    // p: Pegel; visible: Bierfläche ist im Bild (in B steht der Spiegel über dem Bildrand: dann nichts zeichnen, Welle in Ruhe)
+    level(p, visible = true) {
       setLevel(p);
-      const on = p > 0 && p < 1;
-      run(on);                                                    // Welle läuft nur, solange Bier zu sehen ist
+      const on = visible && p > 0 && p < 1;
+      run(on);                                                    // Welle läuft nur, solange die Oberfläche ins Bild kommen kann
       if (on) calm = false;
       else if (!calm) rest();
       if (still) draw();
     },
     velocity(v) { scrollV = v; },
+    foamIn() { return H ? 70 / (H + foamH + 140) : 0.06; },     // Pegel, ab dem die Schaumkrone oben ins Bild sinkt (Spiegel bei −70 px im Zustand B)
   };
 }
