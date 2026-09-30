@@ -314,12 +314,12 @@ async function pfeil() {
         const hit = (x) => titleOp > 0.05 && !(r.bottom <= x.t || r.top >= x.b || r.right <= x.l || r.left >= x.r);
         const mid = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
         return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width, stroke: path.stroke, sw: parseFloat(path.strokeWidth),
-          cap: path.strokeLinecap, color: cs.color, unten: innerHeight - r.bottom, mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(c.querySelector('svg')).animationDuration, text: c.innerText.trim(), n: c.querySelectorAll('path').length, cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
+          join: path.strokeLinejoin, fill: path.fill, color: cs.color, unten: innerHeight - r.bottom, mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(c.querySelector('svg')).animationDuration, text: c.innerText.trim(), n: c.querySelectorAll('path').length, cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
       await sleep(400);                                            // Einblenden (200 ms) abwarten
       const a = await info();
-      const breit = view.w / view.h > 0.8;
-      check(`pfeil ${name}: Knopf „Weiter“, zwei Pfeile, ${breit ? 56 : 44} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.n === 2 && Math.abs(a.svgW - (breit ? 56 : 44)) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW }));
-      check(`pfeil ${name}: Tannengrün, Linie 2 bis 3 px, runde Enden, Schleife 1,6 s`, a.stroke === 'rgb(31, 77, 43)' && a.sw >= 2 && a.sw <= 3 && a.cap === 'round' && a.anim === '1.6s', JSON.stringify({ stroke: a.stroke, sw: a.sw, cap: a.cap, anim: a.anim }));
+      const breit = view.w / view.h > 0.8, soll = breit ? Math.min(48, Math.max(34, view.h * 0.062)) : 44;
+      check(`pfeil ${name}: Knopf „Weiter“, Pfeil ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.n === 1 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW }));
+      check(`pfeil ${name}: nur der Umriss (innen offen, ungefüllt), Tannengrün, Linie 2 bis 3 px, runde Ecken, Schleife 1,6 s`, a.fill === 'none' && a.stroke === 'rgb(31, 77, 43)' && a.sw >= 2 && a.sw <= 3 && a.join === 'round' && a.anim === '1.6s', JSON.stringify({ fill: a.fill, stroke: a.stroke, sw: a.sw, join: a.join, anim: a.anim }));
       check(`pfeil ${name}: Zustand A sichtbar (Deckkraft 0,8), unten mittig, Text „${a.text}“`, a.vis === 'visible' && Math.abs(a.op - 0.8) < 0.02 && a.mitte < 2 && a.unten >= 8 && /^(wischen|scrollen)$/i.test(a.text), JSON.stringify({ op: a.op, unten: a.unten, mitte: a.mitte }));
       check(`pfeil ${name}: liegt oben auf (klickbar)`, a.treffer);
       // Klick auf den Pfeil = Geste 1
