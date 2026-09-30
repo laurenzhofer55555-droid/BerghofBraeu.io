@@ -95,7 +95,7 @@ main { position: relative; z-index: 2; }
 /* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie ── */
 .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
 .site-header__brand {
-  position: sticky; top: var(--frame-inset);
+  position: relative;                 /* scrollt mit der Seite (nicht kleben: sonst läuft der Titel in C beim Scrollen darunter durch) */
   width: max-content; margin: var(--frame-inset) auto 0;
   transform: translateY(-50%);
   padding: 0 18px;
@@ -172,8 +172,8 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 
 /* Weiter-Knopf: ein gefüllter Pfeil mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
    Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
-   Breite --cue-w: Handy 44 px, Desktop bis 56 px (schrumpft mit niedrigen Fenstern). */
-.seq { --cue-w: 44px; --cue-h: calc(var(--cue-w) * 61 / 56); }
+   Breite --cue-w des Pfeils: Handy 33 px, Desktop bis 42 px (schrumpft mit niedrigen Fenstern), Höhe ≈ 1,45 × Breite. */
+.seq { --cue-w: 33px; --cue-h: calc(var(--cue-w) * 64 / 44); }
 .scroll-cue { display: none; }
 .seq .scroll-cue {
   display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
@@ -196,7 +196,7 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
   .seq .hero__text { opacity: 0; }                                    /* Handy: Start ohne Titel, er erscheint mit dem Bier */
 }
 @media not all and (max-aspect-ratio: 4/5) {
-  .seq { --cue-w: clamp(40px, 6.2vh, 56px); }
+  .seq { --cue-w: clamp(28px, 4.7vh, 42px); }
   .scroll-cue__text { font-size: 14px; }
   .hero { --b-pad: calc(var(--frame-inset) + 14px + 8px + var(--cue-h) + 18px + env(safe-area-inset-bottom)); }   /* Titel 18 px über dem Pfeil */
 }
@@ -485,7 +485,7 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   /* „Wischen“ mit gefülltem Pfeil nach rechts, gleiche Gestalt wie der Weiter-Knopf; weg nach dem ersten Wischen */
   .timeline__swipe { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--green); transition: opacity .4s ease; }
   .timeline__swipe span { margin-right: -.3em; }
-  .timeline__swipe svg { width: 22px; height: 20px; flex: none; }
+  .timeline__swipe svg { width: 28px; height: 19px; flex: none; overflow: visible; }
   .timeline__swipe rect, .timeline__swipe polygon { fill: var(--green); }
   .timeline__swipe polygon { stroke: var(--green); stroke-width: 4; stroke-linejoin: round; }
   .timeline__swipe.is-gone { opacity: 0; }

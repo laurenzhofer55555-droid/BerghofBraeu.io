@@ -339,6 +339,15 @@ async function titel() {
       const letzter = S.length ? S.at(-1).textY : 0;
       check(`titel ${name}: Titel gleitet von unten (${Math.round(sB.textY)} px) nach oben, nie zurück, größter Schritt ${maxStep.toFixed(1)} px`, S.length > 20 && auf === 0 && dy > 0 && maxStep < r.vh * 0.06, `${S.length} Messpunkte, Start ${dy}`);
       check(`titel ${name}: kein Sprung am Ende von Geste 2 (letzter Wert ${letzter} px, danach ${ende.textY} px)`, Math.abs(letzter - ende.textY) <= Math.max(maxStep, 2) + 0.5 && Math.abs(ende.textY) < 0.5, `Ende ${ende.textY}`);
+      // „Hofer Bräu“ oben und Titel dürfen sich nie überlappen, auch nicht beim Scrollen in C (die Kopfzeile scrollt mit)
+      const ueberl = [];
+      for (const y of [0, 30, 60, 90, 130, 180]) {
+        await b.js(`window.scrollTo(0, ${y})`); await sleep(120);
+        const o = JSON.parse(await b.js(`JSON.stringify((() => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector('.hero__title')); const t = rg.getBoundingClientRect(), br = document.querySelector('.site-header__brand span').getBoundingClientRect(); return { hit: !(t.bottom <= br.top || t.top >= br.bottom || t.right <= br.left || t.left >= br.right), tt: Math.round(t.top), bb: Math.round(br.bottom) }; })())`));
+        if (o.hit) ueberl.push(`${y}px: Titel ${o.tt} / Kopf ${o.bb}`);
+      }
+      await b.js('window.scrollTo(0, 0)');
+      check(`titel ${name}: Titel überlappt „Hofer Bräu“ nie (auch nicht beim Scrollen)`, ueberl.length === 0, ueberl.join('; '));
       check(`titel ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
     } finally { b.close(); }
   }
@@ -527,16 +536,16 @@ async function pfeil() {
         const title = G('.hero__title'), claim = G('.hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__text')).opacity;
         const hit = (x) => titleOp > 0.05 && !(r.bottom <= x.t || r.top >= x.b || r.right <= x.l || r.left >= x.r);
         const mid = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
-        return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width,
+        return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width, svgH: sv.height,
           rectFill: rect.fill, polyFill: poly.fill, polyStroke: poly.stroke, join: poly.strokeLinejoin, rx: svg.querySelector('rect').getAttribute('rx'), shapes: svg.children.length,
           mitte: Math.abs((r.left + r.right) / 2 - innerWidth / 2), unten: innerHeight - r.bottom, ueber: hit(title) || hit(claim), treffer: c.contains(mid), anim: getComputedStyle(svg).animationDuration,
           text: c.innerText.trim(), fs: parseFloat(tcs.fontSize), ls: parseFloat(tcs.letterSpacing), tcolor: tcs.color, tup: tcs.textTransform,
           rechts: tr.left >= sv.right - 1, vz: Math.abs((svg.offsetTop + svg.offsetHeight / 2) - (tx.offsetTop + tx.offsetHeight / 2)), cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2 }; })()`);
       await sleep(400);                                            // Einblenden (200 ms) abwarten
       const a = await info();
-      const breit = view.w / view.h > 0.8, soll = breit ? Math.min(56, Math.max(40, view.h * 0.062)) : 44;
+      const breit = view.w / view.h > 0.8, soll = breit ? Math.min(42, Math.max(28, view.h * 0.047)) : 33;
       const gruen = 'rgb(31, 77, 43)';
-      check(`pfeil ${name}: Knopf „Weiter“ mit einem einzelnen Pfeil, ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.shapes === 2 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW, shapes: a.shapes }));
+      check(`pfeil ${name}: Knopf „Weiter“ mit einem einzelnen Pfeil, ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.shapes === 2 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44 && a.svgH / a.svgW > 1.3, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW, shapes: a.shapes }));
       check(`pfeil ${name}: vollflächig dunkelgrün gefüllt (Schaft und Spitze), nicht umrahmt, runde Enden und Ecken`, a.rectFill === gruen && a.polyFill === gruen && a.polyStroke === gruen && a.join === 'round' && +a.rx >= 3, JSON.stringify({ r: a.rectFill, p: a.polyFill, s: a.polyStroke, join: a.join, rx: a.rx }));
       check(`pfeil ${name}: „${a.text}“ rechts neben dem Pfeil, Versalien, weite Laufweite, dunkelgrün, ${a.fs} px, vertikal mittig`, /^(wischen|scrollen)$/i.test(a.text) && a.rechts && a.tup === 'uppercase' && a.fs >= 13 && a.ls >= 3 && a.tcolor === gruen && a.vz <= 2, JSON.stringify({ fs: a.fs, ls: a.ls, color: a.tcolor, vz: a.vz, rechts: a.rechts }));
       check(`pfeil ${name}: Zustand A sichtbar, unten mittig, Schleife 1,6 s`, a.vis === 'visible' && Math.abs(a.op - 0.9) < 0.03 && a.mitte < 2 && a.unten >= 8 && a.anim === '1.6s', JSON.stringify({ op: a.op, unten: a.unten, mitte: a.mitte, anim: a.anim }));

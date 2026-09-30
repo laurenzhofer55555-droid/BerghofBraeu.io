@@ -23,7 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js';
+import { createBeer } from './bier-leeren.js?v=776e0e65';
+import { ladeHerde } from './herde.js?v=776e0e65';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -33,7 +34,9 @@ const hero = document.getElementById('start');
 const PHONE = '(max-aspect-ratio: 4/5)';   // Hochformat: Handy-Bildfolge und Handy-Start (ohne Titel)
 const portrait = window.matchMedia(PHONE);
 
-const manifest = await (await fetch(BASE + 'manifest.json')).json();
+const V = new URL(import.meta.url).search;                      // ?v=… der Code-Version (tools/stempeln.py): neue Version = neue Dateien, kein Mischen mit altem Cache
+const manifest = await (await fetch(BASE + 'manifest.json' + V)).json();
+const AV = manifest.v ? '?v=' + manifest.v : '';              // Version der Bilder
 
 // ── Einstellungen ───────────────────────────────
 const DUR1 = 2800;            // ms, Geste 1 (Kamerafahrt bis zum Bier)
@@ -87,7 +90,7 @@ const log = [];                                                // für tools/tes
 let blobs = [], bmp = [], still = null, ready = false, run = 0, loadedCount = 0, loadStarted = false, tLoad = performance.now();
 const decoding = new Map();
 const pad = (n) => String(n).padStart(3, '0');
-const urlOf = (i) => `${BASE}${set}/${pad(i + 1)}.webp`;
+const urlOf = (i) => `${BASE}${set}/${pad(i + 1)}.webp${AV}`;
 
 async function fetchBlob(url, priority) {
   for (let k = 0; k < 2; k++) {
@@ -126,7 +129,7 @@ async function loadAll() {
   const my = ++run;
   bmp.forEach((b) => b?.close?.());
   blobs = new Array(N); bmp = new Array(N); ready = false; loadedCount = 0; decoding.clear();
-  const sb = await fetchBlob(`${BASE}${set}/still-${pad(ST[0] + 1)}.webp`, 'high');
+  const sb = await fetchBlob(`${BASE}${set}/still-${pad(ST[0] + 1)}.webp${AV}`, 'high');
   if (my !== run) return;
   if (sb) {                                                    // altes Ruhebild bleibt stehen, bis das neue da ist (Drehen: nie schwarz)
     const fresh = await toBitmap(sb);
@@ -151,14 +154,10 @@ async function loadAll() {
   }
   if (!blobs.some(Boolean)) { skipToContent(); return; }
   ready = true;
-  setTimeout(warmHerd, 300);
+  setTimeout(ladeHerde, 300);
   if (pending) { const to = pending; pending = null; root.classList.remove('wartet'); begin(to); }
 }
 function ensureLoaded() { if (!loadStarted) loadAll(); }
-// Die Schafe (Zustand C) laden erst, wenn alle Sequenzbilder da sind (sie konkurrieren sonst am Handy mit dem Start): vorwärmen
-function warmHerd() {
-  document.querySelectorAll('.sheep').forEach((img) => { const w = new Image(); w.sizes = img.sizes; w.srcset = img.srcset; w.src = img.getAttribute('src'); });
-}
 
 // ── Zeichnen ────────────────────────────────────
 let shown = null, stale = true, isReady = false;
@@ -334,7 +333,7 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') { unlock(); measureDy(); root.classList.add('herde-an'); teardown(); }
+  if (to === 'C') { ladeHerde(); unlock(); measureDy(); root.classList.add('herde-an'); teardown(); }
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -349,6 +348,7 @@ function skipToContent() {                                     // Überspringen,
   release();
   unlock();
   el.poster.style.visibility = 'hidden';
+  ladeHerde();
   measureDy();
   teardown();
 }
