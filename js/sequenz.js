@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=776e0e65';
-import { ladeHerde } from './herde.js?v=776e0e65';
+import { createBeer } from './bier-leeren.js?v=51c4bb85';
+import { ladeHerde } from './herde.js?v=51c4bb85';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -61,6 +61,7 @@ const el = {
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
   more: hero.querySelector('.hero__more'),
+  flock: hero.querySelector('.flock'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -215,8 +216,6 @@ function measureDy() {
   const bPad = hero.getBoundingClientRect().bottom - pad.getBoundingClientRect().bottom;
   probe.remove(); pad.remove();
   textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
-  const lead = hero.querySelector('.hero__lead');   // Zone für die Herde: unter der Einleitung, mit 16 px Abstand zum Text
-  if (lead) hero.style.setProperty('--zone', Math.max(0, hero.clientHeight - (lead.offsetTop + lead.offsetHeight) - 16 - 28) + 'px');
 }
 const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * (p - 1) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
@@ -247,6 +246,7 @@ function overlays(pv) {
   const end = ramp(g, 0.85, 1);
   const late = g >= 0.5;
   put('text', el.text, 'opacity', String(late ? end : start));
+  put('flock', el.flock, 'opacity', String(late ? end : 0));   // Mini-Herde über dem Titel: ab B sichtbar, gleitet mit dem Titel nach oben
   put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + textDy * (1 - h)).toFixed(2)}px, 0)`);
 
   // Der Titel gleitet durch den Bereich der Einleitung nach oben; sie blendet erst ein, wenn er darüber angekommen ist (letzte 7 % des Wegs)
@@ -327,13 +327,14 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   const from = state, usesFrames = from === 'A' || to === 'A';
   busy = true;
   setCue(false);
+  ladeHerde();                                                 // Schafe und Gemälde (Zustand C) sicher geladen, bevor sie gebraucht werden
   if (usesFrames) await prepare(to === 'A' ? N - 1 : 0, to === 'A' ? -1 : 1);
   busy = false;
   const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : DUR2, usesFrames ? ease : easeSine);
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') { ladeHerde(); unlock(); measureDy(); root.classList.add('herde-an'); teardown(); }
+  if (to === 'C') { unlock(); measureDy(); teardown(); }
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -377,7 +378,7 @@ async function replay() {                                      // „Intro nochm
   replaying = true;
   await scrollToTop();
   window.scrollTo(0, 0);
-  root.classList.remove('frei', 'herde-an', 'wartet');
+  root.classList.remove('frei', 'wartet');
   lock(true);
   state = 'A'; P = 0; busy = false; pending = null; lockUntil = performance.now() + LOCK_AFTER;
   canvas.style.display = ''; resizeCanvas(); useSet();

@@ -138,7 +138,8 @@
       position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
       padding: var(--hero-top) 24px 28px; text-align: center;
       --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px);
-      --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
+      --flock-h: 40px;
+      --text-h: calc(var(--flock-h) + 12px + var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
       --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
       --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
     }
@@ -148,18 +149,30 @@
     .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
     .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: clamp(18px, 3vh, 30px); }
     .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
+    @media (min-width: 768px) { .hero { --flock-h: 50px; } }
+    .hero__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; width: 100%; max-width: 1040px; margin: 0 auto; align-items: center; }
     .hero__lead { position: relative; margin: 0 auto; max-width: 38ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
-    @media (min-width: 768px) { .hero__lead { max-width: 60ch; font-size: 19px; } }
+    .painting { position: relative; margin: 0; }
+    .painting img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
+    @media (min-width: 768px) {
+      .hero__cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4.5vw, 64px); }
+      .hero__lead { margin: 0; max-width: none; font-size: 19px; text-align: left; }
+    }
+    @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } }
+    /* Mini-Herde über dem Titel (Teil des Titelblocks: gleitet mit ihm nach oben); js/herde.js setzt die Bildquellen */
+    .flock { display: flex; justify-content: center; align-items: flex-end; gap: 7px; height: var(--flock-h); margin: 0 auto 12px; }
+    .flock .sheep { flex: none; width: auto; height: var(--h); margin-bottom: var(--y, 0px); }
+    .flock .nur-breit { display: none; }
+    @media (min-width: 768px) {
+      .flock { gap: 10px; }
+      .flock .sheep { height: calc(var(--h) * 1.25); margin-bottom: calc(var(--y, 0px) * 1.25); }
+      .flock .nur-breit { display: block; }
+    }
 
-    /* Herde (Zustand C): Schafe liegen absolut über dem Hero, die Anordnung steht in css/style.css (hier nur die Grundlage, damit nichts springt) */
-    .herd { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-    .seq:not(.frei) .herd { display: none; }     /* in A und B nicht darstellen: die Bilder laden erst, wenn js/sequenz.js sie nach den Sequenzbildern vorwärmt */
-    .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
-
-    /* Weiter-Knopf: ein gefüllter Pfeil mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
+    /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
        Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
-       Breite --cue-w des Pfeils: Handy 33 px, Desktop bis 42 px (schrumpft mit niedrigen Fenstern), Höhe ≈ 1,45 × Breite. */
-    .seq { --cue-w: 33px; --cue-h: calc(var(--cue-w) * 64 / 44); }
+       Größe --cue-w des (quadratischen) Pfeils: Handy 40 px, Desktop bis 46 px (schrumpft mit niedrigen Fenstern). */
+    .seq { --cue-w: 40px; --cue-h: var(--cue-w); }
     .scroll-cue { display: none; }
     .seq .scroll-cue {
       display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
@@ -171,8 +184,7 @@
     .seq.frei .scroll-cue { display: none; }
     .scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
     .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-    .scroll-cue .cue-arrow rect, .scroll-cue .cue-arrow polygon { fill: #1F4D2B; }
-    .scroll-cue .cue-arrow polygon { stroke: #1F4D2B; stroke-width: 4; stroke-linejoin: round; }
+    .scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
     @keyframes cue { 50% { transform: translateY(8px); } }
     /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
     .scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
@@ -182,7 +194,7 @@
       .seq .hero__text { opacity: 0; }                                    /* Handy: Start ohne Titel, er erscheint mit dem Bier */
     }
     @media not all and (max-aspect-ratio: 4/5) {
-      .seq { --cue-w: clamp(28px, 4.7vh, 42px); }
+      .seq { --cue-w: clamp(34px, 5vh, 46px); }
       .scroll-cue__text { font-size: 14px; }
       .hero { --b-pad: calc(var(--frame-inset) + 14px + 8px + var(--cue-h) + 18px + env(safe-area-inset-bottom)); }   /* Titel 18 px über dem Pfeil */
     }
@@ -249,12 +261,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=776e0e65" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=776e0e65" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=776e0e65" /></noscript>
+  <link rel="preload" href="css/style.css?v=51c4bb85" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=51c4bb85" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=51c4bb85" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=776e0e65"></script>
+  <script type="module" src="js/main.js?v=51c4bb85"></script>
 </head>
 <body>
 
@@ -363,6 +375,16 @@
       </div>
 
       <div class="hero__text">
+        <!-- Mini-Herde aus dem Etikettenbild (Gemälde von J. Stallhofer): einzeln freigestellte Schafe als kleines Zierelement über dem Titel -->
+        <div class="flock" role="img" aria-label="Eine kleine Herde aus dem Etikettenbild: weiße und braune Schafe und Lämmer">
+          <img class="sheep nur-breit" style="--h:26px;--y:0px" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="60px" width="224" height="160" alt="" />
+          <img class="sheep" style="--h:32px;--y:0px" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="60px" width="124" height="153" alt="" />
+          <img class="sheep" style="--h:26px;--y:3px" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="60px" width="189" height="149" alt="" />
+          <img class="sheep" style="--h:28px;--y:0px" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="60px" width="180" height="160" alt="" />
+          <img class="sheep" style="--h:32px;--y:2px" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="60px" width="171" height="165" alt="" />
+          <img class="sheep" style="--h:24px;--y:4px" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="60px" width="170" height="145" alt="" />
+          <img class="sheep nur-breit" style="--h:15px;--y:0px" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="60px" width="169" height="99" alt="" />
+        </div>
         <h1 class="hero__heading" id="hero-title">
           <span class="hero__title">Berghof <em>Hell</em></span>
           <span class="visually-hidden">, </span>
@@ -372,26 +394,22 @@
 
       <!-- Einleitung und Bildgestaltung: erscheinen, während das Bier sich leert (Zustand C, js/sequenz.js) -->
       <div class="hero__more">
-        <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
-
-        <!-- Kleine Herde aus dem Etikettenbild (Gemälde von J. Stallhofer): einzeln freigestellte Schafe, Anordnung per CSS (css/style.css) -->
-        <div class="herd" role="img" aria-label="Eine kleine Herde aus dem Etikettenbild: weiße und braune Schafe und Lämmer auf der Weide">
-          <img class="sheep sheep--lamm-links" style="--i:0" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="(max-width: 767px) 120px, 190px" width="124" height="153" decoding="async" alt="" />
-          <img class="sheep sheep--gefleckt" style="--i:1" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" decoding="async" alt="" />
-          <img class="sheep sheep--ruhend-braun" style="--i:2" data-src="assets/img/herde-ruhend-braun-2x.webp" data-srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="(max-width: 767px) 120px, 190px" width="132" height="102" decoding="async" alt="" />
-          <img class="sheep sheep--schaf-grast" style="--i:3" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="(max-width: 767px) 120px, 190px" width="224" height="160" decoding="async" alt="" />
-          <img class="sheep sheep--ruhend-hell" style="--i:4" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" decoding="async" alt="" />
-          <img class="sheep sheep--lamm-stehend" style="--i:5" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" decoding="async" alt="" />
-          <img class="sheep sheep--kalb-braun" style="--i:6" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" decoding="async" alt="" />
-          <img class="sheep sheep--rotbraun" style="--i:7" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" decoding="async" alt="" />
+        <div class="hero__cols">
+          <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
+          <figure class="painting">
+            <img data-src="assets/img/berghof-gemaelde-1030.webp" data-srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
+                 sizes="(min-width: 768px) 460px, calc(100vw - 48px)" width="1030" height="687" decoding="async"
+                 alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge" />
+            <figcaption>Gemälde von J. Stallhofer (1978), das Motiv des Etiketts.</figcaption>
+          </figure>
         </div>
       </div>
 
       <!-- Weiter-Knopf (im Start und im Bier sichtbar, sonst aus; Klick = dieselbe Geste; js/sequenz.js) -->
       <button class="scroll-cue aus" type="button" aria-label="Weiter" data-weiter>
-        <svg class="cue-arrow" viewBox="0 0 44 64" focusable="false" aria-hidden="true">
-          <rect x="18" y="2" width="8" height="40" rx="4"/>
-          <polygon points="6,38 38,38 22,60"/>
+        <svg class="cue-arrow" viewBox="0 0 64 64" focusable="false" aria-hidden="true">
+          <path d="M32 7V55"/>
+          <path d="M10 33L32 55L54 33"/>
         </svg>
         <span class="scroll-cue__text" aria-hidden="true"><span class="scroll-cue__touch">Wischen</span><span class="scroll-cue__mouse">Scrollen</span></span>
       </button>
@@ -531,7 +549,7 @@
           <div class="timeline__hint" aria-hidden="true">
             <span class="timeline__dots"><i></i><i></i><i></i><i></i></span>
             <span class="timeline__swipe">
-              <svg viewBox="-10 10 64 44" focusable="false"><g transform="rotate(-90 22 32)"><rect x="18" y="2" width="8" height="40" rx="4"/><polygon points="6,38 38,38 22,60"/></g></svg>
+              <svg viewBox="0 0 64 64" focusable="false"><g transform="rotate(-90 32 32)"><path d="M32 7V55"/><path d="M10 33L32 55L54 33"/></g></svg>
               <span>Wischen</span>
             </span>
           </div>
