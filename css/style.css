@@ -132,7 +132,7 @@ main { position: relative; z-index: 2; }
 .frame__corner--br { bottom: 1px; right: 1px; }
 
 .hero__heading { margin: 0; font-weight: 400; }
-.hero__text { will-change: transform, opacity; }
+.hero__text { position: relative; padding-top: var(--text-pt); will-change: transform, opacity; }
 
 /* Gold-Phase am Kronkorken (Klasse aus js/sequenz.js, alle Geräte) – ganze Seite in Gold, auch hinter Statusleiste, Adressleiste und beim Überscrollen */
 html.gold-page, html.gold-page body { background: var(--gold-beer); }
@@ -157,8 +157,8 @@ html:not(.seq) .skip, .frei .skip { display: none; }
   position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
   padding: var(--hero-top) 24px 28px; text-align: center;
   --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px);
-  --flock-h: 40px;
-  --text-h: calc(var(--flock-h) + 12px + var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
+  --text-pt: clamp(36px, 5.5vh, 54px); --rw: clamp(160px, 18vw, 240px); --rule-gap: clamp(28px, 3.6vh, 38px); --rule-bottom: clamp(14px, 2.2vh, 22px);
+  --text-h: calc(var(--text-pt) + var(--title-f) + var(--rule-gap) + 14px + var(--rule-bottom) + 20px);
   --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
   --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
 }
@@ -168,7 +168,6 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: clamp(18px, 3vh, 30px); }
 .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
-@media (min-width: 768px) { .hero { --flock-h: 50px; } }
 .hero__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; width: 100%; max-width: 1040px; margin: 0 auto; align-items: center; }
 .hero__lead { position: relative; margin: 0 auto; max-width: 38ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
 .painting { position: relative; margin: 0; }
@@ -178,15 +177,14 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
   .hero__lead { margin: 0; max-width: none; font-size: 19px; text-align: left; }
 }
 @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } }
-/* Mini-Herde über dem Titel (Teil des Titelblocks: gleitet mit ihm nach oben); js/herde.js setzt die Bildquellen */
-.flock { display: flex; justify-content: center; align-items: flex-end; gap: 7px; height: var(--flock-h); margin: 0 auto 12px; }
-.flock .sheep { flex: none; width: auto; height: var(--h); margin-bottom: var(--y, 0px); }
+/* Mini-Herde: kleine Schafe stehen auf der goldenen Zierlinie unter dem Titel (links drei, mittig ein liegendes, rechts drei; Handy 2 + 1 + 2).
+   Größe und Breite hängen an der Breite der Zierlinie (--rw), die Lage an der Titelhöhe; sie sind Teil des Titelblocks und gleiten mit ihm. */
+.flock { position: absolute; left: 50%; top: calc(var(--text-pt) + var(--title-f) + var(--rule-gap) + 6px); transform: translate(-50%, -100%);
+  width: var(--rw); display: flex; justify-content: center; align-items: flex-end; gap: 3px; pointer-events: none; }
+.flock .sheep { flex: none; width: auto; height: calc(var(--rw) * var(--k)); }
+.flock .mitte { margin: 0 7px; }
 .flock .nur-breit { display: none; }
-@media (min-width: 768px) {
-  .flock { gap: 10px; }
-  .flock .sheep { height: calc(var(--h) * 1.25); margin-bottom: calc(var(--y, 0px) * 1.25); }
-  .flock .nur-breit { display: block; }
-}
+@media (min-width: 768px) { .flock .nur-breit { display: block; } }
 
 /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
    Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
@@ -270,7 +268,7 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
   content: '';
   display: block;
   width: clamp(160px, 18vw, 240px); height: 14px;
-  margin: clamp(14px, 2.2vh, 22px) auto;
+  margin: var(--rule-gap) auto var(--rule-bottom);
   background: var(--ornament) center / contain no-repeat;
 }
 
