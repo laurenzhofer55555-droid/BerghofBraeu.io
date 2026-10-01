@@ -64,8 +64,8 @@ for m in meta:
     if last_t is not None and m['t'] - last_t < 0.066: continue
     im = Image.open(d + '/f%04d.jpg' % m['i']).convert('RGB')
     dr = ImageDraw.Draw(im)
-    T = (m['P'] - 1) * 3.65
-    ph = 'Geste 1' if m['P'] < 1 else ('Phase 1: Bier' if T < 2.5 else ('Pause' if T < 2.65 else ('Phase 2: alles fährt hoch' if m['P'] < 1.999 else 'Zustand C')))
+    T = (m['P'] - 1) * 3.75
+    ph = 'Geste 1' if m['P'] < 1 else ('Phase 1: Schaum ein' if T < 0.3 else ('Phase 1: Trinken' if T < 2.6 else ('Pause' if T < 2.75 else ('Phase 2: alles fährt hoch' if m['P'] < 1.999 else 'Zustand C'))))
     dr.rectangle((0, 0, im.width, 16), fill=(20, 20, 20)); dr.text((6, 3), ('%s  T %.2f s' % (ph, max(0, T))) if m['P'] > 1 else ('Zustand %s   P %.2f' % (m['z'], m['P'])), fill=(255, 255, 255))
     imgs.append(im.convert('P', palette=Image.ADAPTIVE, colors=64)); durs.append(66); last_t = m['t']
 imgs[0].save(out, save_all=True, append_images=imgs[1:], duration=durs, loop=0, optimize=True)

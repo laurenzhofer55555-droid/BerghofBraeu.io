@@ -180,7 +180,7 @@
     /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
-    .painting__bild { position: relative; container-type: inline-size; }
+    .painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
     .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
     .painting__herde { display: none; }
     @media (max-width: 767px) {
@@ -241,6 +241,7 @@
     @keyframes cue-warten { 50% { opacity: .3; } }
     @media (prefers-reduced-motion: reduce) { .scroll-cue svg, .wartet .scroll-cue svg { animation: none; } }
     .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
+    .frei .beer { display: none; }                                           /* nach dem Intro ist kein Bier mehr auf der Seite (kein Rest, kein Zeichnen) */
     /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss.
        Desktop/iPad: kleine Karte mittig; Handy: Bottom Sheet am unteren Rand (Safe Area beachtet). Dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (ohne backdrop-filter nur dunkler). */
     .age { display: none; position: fixed; inset: 0; z-index: 70; align-items: center; justify-content: center; padding: 20px; text-align: center;
@@ -307,12 +308,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=a730112e" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=a730112e" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=a730112e" /></noscript>
+  <link rel="preload" href="css/style.css?v=8fd56b72" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=8fd56b72" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=8fd56b72" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=a730112e"></script>
+  <script type="module" src="js/main.js?v=8fd56b72"></script>
 </head>
 <body>
 

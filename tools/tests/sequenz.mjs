@@ -88,7 +88,8 @@ async function flickTest() {
   }
 }
 
-// 3. Gesten während der Animation und in der Sperre danach werden ignoriert; kein Zustand dazwischen
+// 3. Gesten nach oben und andere ungültige Gesten während der Animation und in der Sperre danach werden ignoriert; kein Zustand dazwischen.
+//    (Eine zweite Geste nach unten wird dagegen gemerkt, siehe „puffer“.)
 async function sperre() {
   for (const view of ['desktop', 'handy']) {
     const b = await browser({ view });
@@ -96,18 +97,18 @@ async function sperre() {
       await start(b, view);
       await keyPress(b, 'ArrowDown');
       await sleep(400);
-      // mitten in der Animation: viele Gesten aller Arten
-      for (let k = 0; k < 3; k++) { await keyPress(b, 'ArrowDown'); await sleep(100); }
-      await wheelNotch(b, 300); await sleep(200); await wheelNotch(b, -300);
-      if (view === 'handy') { await touchSwipe(b, 220, { ms: 80 }); await touchSwipe(b, -220, { ms: 80 }); }
-      await keyPress(b, 'ArrowUp'); await keyPress(b, ' ');
+      // mitten in der Animation: viele Gesten nach oben
+      for (let k = 0; k < 3; k++) { await keyPress(b, 'ArrowUp'); await sleep(100); }
+      await wheelNotch(b, -300); await sleep(200); await wheelNotch(b, -300);
+      if (view === 'handy') { await touchSwipe(b, -220, { ms: 80 }); }
+      await keyPress(b, 'ArrowUp'); await keyPress(b, ' ', 8);
       const n1 = await starts(b), busyNow = (await state(b)).busy;
-      check(`sperre ${view}: Gesten während der Animation werden ignoriert`, n1 === 1 && busyNow === true, `${n1} Übergang, busy ${busyNow}`);
-      // Ende der Animation, dann sofort eine Geste: noch in der Sperre (400 ms)
+      check(`sperre ${view}: Gesten nach oben während der Animation werden ignoriert`, n1 === 1 && busyNow === true, `${n1} Übergang, busy ${busyNow}`);
+      // Ende der Animation, dann sofort eine Geste nach oben: noch in der Sperre (400 ms)
       for (let k = 0; k < 200 && (await state(b)).busy; k++) await sleep(30);
-      await keyPress(b, 'ArrowDown'); await sleep(150);
+      await keyPress(b, 'ArrowUp'); await sleep(150);
       const n2 = await starts(b);
-      check(`sperre ${view}: direkt nach der Animation (400 ms Sperre) wird nichts ausgelöst`, n2 === 1, `${n2} Übergänge`);
+      check(`sperre ${view}: direkt nach der Animation (400 ms Sperre) löst eine Geste nach oben nichts aus`, n2 === 1, `${n2} Übergänge`);
       // nach der Sperre wird die nächste Geste angenommen
       await idle(b); await sleep(150);
       await keyPress(b, 'ArrowDown');
@@ -116,6 +117,55 @@ async function sperre() {
       const S = (await samples(b)).filter((s) => s.P != null);
       let rueck = 0; for (let i = 1; i < S.length; i++) if (S[i].P < S[i - 1].P - 1e-6) rueck++;
       check(`sperre ${view}: P wächst monoton, nie ein Rückschritt (${S.length} Bilder)`, rueck === 0, `${rueck} Rückschritte`);
+    } finally { b.close(); }
+  }
+}
+
+// 3b. Viel wischen: eine zweite Geste nach unten während Geste 1 (oder in der kurzen Sperre danach) wird gemerkt, Geste 2 folgt sofort. Eine dritte wird ignoriert, ohne zweite Geste bleibt es in B.
+async function puffer() {
+  const gap = async (b) => { const L = await log(b), e1 = L.find((e) => e.art === 'ende'), s2 = L.filter((e) => e.art === 'start')[1]; return e1 && s2 ? s2.t - e1.t : null; };
+  for (const view of ['desktop', 'handy']) {
+    const wisch = (b) => (view === 'desktop' ? wheelNotch(b, 300) : touchSwipe(b, 220, { ms: 60 }));       // kurze Eingabe: die Geste löst sofort aus, nichts läuft nach
+    let b = await browser({ view });
+    try {
+      await start(b, view);
+      await wisch(b); await sleep(1500);                        // Geste 1 läuft, zweite Wischgeste mittendrin (Mausrad: erst nach 1,2 s und Ruhe)
+      await wisch(b); await sleep(500); await wisch(b);        // und eine dritte: wird ignoriert
+      const L0 = await log(b);
+      check(`puffer ${view}: zweite Geste nach unten während Geste 1 wird gemerkt (${L0.filter((e) => e.art === 'gemerkt').length}), die dritte ignoriert (${L0.filter((e) => e.art === 'ignoriert' && e.grund === 'läuft').length})`,
+        L0.filter((e) => e.art === 'gemerkt').length === 1 && L0.filter((e) => e.art === 'ignoriert' && e.grund === 'läuft').length >= 1);
+      check(`puffer ${view}: Geste 2 folgt direkt auf Geste 1 und endet in C`, await waitZustand(b, 'C', 15000) && await idle(b, 15000));
+      const g = await gap(b);
+      check(`puffer ${view}: Abstand zwischen Ende von Geste 1 und Start von Geste 2 ${g} ms (≤ 120, keine Sperre)`, g != null && g >= 0 && g <= 120, String(g));
+      const S = (await samples(b)).filter((x) => x.P != null); let rueck = 0; for (let i = 1; i < S.length; i++) if (S[i].P < S[i - 1].P - 1e-6) rueck++;
+      check(`puffer ${view}: P wächst monoton (${S.length} Bilder), genau zwei Übergänge (${await starts(b)})`, rueck === 0 && (await starts(b)) === 2);
+      check(`puffer ${view}: keine Fehler`, b.errors.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+    b = await browser({ view });
+    try {                                                       // zweite Geste in der kurzen Sperre nach Geste 1: wird nach der Sperre ausgeführt
+      await start(b, view);
+      await wisch(b); await waitZustand(b, 'B', 8000); await sleep(40);
+      await wisch(b); await sleep(100);
+      const n = await starts(b);
+      check(`puffer ${view}: Geste in der Sperre nach Geste 1 wird gemerkt, startet nicht sofort (${n} Übergang nach 100 ms)`, n === 1);
+      check(`puffer ${view}: ... und läuft nach der Sperre nach C`, await waitZustand(b, 'C', 15000) && (await starts(b)) === 2);
+    } finally { b.close(); }
+    if (view === 'desktop') {
+      b = await browser({ view });
+      try {                                                     // Nachläufer eines Trackpad-Schwungs nach einer Lücke (400 ms nach dem Start von Geste 1) ist keine zweite Geste
+        await start(b, view);
+        await wheelNotch(b, 300); await sleep(400); await wheelNotch(b, 300); await sleep(300); await wheelNotch(b, 300);
+        await waitZustand(b, 'B', 8000); await idle(b); await sleep(1800);
+        const L = await log(b);
+        check(`puffer ${view}: Mausrad-Nachläufer früh nach Geste 1 wird nicht gemerkt (${L.filter((e) => e.art === 'gemerkt').length}), es bleibt in B (${(await state(b)).z})`, !L.some((e) => e.art === 'gemerkt') && (await state(b)).z === 'B' && (await starts(b)) === 1);
+      } finally { b.close(); }
+    }
+    b = await browser({ view });
+    try {                                                       // nur eine Geste: es bleibt in B
+      await start(b, view);
+      await wisch(b); await waitZustand(b, 'B', 8000); await idle(b); await sleep(1800);
+      const z = (await state(b)).z;
+      check(`puffer ${view}: ohne zweite Geste bleibt es in B (${z})`, z === 'B' && (await starts(b)) === 1);
     } finally { b.close(); }
   }
 }
@@ -256,14 +306,16 @@ async function zustandB() {
 // Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
 // Geste 2: zwei Phasen nacheinander (gleiche Zahlen wie in js/sequenz.js, window.__sequenz.phasen wird in „phasen“ gegengeprüft)
-const PH = { PH1: 2500, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3650 };
+const PH = { PH_IN: 300, PH1: 2600, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3750, DRINK: [[420, 0.2, 'io'], [640, 0.23, 'io'], [1120, 0.54, 'io'], [1330, 0.57, 'io'], [1700, 0.77, 'io'], [1860, 0.79, 'io'], [2300, 1, 'in']] };
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn von Geste 2
 const tOf = (P) => (P - 1) * PH.T2;
 const easeOutT = (t) => 1 - (1 - t) ** 3;
 const rampT = (x, a, b) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 const rideT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.RIDE));          // gemeinsame Fahrt 0 … 1
 const einT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.FADE));           // gemeinsames Einblenden 0 … 1
-const lvlT = (T) => easeSine(Math.min(1, T / PH.PH1));             // Bierpegel 0 … 1
+// Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): erst Schaumkrone ein (0,3 s ease-out), dann drei Schlucke mit Pausen (js/sequenz.js: levelOf)
+const drinkT = (ms) => { let t0 = 0, d0 = 0; for (const [t1, d1, f] of PH.DRINK) { if (ms <= t1) { const u = (ms - t0) / (t1 - t0); return d0 + (d1 - d0) * (f === 'in' ? 1 - Math.cos(u * Math.PI / 2) : easeSine(u)); } t0 = t1; d0 = d1; } return 1; };
+const lvlT = (T, H) => { const foamH = Math.min(100, Math.max(56, H * 0.09)), p1 = (foamH + 12 + 16) / (H + foamH + 126); return T >= PH.PH1 ? 1 : T <= PH.PH_IN ? p1 * easeOutT(T / PH.PH_IN) : p1 + (1 - p1) * drinkT(T - PH.PH_IN); };
 async function geste2() {
   for (const [name, view] of Object.entries(DEVICES)) {
     if (name === 'desktop-2560' && !only.length) continue;   // gleiche Logik wie 1440, spart Zeit im Gesamtlauf
@@ -279,7 +331,8 @@ async function geste2() {
         const buf = await shot(b, join(OUT, 'geste2', `${name}-${pct}.png`));
         anteile[pct] = { oben: await goldShare(b, buf, 0.06, 0.3), gesamt: await goldShare(b, buf, 0.06, 0.9), alles: await goldShare(b, buf, 0.0, 0.3, 40) };       // oben (unten steht in C das Gemälde)
       }
-      check(`geste2 ${name}: 0 % und 10 % ohne Lücke oben, Bild komplett Bier`, anteile[0].oben >= 0.95 && anteile[0].gesamt >= 0.9 && anteile[10].oben >= 0.95 && anteile[10].gesamt >= 0.8,
+      check(`geste2 ${name}: 0 % (Zustand B) komplett Bier ohne Lücke oben, nach 10 % (0,26 s) ist die Schaumkrone schon im Bild und der Spiegel steht direkt unter der Oberkante`,
+        anteile[0].oben >= 0.95 && anteile[0].gesamt >= 0.9 && anteile[10].oben < 0.97 && anteile[10].oben > 0.5 && anteile[10].gesamt >= 0.85,
         `0 %: ${anteile[0].oben.toFixed(2)}/${anteile[0].gesamt.toFixed(2)}, 10 %: ${anteile[10].oben.toFixed(2)}/${anteile[10].gesamt.toFixed(2)}`);
       check(`geste2 ${name}: 50 % Schaumkrone im Bild, 90 % fast leer, 100 % leer`, anteile[50].oben < 0.9 && anteile[50].gesamt < 0.75 && anteile[90].gesamt < 0.3 && anteile[100].alles < 0.02,
         `50 %: ${anteile[50].oben.toFixed(2)}/${anteile[50].gesamt.toFixed(2)}, 90 %: ${anteile[90].gesamt.toFixed(2)}, 100 %: ${anteile[100].alles.toFixed(3)}`);
@@ -290,16 +343,24 @@ async function geste2() {
       await start(b2, view);
       await gesture(b2, 1); await waitZustand(b2, 'B'); await idle(b2); await sleep(300);
       const vorher = (await state(b2)).level;
-      const n0 = (await log(b2)).length;
+      const n0 = (await log(b2)).length, ns0 = (await samples(b2)).length;
       await gesture(b2, 1);
       check(`geste2 ${name}: Geste 2 führt nach C`, await waitZustand(b2, 'C', 12000) && await idle(b2, 12000));
       let ev = (await log(b2)).slice(n0).filter((e) => e.art === 'start' || e.art === 'ende');
       const dauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
-      check(`geste2 ${name}: Dauer ≈ 3,65 s = Phase 1 (2,5 s) + Pause + Phase 2 (1 s) (${dauer} ms)`, dauer >= 3450 && dauer <= 4000);
+      check(`geste2 ${name}: Dauer ≈ 3,75 s = Phase 1 (2,6 s) + Pause + Phase 2 (1 s) (${dauer} ms)`, dauer >= 3550 && dauer <= 4100);
       const S = (await samples(b2)).filter((x) => x.P > 1 && x.P < Pg2(PH.PH1) && x.z !== 'C');   // Phase 1
       let rueck = 0, maxStep = 0;
       for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
-      check(`geste2 ${name}: Pegel sinkt gleichmäßig (kein Zurück, größter Schritt ${maxStep.toFixed(1)} px, Start ${vorher} px)`, S.length > 20 && rueck === 0 && maxStep < view.h * 0.06, `${S.length} Messpunkte`);
+      check(`geste2 ${name}: Pegel sinkt nie zurück (größter Schritt ${maxStep.toFixed(1)} px, Start ${vorher} px)`, S.length > 20 && rueck === 0 && maxStep < view.h * 0.07, `${S.length} Messpunkte`);
+      // Schaumkrone gleitet sofort ein (Wartezeit vom ersten Rad-/Touch-Ereignis bis der Schaum im Bild ist), danach trinkt „jemand“: Schlucke mit Pausen dazwischen
+      const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), ein = alle.find((x) => x.input === 1 && x.P >= 1 && x.P < 1.01), sicht = alle.find((x) => x.P > 1 && x.level + 170 > 0);
+      const wartezeit = ein && sicht ? sicht.t - ein.t : null;
+      check(`geste2 ${name}: erste sichtbare Bewegung (Schaumkrone) ${wartezeit} ms nach der Geste (≤ 120)`, wartezeit != null && wartezeit <= 120, JSON.stringify({ ein: ein && ein.t, sicht: sicht && sicht.t }));
+      const T0 = S.length ? S[0].t - tOf(S[0].P) : 0, D = S.filter((x) => tOf(x.P) >= PH.PH_IN && tOf(x.P) <= PH.PH1 - 100);
+      const v = []; for (let i = 0, j = 1; j < D.length; j++) { if (D[j].t - D[i].t >= 90) { v.push({ t: tOf(D[j].P), v: (D[j].level - D[i].level) / (D[j].t - D[i].t) }); i = j; } }
+      const vmax = Math.max(...v.map((x) => x.v)); let tiefs = 0; for (let k = 1; k < v.length - 1; k++) if (v[k].v < 0.3 * vmax && v[k].v <= v[k - 1].v && v[k].v <= v[k + 1].v) tiefs++;
+      check(`geste2 ${name}: Bier läuft unregelmäßig wie getrunken: ${tiefs} Pausen (Tempo unter 30 % des schnellsten Zugs, ≥ 2), schnellster Zug ${(vmax * 1000).toFixed(0)} px/s`, tiefs >= 2 && vmax > 0, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
   }
@@ -780,7 +841,7 @@ async function leisten() {
     return JSON.parse(await b.js(`JSON.stringify((() => { const c = (e) => (e ? getComputedStyle(e).backgroundColor : null), t = document.querySelectorAll('.edge--top'), u = document.querySelectorAll('.edge--bottom');
       const beer = document.querySelector('.beer'), H = beer.clientHeight, foamH = Math.min(100, Math.max(56, H * 0.09));
       return { top: c(t[0]), bottom: c(u[0]), n: [t.length, u.length], meta: document.querySelector('meta[name=theme-color]').content, page: document.documentElement.classList.contains('gold-page'),
-        surf: -70 + (H + foamH + 140) * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, (${p} - 1) * ${PH.T2} / ${PH.PH1})))) / 2, vh: innerHeight, root: getComputedStyle(document.documentElement).backgroundColor }; })())`));
+        surf: new DOMMatrix(getComputedStyle(document.querySelector('.beer__liquid')).transform).m42 + 170, lt: foamH + 22, vh: innerHeight, root: getComputedStyle(document.documentElement).backgroundColor }; })())`));
   };
   for (const [name, view] of Object.entries(GERAETE)) {
     const touch = !!view.mobile;
@@ -799,7 +860,7 @@ async function leisten() {
         let ok = true, fehler = '', prevT = 1, prevB = 1, maxStep = 0;
         for (let T = 0; T <= PH.PH1 + 60; T += 30) {
           const p = Pg2(T), x = await M(+p.toFixed(4)), gt = gold(x.top), gb = gold(x.bottom);
-          if (x.surf >= -30 + Math.max(64, x.vh * 0.075) + 2 && gt > 0.07) { ok = false; fehler += ` oben ${gt.toFixed(2)} bei P ${p.toFixed(2)};`; }
+          if (x.surf >= -16 + x.lt + 2 && gt > 0.07) { ok = false; fehler += ` oben ${gt.toFixed(2)} bei P ${p.toFixed(2)};`; }
           if (x.surf - 12 < x.vh - 4 && gb < 0.95) { ok = false; fehler += ` unten ${gb.toFixed(2)} bei P ${p.toFixed(2)};`; }
           if (gt > prevT + 0.001 || gb > prevB + 0.001) { ok = false; fehler += ` steigt bei P ${p.toFixed(2)};`; }
           maxStep = Math.max(maxStep, prevT - gt, prevB - gb); prevT = gt; prevB = gb;
@@ -956,7 +1017,7 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (Phase 1 ${pz.PH1} ms, Pause ${pz.PAUSE} ms, Titel ${pz.TITLE} ms, Versatz ${pz.STAG} ms, Einblenden ${pz.FADE} ms, ${pz.RISE} px, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (Schaum ein ${pz.PH_IN} ms, Phase 1 ${pz.PH1} ms mit ${pz.DRINK.length} Zügen, Pause ${pz.PAUSE} ms, Fahrt ${pz.RIDE} ms, Einblenden ${pz.FADE} ms, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(700);
       // Mitschnitt: welche Stileigenschaften ändern sich während Geste 2 (nur transform, opacity, visibility und --frame-o erlaubt) und Aufgaben über 50 ms (CPU 4 × langsamer)
       await b.js(`(() => { window.__chg = {}; window.__lt = [];
@@ -1075,8 +1136,73 @@ async function alter() {
     } finally { b.close(); } }
 }
 
+// 20. Nach dem Intro ist kein Bier mehr auf der Seite (Layer abgeschaltet, nichts schaut unten aus dem Hero), auch nicht in kleinen Fenstern; „Bier Animation erneut anzeigen“ bringt es zurück und danach wieder weg
+const FENSTER = { ...GERAETE, 'fenster-1000x650': { w: 1000, h: 650, mobile: false }, 'fenster-1710x1000': { w: 1710, h: 1000, mobile: false }, 'fenster-1280x720': { w: 1280, h: 720, mobile: false } };
+const bierReste = (b) => b.js(`JSON.stringify((() => { const q = (s) => document.querySelector(s), beer = q('.beer'), cs = getComputedStyle(beer), cv = q('#sequenz');
+  return { disp: cs.display, rects: beer.getClientRects().length, cvDisp: cv ? getComputedStyle(cv).display : 'weg', poster: getComputedStyle(q('.poster')).visibility, edges: document.querySelectorAll('.edge').length,
+    lade: getComputedStyle(q('.lade')).display, age: getComputedStyle(q('.age')).display, gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei') }; })())`).then(JSON.parse);
+async function reste() {
+  for (const [name, view] of Object.entries(FENSTER)) {
+    if (name === 'desktop-2560' && !only.length) continue;
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(400);
+      await gesture(b, 1); await waitZustand(b, 'C', 15000); await idle(b, 15000); await sleep(900);
+      const r = await bierReste(b);
+      check(`reste ${name}: nach dem Intro ist das Bier weg (Layer ${r.disp}, ${r.rects} Flächen), Canvas ${r.cvDisp}, Standbild ${r.poster}, keine Leisten (${r.edges}), Ladesymbol ${r.lade}, Altersabfrage ${r.age}, Seitenhintergrund nicht gold (${r.gold})`,
+        r.disp === 'none' && r.rects === 0 && r.cvDisp === 'none' && r.poster === 'hidden' && r.edges === 0 && r.lade === 'none' && r.age === 'none' && !r.gold && r.frei, JSON.stringify(r));
+      // Pixel: unten am ersten Bildschirm und am Ende des Heros nirgends die Bierfarbe (197, 161, 73)
+      const y = await b.js(`Math.round(document.querySelector('.hero').getBoundingClientRect().bottom + scrollY)`);
+      await b.js(`window.scrollTo(0, ${Math.max(0, y - Math.round(view.h * 0.55))})`); await sleep(500);
+      const buf = await shot(b), px = await goldShare(b, buf, 0, 1, 7);
+      check(`reste ${name}: im Bild am Ende des Heros fast kein Pixel in Bierfarbe (${(px * 100).toFixed(3)} %, Grenze 0,3 %)`, px < 0.003, String(px));
+      check(`reste ${name}: keine Fehler, kein horizontaler Scroll`, b.errors.length === 0 && (await b.js('document.documentElement.scrollWidth <= document.documentElement.clientWidth')), b.errors[0] || '');
+      if (name === 'desktop-1440' || name === 'iphone15') {
+        await b.js('window.scrollTo(0, 0)'); await sleep(300);
+        await b.js(`window.scrollTo(0, document.documentElement.scrollHeight)`); await sleep(500);
+        await b.js(`document.querySelector('[data-intro]').click()`); await sleep(1500); await waitReady(b);
+        const w = await b.js(`(() => { const e = document.querySelector('.beer'); return [getComputedStyle(e).display, e.clientWidth, e.clientHeight, window.__sequenz.zustand]; })()`);
+        check(`reste ${name}: nach „Bier Animation erneut anzeigen“ ist der Layer wieder da und gemessen (${w.join(' / ')})`, w[0] === 'block' && w[1] > 0 && w[2] > 0 && w[3] === 'A', JSON.stringify(w));
+        await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(400); await gesture(b, 1); await waitZustand(b, 'C', 15000); await idle(b, 15000); await sleep(900);
+        const r2 = await bierReste(b);
+        const S = (await samples(b)).filter((x) => x.z === 'B' && x.P > 1 && x.P < 1.5 && x.level + 170 > 0);
+        check(`reste ${name}: beim zweiten Mal läuft das Bier wieder ein (${S.length} Bilder mit Schaum im Bild) und danach ist es wieder weg (${r2.disp})`, S.length > 10 && r2.disp === 'none', JSON.stringify(r2));
+      }
+    } finally { b.close(); }
+  }
+}
+
+// 21. Kein Sprung am Ende von Geste 2: Titel, Text und Gemälde stehen nach der Fahrt still (kein Neumessen, --lift unverändert); das Gemälde hat schon vor dem Laden die richtige Höhe (WebKit hat es ohne aspect-ratio mit 18 px gemessen)
+async function sprung() {
+  for (const [name, view] of Object.entries(FENSTER)) {
+    if (name === 'desktop-2560' && !only.length) continue;
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      const ratio = await b.js(`(() => { const f = document.querySelector('.painting'), w = document.createElement('div'), t = document.createElement('img'); w.className = 'painting__bild'; t.setAttribute('width', '1030'); t.setAttribute('height', '687'); t.alt = 'Platzhalter ohne Quelle'; w.appendChild(t); f.insertBefore(w, f.firstChild);
+        const r = w.getBoundingClientRect(), ar = getComputedStyle(w).aspectRatio, res = [Math.round(r.width), Math.round(r.height), ar]; w.remove(); return res; })()`);
+      check(`sprung ${name}: Bildfläche des Gemäldes hat schon vor dem Laden die richtige Höhe (${ratio[0]} × ${ratio[1]} px, aspect-ratio „${ratio[2]}“, Soll Verhältnis 1,5)`,
+        /1030 \/ 687/.test(ratio[2]) && Math.abs(ratio[0] / ratio[1] - 1030 / 687) < 0.03, JSON.stringify(ratio));
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(500);
+      const lift0 = await b.js(`document.querySelector('.hero').style.getPropertyValue('--lift') + '|' + document.querySelector('.hero').style.getPropertyValue('--fold') + '|' + document.querySelector('.hero').style.getPropertyValue('--zone')`);
+      await b.js(`window.__R = []; (function loop() { requestAnimationFrame(() => { setTimeout(() => { const q = (s) => document.querySelector(s), r = (s) => Math.round(q(s).getBoundingClientRect().top * 10) / 10;
+        window.__R.push([Math.round(performance.now()), window.__sequenz.zustand, +window.__sequenz.P.toFixed(4), r('.hero__title'), r('.hero__lead'), r('.painting')]); }, 0); loop(); }); })()`);
+      await gesture(b, 1); await waitZustand(b, 'C', 15000); await idle(b, 15000); await sleep(1500);
+      const R = JSON.parse(await b.js('JSON.stringify(window.__R)')), lift1 = await b.js(`document.querySelector('.hero').style.getPropertyValue('--lift') + '|' + document.querySelector('.hero').style.getPropertyValue('--fold') + '|' + document.querySelector('.hero').style.getPropertyValue('--zone')`);
+      // ab 100 ms vor dem Ende der Fahrt bis 1,5 s danach: kein Bild weicht um mehr als 2 px vom vorigen ab, insgesamt höchstens 3 px Drift
+      const tEnd = PH.T2, G = R.filter((x) => x[2] >= 1 + (tEnd - 120) / PH.T2);
+      let maxd = 0; for (let i = 1; i < G.length; i++) maxd = Math.max(maxd, Math.abs(G[i][3] - G[i - 1][3]), Math.abs(G[i][5] - G[i - 1][5]));
+      const drift = Math.max(Math.abs(G.at(-1)[3] - G[0][3]), Math.abs(G.at(-1)[5] - G[0][5]));
+      check(`sprung ${name}: nach der Fahrt springt nichts (größter Bildsprung ${maxd.toFixed(1)} px ≤ 2, Drift bis zum Ruhezustand ${drift.toFixed(1)} px ≤ 3, ${G.length} Bilder)`, G.length > 40 && maxd <= 2 && drift <= 3, JSON.stringify(G.filter((_, i) => i % 12 === 0)));
+      check(`sprung ${name}: Layoutwerte --lift|--fold|--zone vor Geste 2 „${lift0}“ = nach dem Intro „${lift1}“`, lift0 === lift1);
+      check(`sprung ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+}
+
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['lade', lade], ['phasen', phasen], ['alter', alter]];
+  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['lade', lade], ['phasen', phasen], ['alter', alter], ['puffer', puffer], ['reste', reste], ['sprung', sprung]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

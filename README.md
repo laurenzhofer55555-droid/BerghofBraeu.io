@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
-Geste 2 läuft in zwei klar getrennten Phasen nacheinander (3,65 s, eine Zeitleiste): Phase 1 (2,5 s) nur das Bier, der Titel bleibt ruhig; 150 ms Pause; Phase 2 (1 s) Titel, Schafe, Einleitung und Gemälde fahren gleichzeitig nach oben und blenden gemeinsam ein.
+Geste 2 läuft in zwei klar getrennten Phasen nacheinander (3,75 s, eine Zeitleiste): Phase 1 (2,6 s) nur das Bier, der Titel bleibt ruhig: sofort gleitet die Schaumkrone in 0,3 s ins Bild, danach trinkt „jemand“ das Glas in drei Schlucken mit kleinen Pausen leer (unregelmäßig, keine gleichmäßige Fahrt); 150 ms Pause; Phase 2 (1 s) Titel, Schafe, Einleitung und Gemälde fahren gleichzeitig nach oben und blenden gemeinsam ein. Danach ist kein Bier mehr auf der Seite (Layer `display: none`). Wer mehrmals wischt, löst Geste 1 und Geste 2 direkt hintereinander aus.
 Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Bier Animation erneut anzeigen“ im Fuß).
 
 Live: https://berghof-hell.de
@@ -55,10 +55,13 @@ Dann http://localhost:5173 öffnen.
     Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
   Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
   der Fenstergröße kommt der Rest nach).
-- Geste 2 in zwei Phasen (`PH1`, `PAUSE`, `RIDE`, `FADE`, `T2` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 3,65 s): **Phase 1** (2,5 s) leert nur das Bier
-  (Pegel sine.inOut), der Titel bleibt ruhig unten; **Pause** 150 ms; **Phase 2** (1 s): der ganze Block fährt **gleichzeitig** nach oben und blendet gleichzeitig ein: Titel „Berghof Hell“ (mit den Schafen
+- Geste 2 in zwei Phasen (`PH_IN`, `PH1`, `PAUSE`, `RIDE`, `FADE`, `T2`, `DRINK` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 3,75 s): **Phase 1** (2,6 s) leert nur das Bier:
+  0 bis 0,3 s gleitet die Schaumkrone (ease-out) ins Bild, der Spiegel steht dann `FOAM_GAP` px unter ihr direkt unter der Oberkante; danach 2,3 s „Trinken“: sieben Abschnitte (`DRINK`: Schluck, Pause, Schluck, Pause,
+  Schluck, Pause, langer letzter Zug; sine.inOut bzw. sine.in) mit kleinen Pausen, in denen das Bier nur nachsackt und schwappt. Start und Ende des Weges kommen aus der echten Höhe des Layers (100lvh):
+  `beer.levelAt()` – der Spiegel startet 16 px über der Oberkante (kein unsichtbarer Vorlauf), das Ende liegt 110 px unter der Schaumkrone (auch kräftiges Schwappen bleibt unter dem Rand). Der Pegel wird nur per `transform`
+  verschoben. Der Titel bleibt ruhig unten; **Pause** 150 ms; **Phase 2** (1 s): der ganze Block fährt **gleichzeitig** nach oben und blendet gleichzeitig ein: Titel „Berghof Hell“ (mit den Schafen
   daneben), Einleitung, Gemälde und die Herde am Handy gleiten um denselben Weg `textDy` (der Block bleibt starr, FLIP: der Weg wird vorher gemessen, bewegt wird nur `translate3d`), der Seitenrahmen
-  blendet mit (cubic.out). Pfeil und „Wischen“ sind in beiden Phasen aus. Es werden nur `transform` und `opacity` animiert (Test `phasen` prüft das per MutationObserver); `will-change` steht nur
+  blendet mit (cubic.out). Pfeil und „Wischen“ sind in beiden Phasen aus. Es werden nur `transform` und `opacity` animiert (Test `phasen` prüft das per MutationObserver). Am Ende von Geste 2 wird **nicht neu gemessen** (`--lift`, `--fold`, `--zone` bleiben, die Fahrt endet genau an der vorher gemessenen Stelle; Test `sprung`); die Bildfläche des Gemäldes (`.painting__bild`) hat per `aspect-ratio` schon vor dem Laden die richtige Höhe (WebKit misst ein `<img>` ohne `src` nur mit der Alt-Text-Zeile, 18 px, das ergab einen Sprung von ca. 100–160 px am Ende). Geste während Geste 1 (oder in der kurzen Sperre danach) nach unten: `queued`, Geste 2 beginnt sofort (Test `puffer`); `will-change` steht nur
   während einer Animation (`html.anim`); die Bildfolge und das Canvas werden vor Phase 1 freigegeben (`freeFrames()`); die Welle wird nur gezeichnet, solange Oberfläche oder Schaum im Bild sind,
   Bläschen stehen still, sobald kein Bier mehr zu sehen ist; Einleitung, Gemälde, Schafe und Seitenrahmen sind ab B mit 1 % Deckkraft schon gezeichnet (kein Dekodieren mitten im Einblenden),
   `js/herde.js` dekodiert früh. Das Schwere am Ende (Messen, Speicher freigeben) läuft erst 350 ms nach dem letzten Bild. Messung (Chrome, CPU 4 × gedrosselt, iPhone-15-Profil): 60 Bilder/s vorher
@@ -94,7 +97,7 @@ Dann http://localhost:5173 öffnen.
 Prüft in Headless Chrome (Node ≥ 22, Google Chrome) mit echten Mausrad-, Touch- und Tastaturereignissen: genau 2 Gesten von A bis C,
 der Rückweg nur in B, in C keine Animation mehr (10 schnelle Gesten nach oben; keine Listener, Canvas und Bilder aus dem Speicher),
 „Bier Animation erneut anzeigen“ spielt A → B → C erneut ab, Titel oben und Einleitung im ersten Bildschirm nach 2 Gesten, der Titel gleitet
-ohne Sprung, Schafe je nach Gerät (Handy: Herde unten ohne Gemälde, Tablet/Desktop: vier neben dem Titel, Gemälde neben dem Text), Timeline komplett sichtbar (Tablet/Desktop) bzw. mit Peek, Punkten und Hinweis (Handy), Pfeil gefüllt, ein starker Trackpad-Flick löst nur Übergang 1 aus, Gesten während der Animation und in der Sperre werden ignoriert,
+ohne Sprung, Schafe je nach Gerät (Handy: Herde unten ohne Gemälde, Tablet/Desktop: vier neben dem Titel, Gemälde neben dem Text), Timeline komplett sichtbar (Tablet/Desktop) bzw. mit Peek, Punkten und Hinweis (Handy), Pfeil gefüllt, ein starker Trackpad-Flick löst nur Übergang 1 aus, Gesten nach oben während der Animation und in der Sperre werden ignoriert (eine zweite Geste nach unten wird gemerkt), nach dem Intro ist kein Bier mehr auf der Seite (auch nicht in kleinen Fenstern) und nach „Bier Animation erneut anzeigen“ wieder da, nach der Fahrt springt nichts,
 Endzustände sind jedes Mal exakt gleich, Scrollen direkt nach dem Laden (auch kalt, Fast 3G, CPU 4x), zu frühe Geste wartet und startet
 von selbst, Bilder von Geste 1 bei 50 bis 100 % (Farbwechsel Kronkorken → Bier), Zustand B auf iPhone, iPad und Desktop (Bier von Rand
 zu Rand, kein Rahmen, Titel, Bläschen), Neu laden und Direktlink, Drehen, Tastatur, Überspringen, „Bewegung reduzieren“, keine externen

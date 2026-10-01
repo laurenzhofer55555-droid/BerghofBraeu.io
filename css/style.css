@@ -185,7 +185,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
    größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
 .painting { position: relative; margin: 0; width: 100%; }
-.painting__bild { position: relative; container-type: inline-size; }
+.painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
 .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
 .painting__herde { display: none; }
 @media (max-width: 767px) {
@@ -262,6 +262,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
 .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }   /* Rand zu Rand, Höhe 100lvh: auch unter der eingeklappten Adressleiste */
+.frei .beer { display: none; }                                           /* nach dem Intro ist kein Bier mehr auf der Seite (kein Rest, kein Zeichnen) */
 .beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); }   /* PAD + BELOW in js/bier-leeren.js */
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }
