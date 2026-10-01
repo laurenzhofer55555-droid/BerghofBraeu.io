@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
-Geste 2: das Bier leert sich (2,7 s, ruhig), der Titel rutscht nach oben, darunter erscheinen Einleitung, Schafe und (Tablet/Desktop) Gemälde gemeinsam.
+Geste 2 läuft in zwei klar getrennten Phasen nacheinander (3,65 s, eine Zeitleiste): Phase 1 (2,5 s) nur das Bier, der Titel bleibt ruhig; 150 ms Pause; Phase 2 (1 s) Titel, Schafe, Einleitung und Gemälde fahren gleichzeitig nach oben und blenden gemeinsam ein.
 Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Bier Animation erneut anzeigen“ im Fuß).
 
 Live: https://berghof-hell.de
@@ -59,8 +59,19 @@ Dann http://localhost:5173 öffnen.
   Sequenz geladen sind (`.bereit`, `js/sequenz.js`), wandert nicht weg und blendet dann aus (0,45 s); erst dann erscheint der Weiter-Pfeil. Es erscheint erst nach 0,25 s (bei schnellem Laden blitzt nichts
   auf), fängt keine Eingaben, liegt unter der Altersabfrage, hat `role="status"` und `data-nosnippet`; ohne Intro (Bewegung reduzieren, Neuladen mitten auf der Seite) gibt es kein Ladesymbol.
   Notausgang per CSS nach 40 s (die Sequenz springt selbst nach `LOAD_TIMEOUT` zum Inhalt).
-- Kein Ruckeln beim Auftauchen (Ende von Geste 2): Ab B werden Einleitung, Gemälde, Schafe und Seitenrahmen mit 1 % Deckkraft unmerklich schon gezeichnet (`prime` in `overlays`), `js/herde.js` dekodiert die
-  Bilder früh (`decode()`); das Schwere am Ende (Messen, Speicher freigeben, Canvas verkleinern) läuft erst 350 ms nach dem letzten Bild.
+- Geste 2 in zwei Phasen (`PH1`, `PAUSE`, `RIDE`, `FADE`, `T2` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 3,65 s): **Phase 1** (2,5 s) leert nur das Bier
+  (Pegel sine.inOut), der Titel bleibt ruhig unten; **Pause** 150 ms; **Phase 2** (1 s): der ganze Block fährt **gleichzeitig** nach oben und blendet gleichzeitig ein: Titel „Berghof Hell“ (mit den Schafen
+  daneben), Einleitung, Gemälde und die Herde am Handy gleiten um denselben Weg `textDy` (der Block bleibt starr, FLIP: der Weg wird vorher gemessen, bewegt wird nur `translate3d`), der Seitenrahmen
+  blendet mit (cubic.out). Pfeil und „Wischen“ sind in beiden Phasen aus. Es werden nur `transform` und `opacity` animiert (Test `phasen` prüft das per MutationObserver); `will-change` steht nur
+  während einer Animation (`html.anim`); die Bildfolge und das Canvas werden vor Phase 1 freigegeben (`freeFrames()`); die Welle wird nur gezeichnet, solange Oberfläche oder Schaum im Bild sind,
+  Bläschen stehen still, sobald kein Bier mehr zu sehen ist; Einleitung, Gemälde, Schafe und Seitenrahmen sind ab B mit 1 % Deckkraft schon gezeichnet (kein Dekodieren mitten im Einblenden),
+  `js/herde.js` dekodiert früh. Das Schwere am Ende (Messen, Speicher freigeben) läuft erst 350 ms nach dem letzten Bild. Messung (Chrome, CPU 4 × gedrosselt, iPhone-15-Profil): 60 Bilder/s vorher
+  und nachher, Hauptfaden je Bild Median 1,1 → 0,6 ms, größter Bildaufwand 11,1 → 7,9 ms, Hauptfaden 10 → 8 % ausgelastet, keine Aufgabe ≥ 50 ms.
+- Altersabfrage (`.age`, nur `index.html`): kleine Karte (max. 420 px, abgerundet, beiger Grund, feiner goldener Doppelrand) mittig am Desktop/iPad, Bottom Sheet am Handy (≈ 36 % der Höhe, Safe Area unten);
+  dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (`backdrop-filter`, ohne Unterstützung nur dunkler). Frage, „Ja, ich bin 16“ (primär) und „Nein“, kurzer Jugendschutz-Hinweis, Schrift
+  ≥ 15 px, Schaltflächen ≥ 48 px. Fade plus Hochgleiten (bei „Bewegung reduzieren“ ohne Animation), Fokusfalle (Tab/Umschalt + Tab bleiben in der Abfrage, Escape schließt nicht), Seite `inert` und Intro
+  gesperrt bis „Ja“, Speicherung 30 Tage wie bisher.
+
 - Seitenrahmen (`.frame--page`, erstes Kind von `main`): derselbe feine Doppelrahmen mit Eckverzierungen wie im Startbild, um den ganzen Hauptinhalt, `position: absolute` mit `inset: --frame-inset`
   (Handy 10 px, Desktop 22 px), also ohne feste Höhe: er wächst mit der Seite, scrollt mit und endet direkt vor dem Fuß (der liegt außerhalb). „Hofer Bräu“ (`.site-header__brand`) sitzt mittig in
   der oberen Linie. Er blendet am Ende von Geste 2 in ca. 0,6 s ein (`ramp(h, .88, 1)` in `js/sequenz.js`, aus dem Fortschritt); der Startrahmen im Hero (`.hero > .frame`) blendet in Geste 1 aus und

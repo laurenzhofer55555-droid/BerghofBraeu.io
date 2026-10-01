@@ -220,36 +220,44 @@
     @keyframes cue-warten { 50% { opacity: .3; } }
     @media (prefers-reduced-motion: reduce) { .scroll-cue svg, .wartet .scroll-cue svg { animation: none; } }
     .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
-    /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss */
-    .age { display: none; position: fixed; inset: 0; z-index: 70; background: var(--cream); align-items: center; justify-content: center;
-      padding: 24px; text-align: center; transition: opacity .6s ease; }
+    /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss.
+       Desktop/iPad: kleine Karte mittig; Handy: Bottom Sheet am unteren Rand (Safe Area beachtet). Dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (ohne backdrop-filter nur dunkler). */
+    .age { display: none; position: fixed; inset: 0; z-index: 70; align-items: center; justify-content: center; padding: 20px; text-align: center;
+      background: rgba(22, 32, 20, .55); transition: opacity .5s ease; }
+    @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .age { background: rgba(22, 32, 20, .36); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); } }
     .age-gate, .age-gate body { overflow: hidden; }
-    .age-gate .age { display: flex; }
+    .age-gate .age { display: flex; animation: age-ein .45s ease both; }
     .age-leaving .age { opacity: 0; pointer-events: none; }
     .age:focus { outline: none; }
-    .age__vine { position: absolute; top: 50%; left: clamp(6px, 7vw, 120px); height: min(72vh, 540px); width: auto; transform: translateY(-50%); }
-    .age__vine--right { left: auto; right: clamp(6px, 7vw, 120px); transform: translateY(-50%) scaleX(-1); }
-    .age__card { position: relative; max-width: 30rem; }
-    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4.4vw, 46px); line-height: 1.15; color: var(--green); }
-    .age__title::after { content: ''; display: block; width: 180px; height: 12px; margin: 22px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
+    .age__card { position: relative; width: min(100%, 420px); padding: 30px 28px 24px; border-radius: 16px; background: var(--cream); border: 1px solid var(--gold);
+      box-shadow: inset 0 0 0 5px var(--cream), inset 0 0 0 6px rgba(184, 145, 58, .45), 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
+    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.2; color: var(--green); }
+    .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 16px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
-    .age__actions { display: flex; gap: 14px; justify-content: center; margin: clamp(22px, 4vh, 34px) 0 0; }
-    .age__btn { min-width: 124px; padding: 13px 30px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
-      font: 500 14px/1 var(--font-text); letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }
+    .age__actions { display: flex; gap: 10px; justify-content: center; margin: 22px 0 0; }
+    .age__btn { flex: 1 1 0; min-height: 48px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
+      font: 600 16px/1.1 var(--font-text); letter-spacing: .04em; cursor: pointer; }
+    .age__btn--ja { flex: 1.7 1 0; }
     .age__btn:hover { background: #173b21; }
     .age__btn--no { background: transparent; color: var(--green); }
     .age__btn--no:hover { background: rgba(31, 77, 43, .07); }
     .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #7A5C1C; outline-offset: 3px; }
-    .age__note { margin: clamp(20px, 3.5vh, 30px) 0 0; font-size: 14px; line-height: 1.5; color: var(--green-soft); }
+    .age__note { margin: 18px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
     .age__note a { color: var(--green); }
     .age__no { display: none; }
     .age-denied .age__ask { display: none; }
+    .age-denied .age__hint { display: none; }
     .age-denied .age__no { display: block; }
-    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.6; color: var(--ink); }
-    @media (max-width: 640px) { .age__vine { height: min(30vh, 250px); left: 4px; } .age__vine--right { left: auto; right: 4px; } .age__card { max-width: 15rem; }
-      .age__title { font-size: 26px; }
-      .age__actions { gap: 10px; } .age__btn { min-width: 104px; padding: 12px 20px; } }
-    @media (prefers-reduced-motion: reduce) { .age { transition: none; } }
+    .age__no p { margin: 14px 0 0; font-size: 17px; line-height: 1.55; color: var(--ink); }
+    @keyframes age-ein { from { opacity: 0; } }
+    @keyframes age-hoch { from { opacity: 0; transform: translateY(18px); } }
+    @keyframes age-sheet { from { opacity: 0; transform: translateY(44px); } }
+    @media (max-width: 767px) {
+      .age { align-items: flex-end; padding: 0; }
+      .age__card { width: 100%; min-height: 36vh; min-height: 36svh; display: flex; flex-direction: column; justify-content: center; border-radius: 22px 22px 0 0; border-bottom: 0;
+        padding: 26px 22px calc(22px + env(safe-area-inset-bottom)); animation-name: age-sheet; }
+    }
+    @media (prefers-reduced-motion: reduce) { .age, .age-gate .age, .age__card { animation: none; transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
     .poster picture { position: absolute; left: 50%; top: 9.92%; height: 56.04%; aspect-ratio: 524 / 1401; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
@@ -278,12 +286,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=d6376cec" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=d6376cec" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=d6376cec" /></noscript>
+  <link rel="preload" href="css/style.css?v=46474755" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=46474755" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=46474755" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=d6376cec"></script>
+  <script type="module" src="js/main.js?v=46474755"></script>
 </head>
 <body>
 
@@ -294,53 +302,11 @@
 
   <!-- Altersabfrage 16+: liegt nur über der Seite, alle Inhalte bleiben im HTML (js/altersabfrage.js) -->
   <div class="age" id="altersabfrage" role="dialog" aria-modal="true" aria-labelledby="age-title" tabindex="-1" data-nosnippet>
-    <div class="frame" aria-hidden="true">
-      <i class="frame__corner frame__corner--tl"></i>
-      <i class="frame__corner frame__corner--tr"></i>
-      <i class="frame__corner frame__corner--bl"></i>
-      <i class="frame__corner frame__corner--br"></i>
-    </div>
-    <svg class="age__vine" viewBox="0 0 120 460" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
-      <path d="M60 310C74 300 90 302 92 316C94 328 82 332 76 324C72 318 78 312 83 316"/>
-      <path d="M62 182C46 172 30 176 28 190C27 202 40 204 44 196C47 190 40 185 36 189"/>
-      <path d="M58 58C72 54 84 60 82 72C80 81 70 80 70 73"/>
-      <path d="M52 404C40 390 22 388 10 396C18 400 22 408 18 416C30 414 40 410 46 404C42 416 44 426 52 432C56 420 56 412 52 404Z" fill="#F7F4EC"/>
-      <path d="M52 404L20 402M36 403L26 394M38 406L30 414" stroke-width=".9"/>
-      <path d="M64 254C78 242 96 242 108 250C100 254 96 262 100 270C88 268 78 264 72 258C76 270 74 280 66 286C62 274 62 264 64 254Z" fill="#F7F4EC"/>
-      <path d="M64 254L98 256M82 255L92 246M80 258L88 266" stroke-width=".9"/>
-      <path d="M64 124C52 112 36 112 26 118C33 122 36 128 33 135C43 133 51 130 57 125C54 135 56 143 62 148C65 138 66 130 64 124Z" fill="#F7F4EC"/>
-      <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
-      <path d="M78 322C82 328 86 332 86 338"/>
-      <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
-      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
-      <path d="M40 196C38 202 36 206 36 212"/>
-      <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
-      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
-    </svg>
-    <svg class="age__vine age__vine--right" viewBox="0 0 120 460" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
-      <path d="M60 310C74 300 90 302 92 316C94 328 82 332 76 324C72 318 78 312 83 316"/>
-      <path d="M62 182C46 172 30 176 28 190C27 202 40 204 44 196C47 190 40 185 36 189"/>
-      <path d="M58 58C72 54 84 60 82 72C80 81 70 80 70 73"/>
-      <path d="M52 404C40 390 22 388 10 396C18 400 22 408 18 416C30 414 40 410 46 404C42 416 44 426 52 432C56 420 56 412 52 404Z" fill="#F7F4EC"/>
-      <path d="M52 404L20 402M36 403L26 394M38 406L30 414" stroke-width=".9"/>
-      <path d="M64 254C78 242 96 242 108 250C100 254 96 262 100 270C88 268 78 264 72 258C76 270 74 280 66 286C62 274 62 264 64 254Z" fill="#F7F4EC"/>
-      <path d="M64 254L98 256M82 255L92 246M80 258L88 266" stroke-width=".9"/>
-      <path d="M64 124C52 112 36 112 26 118C33 122 36 128 33 135C43 133 51 130 57 125C54 135 56 143 62 148C65 138 66 130 64 124Z" fill="#F7F4EC"/>
-      <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
-      <path d="M78 322C82 328 86 332 86 338"/>
-      <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
-      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
-      <path d="M40 196C38 202 36 206 36 212"/>
-      <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
-      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
-    </svg>
     <div class="age__card">
       <div class="age__ask">
         <h2 class="age__title" id="age-title">Bist du 16 Jahre oder älter?</h2>
         <div class="age__actions">
-          <button class="age__btn" type="button" data-age="ja">Ja</button>
+          <button class="age__btn age__btn--ja" type="button" data-age="ja">Ja, ich bin 16</button>
           <button class="age__btn age__btn--no" type="button" data-age="nein">Nein</button>
         </div>
       </div>
@@ -348,7 +314,7 @@
         <h2 class="age__title">Schade!</h2>
         <p>Berghof Hell gibt es erst ab 16 Jahren. Schau gern wieder vorbei, wenn es so weit ist.</p>
       </div>
-      <p class="age__note">Bitte genieße verantwortungsvoll.<br /><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+      <p class="age__note"><span class="age__hint">Jugendschutz: Berghof Hell gibt es erst ab 16 Jahren. Bitte genieße verantwortungsvoll.<br /></span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </div>
   </div>
   <!-- Tastatur: springt ohne die zwei Übergänge direkt zum Inhalt (js/sequenz.js) -->

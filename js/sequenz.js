@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=e1c74548';
-import { ladeHerde } from './herde.js?v=e1c74548';
+import { createBeer } from './bier-leeren.js?v=46474755';
+import { ladeHerde } from './herde.js?v=46474755';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -40,7 +40,11 @@ const AV = manifest.v ? '?v=' + manifest.v : '';              // Version der Bil
 
 // ── Einstellungen ───────────────────────────────
 const DUR1 = 2800;            // ms, Geste 1 (Kamerafahrt bis zum Bier)
-const DUR2 = 2700;            // ms, Geste 2 (Bier leeren, ruhig; Rückweg gleich lang)
+// Geste 2 in zwei klar getrennten Phasen nacheinander (eine Zeitleiste, P läuft linear von 1 nach 2): erst nur das Bier (PH1), kurze Pause, dann fährt der ganze Block gleichzeitig
+// nach oben (RIDE): Titel „Berghof Hell“, Schafe, Einleitung und Gemälde gleiten gemeinsam an ihren Platz (alle um denselben Weg, der Block bleibt starr) und blenden dabei gemeinsam
+// ein (FADE), dazu der Seitenrahmen
+const PH1 = 2500, PAUSE = 150, RIDE = 1000, FADE = 550;
+const T2 = PH1 + PAUSE + RIDE;                               // 3650 ms insgesamt (Phase 2 = 1 s)
 const B_LEVEL = 0;            // Pegel im Zustand B (0 = Bierfläche über den ganzen Bildschirm, Spiegel über dem Bildrand, keine Schaumkrone; 1 = leer)
 const LOCK_AFTER = 400;       // ms Sperre nach jeder Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
@@ -54,7 +58,9 @@ const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const ramp = (g, a, b) => clamp01((g - a) / (b - a));         // 0 vor a, 1 nach b, dazwischen linear
 const smooth = (x) => x * x * (3 - 2 * x);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);   // power2.inOut (Geste 1)
-const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;                    // sine.inOut (Geste 2: sanfter Anfang, sanftes Auslaufen)
+const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;                    // sine.inOut (Bierpegel in Phase 1: sanfter Anfang, sanftes Auslaufen)
+const easeOut = (t) => 1 - (1 - t) ** 3;                                     // cubic.out (Titel und Einblenden in Phase 2)
+const linear = (t) => t;
 
 const el = {
   cue: hero.querySelector('.scroll-cue'),
@@ -62,6 +68,9 @@ const el = {
   pageFrame: document.querySelector('.frame--page'),
   text: hero.querySelector('.hero__text'),
   more: hero.querySelector('.hero__more'),
+  lead: hero.querySelector('.hero__lead'),
+  art: hero.querySelector('.painting'),
+  herd: hero.querySelector('.herd'),
   flock: hero.querySelector('.flock'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
@@ -113,9 +122,21 @@ function want(i) {                                            // Bild i dekodier
   return p;
 }
 function keep(f, dir) {                                       // Fenster um Bild f, in Fahrtrichtung weiter voraus
+  if (framesFreed) return;
   const lo = f - (dir >= 0 ? BEHIND : AHEAD), hi = f + (dir >= 0 ? AHEAD : BEHIND);
   for (let i = Math.max(0, lo); i <= Math.min(N - 1, hi); i++) want(i);
   for (let i = 0; i < N; i++) if (bmp[i] && (i < lo - 2 || i > hi + 2)) { bmp[i].close?.(); bmp[i] = undefined; }
+}
+let framesFreed = false;
+function freeFrames() {                                        // Geste 2 braucht die Bildfolge nicht mehr (die Bierfläche deckt alles, es gibt keinen Rückweg aus C): vor Phase 1 Speicher und Canvas freigeben
+  if (framesFreed) return;
+  framesFreed = true;
+  run++;                                                       // laufende Ladevorgänge verwerfen
+  for (let i = 0; i < N; i++) if (bmp[i]) bmp[i].close?.();
+  still?.close?.(); still = null;
+  blobs = []; bmp = []; decoding.clear();
+  shown = null; stale = false;
+  canvas.style.display = 'none'; canvas.width = 0; canvas.height = 0;
 }
 function release() {                                           // nach jeder Animation: Speicher freigeben (das Ruhebild bleibt)
   for (let i = 0; i < N; i++) if (bmp[i]) { bmp[i].close?.(); bmp[i] = undefined; }
@@ -186,6 +207,7 @@ function flood(v, f, iw, ih) {                                // Bierfarbe breit
   ctx.fillRect(0, 0, W, H);
 }
 function resizeCanvas() {                                     // nur bei echter Größenänderung (Höhe = 100lvh: Adressleiste ändert sie nicht)
+  if (framesFreed) return;
   const cw = canvas.clientWidth, ch = canvas.clientHeight;
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
   if (cw * ch * dpr * dpr > 12e6) dpr = Math.sqrt(12e6 / (cw * ch));      // Safari: Canvas höchstens ca. 16 Mio. Pixel
@@ -257,7 +279,7 @@ function measureDy() {
     hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
   }
 }
-const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * (p - 1) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1
+const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * easeSine(clamp01((p - 1) * T2 / PH1)) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1 (in Phase 1 von Geste 2 sine.inOut, danach leer)
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
 
 // Zeichnet das Canvas zu P. false, wenn ein nötiges Bild noch nicht dekodiert ist.
@@ -286,21 +308,31 @@ function overlays(pv) {
   const end = ramp(g, 0.85, 1);
   const late = g >= 0.5;
   put('text', el.text, 'opacity', String(late ? end : start));
-  put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + textDy * (1 - h)).toFixed(2)}px, 0)`);
-
-  // Der Titel gleitet durch den Bereich der Einleitung nach oben; sie blendet erst ein, wenn er darüber angekommen ist (letzte 7 % des Wegs)
-  const more = ramp(h, 0.93, 1);
+  // Geste 2, Phase 2: der Titel bleibt in Phase 1 ruhig unten (textDy ist der gemessene Weg, FLIP: nur translate3d). Nach der Pause fährt der ganze Block gleichzeitig nach oben:
+  // Titel (mit den Schafen daneben), Einleitung, Gemälde und die Herde am Handy gleiten um denselben Weg und blenden gemeinsam ein (nur transform und opacity)
+  const T = h * T2;                                              // ms seit Beginn von Geste 2
+  const ride = easeOut(ramp(T, PH1 + PAUSE, PH1 + PAUSE + RIDE));    // Fahrt 0 … 1
+  const einblenden = easeOut(ramp(T, PH1 + PAUSE, PH1 + PAUSE + FADE));    // Einblenden 0 … 1
+  const dy = textDy * (1 - ride);                                // noch zu fahrender Weg (px)
+  put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + dy).toFixed(1)}px, 0)`);
   const prime = pv >= 1 ? 0.01 : 0;                            // ab B: Einleitung, Gemälde, Schafe und Seitenrahmen unmerklich (1 %) schon gezeichnet: Dekodieren und Rastern
                                                                // passiert vor dem Einblenden und nicht mittendrin (sonst ruckelt das Auftauchen am Ende von Geste 2)
-  put('more', el.more, 'opacity', String(Math.max(more, prime)));
-  put('flock', el.flock, 'opacity', String(Math.max(more, prime)));            // Schafe neben dem Titel (Tablet/Desktop): erscheinen mit dem Einleitungstext, ohne eigene Animation (die Herde am Handy liegt in .hero__more)
-  put('moreV', el.more, 'visibility', more > 0 || prime ? 'visible' : 'hidden');
+  put('more', el.more, 'opacity', prime ? '1' : '0');
+  put('moreV', el.more, 'visibility', prime ? 'visible' : 'hidden');
+  const show = (key, node, move) => {
+    put(key, node, 'opacity', Math.max(einblenden, prime).toFixed(3));
+    if (move) put(key + 'Y', node, 'transform', ride >= 1 ? 'none' : `translate3d(0, ${dy.toFixed(1)}px, 0)`);
+  };
+  show('flock', el.flock, false);                               // Schafe neben dem Titel (Tablet/Desktop): liegen im Titelblock und fahren mit ihm
+  show('herd', el.herd, true);                                  // Herde unten (Handy)
+  show('lead', el.lead, true);                                  // Einleitungstext
+  show('art', el.art, true);                                    // Gemälde
+  const frameC = einblenden;                                    // Seitenrahmen (C): blendet gleichzeitig ein
+  put('pageFrame', el.pageFrame, 'opacity', Math.max(frameC, prime).toFixed(3));
 
   // Rahmen mit Eckverzierung blendet auf allen Geräten aus; „Hofer Bräu“ oben bleibt frei (Hintergrund folgt über --frame-o)
   const frameA = 1 - ramp(g, 0.5, 0.72);                       // Startrahmen: noch während des Zooms weg, vor dem flachen Bier-Gold
-  const frameC = ramp(h, 0.88, 1);                              // Seitenrahmen (C): blendet am Ende von Geste 2 ein (≈ 0,6 s von 2,7 s), aus dem Fortschritt
   put('frame', el.frame, 'opacity', String(frameA));
-  put('pageFrame', el.pageFrame, 'opacity', String(Math.max(frameC, prime)));
   put('frameO', el.header, '--frame-o', String(Math.max(frameA, frameC)));   // Creme-Fläche hinter „Hofer Bräu“ unterbricht die Rahmenlinie, solange ein Rahmen steht
 
   // Bierfläche (mit Bläschen) legt sich über den Farbwechsel des Kronkorkens
@@ -314,11 +346,13 @@ function overlays(pv) {
   const fade = pv <= 1 ? ramp(g, 0.6, 0.8) : null;              // Geste 1: mit der Bierfläche (gleiche Rampe wie .beer) nach Gold
   const goldTop = fade ?? 1 - ramp(surf, -30, -30 + L);
   const goldBottom = fade ?? 1 - ramp(surf - 12, innerHeight, innerHeight + L);
-  setGold(goldTop, goldBottom, g >= 0.7 && pv < 1.9);          // Seitenhintergrund (Gummiband, Desktop-Safari-Leisten) wie bisher
+  setGold(goldTop, goldBottom, g >= 0.7 && p < 0.9);           // Seitenhintergrund (Gummiband, Desktop-Safari-Leisten): bierfarben, solange noch Bier im Bild ist
 
   const shown = g >= 0.8;                                      // ab hier deckt die Bierfläche alles (Canvas aus)
-  beer.level(p, shown);
-  const draining = shown && p < 1;                             // Bläschen steigen, solange Bier zu sehen ist (auch in B)
+  const foamH = 80;                                            // grob: Höhe von Schaumkrone und Wellen (px)
+  const wave = shown && surf + 40 > -foamH && surf - foamH - 40 < innerHeight;   // Welle nur zeichnen, solange Oberfläche oder Schaum im Bild sein können (sonst steht alles still, kein Pfad pro Bild)
+  beer.level(p, wave);
+  const draining = shown && surf < innerHeight + 20;           // Bläschen steigen, solange Bier zu sehen ist (auch in B); danach stehen sie
   if (last.draining !== draining) { last.draining = draining; root.classList.toggle('is-draining', draining); }
 }
 
@@ -334,6 +368,7 @@ function go(to, dur, easing = ease) {
   const from = P, my = ++animId, dir = to > from ? 1 : -1;
   busy = true;
   stalls = 0;
+  root.classList.add('anim');                                  // will-change nur während der Animation (CSS)
   log.push({ t: Math.round(performance.now()), art: 'start', von: from, nach: to });
   return new Promise((resolve) => {
     let t = 0, prev = performance.now(), prevLevel = levelOf(from);
@@ -344,7 +379,7 @@ function go(to, dur, easing = ease) {
       if (render(pv)) {                                        // sonst: Zeit hält an, bis das Bild dekodiert ist
         t = nt; P = pv;
         const lv = levelOf(pv);
-        if (dt > 0 && lv !== prevLevel) beer.velocity(((lv - prevLevel) / dt) * 1000 * canvas.clientHeight * 1.15);   // Schwappen folgt dem Tempo
+        if (dt > 0 && lv !== prevLevel) beer.velocity(((lv - prevLevel) / dt) * 1000 * innerHeight * 1.15);   // Schwappen folgt dem Tempo
         prevLevel = lv;
       } else { stalls++; }
       keep(frameOf(P), dir);
@@ -355,7 +390,7 @@ function go(to, dur, easing = ease) {
       P = to;                                                  // Zielzustand ausdrücklich setzen
       const settle = () => {
         if (my !== animId) return resolve(false);
-        if (render(to) || !ready) { busy = false; lockUntil = performance.now() + LOCK_AFTER; log.push({ t: Math.round(performance.now()), art: 'ende', nach: to }); resolve(true); }
+        if (render(to) || !ready) { busy = false; root.classList.remove('anim'); lockUntil = performance.now() + LOCK_AFTER; log.push({ t: Math.round(performance.now()), art: 'ende', nach: to }); resolve(true); }
         else requestAnimationFrame(settle);
       };
       settle();
@@ -380,7 +415,8 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   ladeHerde();                                                 // Schafe und Gemälde (Zustand C) sicher geladen, bevor sie gebraucht werden
   if (usesFrames) await prepare(to === 'A' ? N - 1 : 0, to === 'A' ? -1 : 1);
   busy = false;
-  const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : DUR2, usesFrames ? ease : easeSine);
+  if (to === 'C') freeFrames();                                // vor Phase 1: Canvas und Bilder weg, Geste 2 läuft nur noch mit Bierfläche und Seite
+  const done = await go(to === 'A' ? 0 : to === 'B' ? 1 : 2, usesFrames ? DUR1 : T2, usesFrames ? ease : linear);
   if (!done) return;
   state = to;
   release();
@@ -392,6 +428,7 @@ function unlock() { lock(false); root.classList.add('frei'); }
 
 function skipToContent() {                                     // Überspringen, Notfall oder Direktlink: sofort Zustand C
   animId++; busy = false; pending = null;
+  root.classList.remove('anim');
   root.classList.remove('wartet');
   setCue(false);
   state = 'C'; P = 2;
@@ -429,6 +466,7 @@ async function replay() {                                      // „Bier Animat
   replaying = true;
   await scrollToTop();
   window.scrollTo(0, 0);
+  framesFreed = false;
   root.classList.remove('frei', 'wartet', 'bereit');            // „bereit“ erst wieder, wenn die Bilder neu geladen sind (bis dahin zeigt das Ladesymbol unten „Lädt“)
   lock(true);
   state = 'A'; P = 0; busy = false; pending = null; lockUntil = performance.now() + LOCK_AFTER;
@@ -570,7 +608,7 @@ window.__sequenz = {
   get zustand() { return state; }, get P() { return P; }, get busy() { return busy; }, get bereit() { return ready; },
   get wartet() { return !!pending; }, get stalls() { return stalls; }, get frame() { return frameOf(P); },
   get geladen() { return loadedCount; }, get anzahl() { return N; }, log,
-  get aktiv() { return attached; }, get speicher() { return { bitmaps: bmp.filter(Boolean).length, dateien: blobs.filter(Boolean).length, standbild: !!still, canvas: canvas.style.display !== 'none' && canvas.width > 0 }; },
+  get aktiv() { return attached; }, phasen: { PH1, PAUSE, RIDE, FADE, T2 }, get speicher() { return { bitmaps: bmp.filter(Boolean).length, dateien: blobs.filter(Boolean).length, standbild: !!still, canvas: canvas.style.display !== 'none' && canvas.width > 0 }; },
   replay,
   get gestenbereit() { return !busy && !pending && performance.now() >= lockUntil; },   // Eingabesperre vorbei?
   async zeige(pv) {                                            // Zustand zu P ohne Animation zeigen (Screenshots)

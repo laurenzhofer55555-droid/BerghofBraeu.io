@@ -73,9 +73,9 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Altersabfrage liegt über dem Papierkorn der Seite (z-index 70 statt 40, damit die Beschriftung „Hofer Bräu“ darunter bleibt): eigenes Korn, gleiches Aussehen */
-.age::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
+/* Altersabfrage: die Karte liegt über dem Papierkorn der Seite (z-index 70) und hat ein eigenes Korn */
+.age__card::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   opacity: .5;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -141,7 +141,8 @@ main { position: relative; z-index: 2; }
 .frame__corner--br { bottom: 1px; right: 1px; }
 
 .hero__heading { margin: 0; font-weight: 400; }
-.hero__text { position: relative; will-change: transform, opacity; }
+.hero__text { position: relative; }
+.anim .hero__text, .anim .hero__lead, .anim .painting, .anim .herd, .anim .flock, .anim .frame--page, .anim .beer__liquid { will-change: transform, opacity; }   /* nur während einer Animation (html.anim, js/sequenz.js) */
 
 /* Gold-Phase am Kronkorken (Klasse aus js/sequenz.js, alle Geräte) – ganze Seite in Gold, auch hinter Statusleiste, Adressleiste und beim Überscrollen */
 html.gold-page, html.gold-page body { background: var(--gold-beer); }
@@ -249,7 +250,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
 .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }   /* Rand zu Rand, Höhe 100lvh: auch unter der eingeklappten Adressleiste */
-.beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); will-change: transform; }   /* PAD + BELOW in js/bier-leeren.js */
+.beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); }   /* PAD + BELOW in js/bier-leeren.js */
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }
 .beer__foam { fill: #FFFFFF; }

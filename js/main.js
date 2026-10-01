@@ -3,9 +3,9 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=d6376cec';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './timeline.js?v=d6376cec';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=d6376cec';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import './altersabfrage.js?v=46474755';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './timeline.js?v=46474755';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=46474755';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -32,7 +32,7 @@ const unlock = () => { root.classList.remove('seq'); root.classList.add('frei');
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=d6376cec').catch((e) => {
+  import('./sequenz.js?v=46474755').catch((e) => {
     console.warn('Startsequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
     unlock();
   });

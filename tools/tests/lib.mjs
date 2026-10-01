@@ -43,6 +43,9 @@ window.__state = () => {
     wartet: q ? q.wartet : null, frame: q ? q.frame : null, stalls: q ? q.stalls : 0, geladen: q ? q.geladen : 0,
     cv: c ? getComputedStyle(c).visibility : null, beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cue: num(cs('.scroll-cue')?.opacity),
     frameO: num(cs('#start > .frame')?.opacity), level: Math.round(ty(document.querySelector('.beer__liquid'))), textY: Math.round(ty(document.querySelector('.hero__text')) * 10) / 10, more: num(cs('.hero__more')?.opacity),
+    ops: { flock: num(cs('.flock')?.opacity), herd: num(cs('.herd')?.opacity), lead: num(cs('.hero__lead')?.opacity), art: num(cs('.painting')?.opacity), pf: num(cs('.frame--page')?.opacity) },
+    tys: { flock: Math.round(ty(document.querySelector('.flock')) * 10) / 10, herd: Math.round(ty(document.querySelector('.herd')) * 10) / 10, lead: Math.round(ty(document.querySelector('.hero__lead')) * 10) / 10, art: Math.round(ty(document.querySelector('.painting')) * 10) / 10 },
+    anim: document.documentElement.classList.contains('anim'), wc: cs('.hero__text')?.willChange, cw: c ? c.width : null,
     gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei'),
     overflow: getComputedStyle(document.documentElement).overflow, height: document.documentElement.scrollHeight,
   };
@@ -145,7 +148,7 @@ export async function touchSwipe(b, dy, { ms = 160, x = null } = {}) {
   for (let k = 1; k <= steps; k++) { await b.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: X, y: Y0 - (dy * k) / steps }] }); await sleep(ms / steps); }
   await b.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
-const KEYS = { ArrowDown: [40, 'ArrowDown'], ArrowUp: [38, 'ArrowUp'], PageDown: [34, 'PageDown'], PageUp: [33, 'PageUp'], ' ': [32, 'Space'], Tab: [9, 'Tab'] };
+const KEYS = { ArrowDown: [40, 'ArrowDown'], ArrowUp: [38, 'ArrowUp'], PageDown: [34, 'PageDown'], PageUp: [33, 'PageUp'], ' ': [32, 'Space'], Tab: [9, 'Tab'], Escape: [27, 'Escape'] };
 export async function keyPress(b, key, modifiers = 0) {
   const [vk, code] = KEYS[key];
   await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk, modifiers, text: key === ' ' ? ' ' : undefined });

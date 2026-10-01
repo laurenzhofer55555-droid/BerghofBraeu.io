@@ -18,6 +18,17 @@ export const confirmed = new Promise((resolve) => {
   others.forEach((el) => { el.inert = true; });
   dialog.focus();
 
+  // Fokusfalle: Tab und Umschalt + Tab bleiben in der Abfrage, Escape schließt sie nicht (nur „Ja“ gibt die Seite frei)
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); return; }
+    if (e.key !== 'Tab') return;
+    const fokus = [...dialog.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])')].filter((n) => n.offsetParent !== null);
+    if (!fokus.length) { e.preventDefault(); return; }
+    const erst = fokus[0], letzt = fokus[fokus.length - 1], a = document.activeElement;
+    if (e.shiftKey && (a === erst || a === dialog)) { e.preventDefault(); letzt.focus(); }
+    else if (!e.shiftKey && a === letzt) { e.preventDefault(); erst.focus(); }
+  });
+
   dialog.querySelector('[data-age="ja"]').addEventListener('click', () => {
     try {
       localStorage.setItem(KEY, String(Date.now() + DAYS * 24 * 60 * 60 * 1000));
