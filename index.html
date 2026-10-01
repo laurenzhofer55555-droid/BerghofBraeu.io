@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
        GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-W1MLevFcz2++4AUjsFEplTYbFgmjE6L8KkrxxVdikpU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dAIXUCnMu0fMMnwBd2rgApMZM6iCZr/TvJ4d17hiEhs='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
@@ -98,8 +98,12 @@
       try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('seq'); } catch (e) {}
       // Direktlink (#…), Neuladen, Zurück: nicht gesperrt, js/sequenz.js entscheidet (Position über 0 oder Sprungmarke → Inhalt).
       // Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
+      // Neuladen/Zurück: der Browser stellt die Position erst nach dem Laden wieder her. Gemerkt wird sie beim Verlassen der Seite;
+      // war sie oben (0), startet die Sequenz sofort in A (sonst blitzt bis zum Laden kurz das Endlayout über dem Standbild auf).
       var nav = ''; try { nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
-      if (location.hash || nav === 'reload' || nav === 'back_forward') root.classList.add('frei');
+      var oben = false; try { oben = sessionStorage.getItem('berghof-y') === '0'; } catch (e) {}
+      try { addEventListener('pagehide', function () { try { sessionStorage.setItem('berghof-y', String(Math.round(scrollY))); } catch (e) {} }); } catch (e) {}
+      if (location.hash || ((nav === 'reload' || nav === 'back_forward') && !oben)) root.classList.add('frei');
       if (location.hash) root.classList.add('css-wait');
     })();
   </script>

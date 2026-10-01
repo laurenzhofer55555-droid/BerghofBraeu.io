@@ -669,6 +669,13 @@ async function neuladen() {
     await b.send('Page.reload'); await sleep(3500); await waitReady(b);
     const a = await state(b);
     check('neuladen: Neuladen oben bleibt in A (gesperrt)', a.z === 'A' && a.overflow === 'hidden' && a.y === 0);
+    const blitz = await b.js(`window.__S.filter((s) => s.frei && s.more !== 0).length`);
+    check('neuladen: Neuladen oben zeigt nie das Endlayout über dem Standbild (kein Aufblitzen vor A)', blitz === 0, `${blitz} Bilder mit Endlayout`);
+    await b.send('Page.navigate', { url: BASE + 'impressum.html' }); await sleep(1200);
+    const h = (await b.send('Page.getNavigationHistory')).result;
+    await b.send('Page.navigateToHistoryEntry', { entryId: h.entries[h.currentIndex - 1].id }); await sleep(3500); await waitReady(b);
+    const z = await state(b), blitz2 = await b.js(`window.__S.filter((s) => s.frei && s.more !== 0).length`);
+    check('neuladen: Zurück zur Startseite (Position oben) startet in A, ohne Aufblitzen', z.z === 'A' && z.y === 0 && blitz2 === 0, JSON.stringify({ z: z.z, y: z.y, blitz: blitz2 }));
     check('neuladen: keine Fehler', b.errors.length === 0, b.errors[0] || '');
   } finally { b.close(); }
 }
