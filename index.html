@@ -251,33 +251,48 @@
     .age-gate .age { display: flex; animation: age-ein .45s ease both; }
     .age-leaving .age { opacity: 0; pointer-events: none; }
     .age:focus { outline: none; }
-    .age__card { position: relative; width: min(100%, 420px); padding: 30px 28px 24px; border-radius: 16px; background: var(--cream); border: 1px solid var(--gold);
-      box-shadow: inset 0 0 0 5px var(--cream), inset 0 0 0 6px rgba(184, 145, 58, .45), 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
-    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.2; color: var(--green); }
-    .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 16px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
+    /* Rahmen wie auf der Seite (.frame): außen tannengrün (1,5 px), innen eine feine goldene Linie, vier goldene Rauten in den Ecken */
+    .age__card { position: relative; width: min(100%, 544px); padding: 48px 48px 40px; border-radius: 6px; background: var(--cream); border: 1.5px solid var(--green);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
+    .age__card::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--gold); border-radius: 3px; opacity: .8; pointer-events: none; }
+    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); pointer-events: none; }
+    .age__corner:nth-of-type(1) { top: 1px; left: 1px; } .age__corner:nth-of-type(2) { top: 1px; right: 1px; }
+    .age__corner:nth-of-type(3) { bottom: 1px; left: 1px; } .age__corner:nth-of-type(4) { bottom: 1px; right: 1px; }
+    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; color: var(--green); }
+    .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 24px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
-    .age__actions { display: flex; gap: 10px; justify-content: center; margin: 22px 0 0; }
-    .age__btn { flex: 1 1 0; min-height: 48px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
-      font: 600 16px/1.1 var(--font-text); letter-spacing: .04em; cursor: pointer; }
-    .age__btn--ja { flex: 1.7 1 0; }
-    .age__btn:hover { background: #173b21; }
-    .age__btn--no { background: transparent; color: var(--green); }
-    .age__btn--no:hover { background: rgba(31, 77, 43, .07); }
-    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #7A5C1C; outline-offset: 3px; }
-    .age__note { margin: 18px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
-    .age__note a { color: var(--green); }
+    /* Beide Antworten gleichwertig (Jugendschutz): derselbe Stil, dieselbe Größe, kein Knopf wird hervorgehoben. „Ja, ich bin 16“ links, „Nein“ rechts. */
+    .age__actions { display: flex; gap: 16px; justify-content: center; margin: 32px 0 0; }
+    .age__btn { flex: 1 1 0; min-width: 0; min-height: 56px; padding: 16px 24px; border-radius: 10px; border: 1.5px solid #1F4D2B; background: #F0EBDC; color: #1F4D2B;
+      font: 600 17px/1.15 var(--font-text); letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
+    .age__btn:hover, .age__btn:focus-visible { background: #E6DFCB; }
+    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #B8913A; outline-offset: 5px; box-shadow: 0 0 0 3px #F7F4EC, 0 0 0 5px #1F4D2B; border-radius: 10px; }      /* dünner goldener Rahmen, innen ein dunkelgrüner Ring: auch auf Beige mit gutem Kontrast sichtbar */
+    .age a:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px #F7F4EC, 0 0 0 4px #1F4D2B; outline-offset: 4px; }
+    .age__note { margin: 32px 0 0; font-size: 16px; line-height: 1.55; color: var(--green-soft); }
+    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: rgba(31, 77, 43, .82); }
+    .age__links { margin: 24px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
+    .age__links a { color: var(--green); }
     .age__no { display: none; }
     .age-denied .age__ask { display: none; }
-    .age-denied .age__hint { display: none; }
+    .age-denied .age__hint, .age-denied .age__privacy { display: none; }
     .age-denied .age__no { display: block; }
-    .age__no p { margin: 14px 0 0; font-size: 17px; line-height: 1.55; color: var(--ink); }
+    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.55; color: var(--ink); }
     @keyframes age-ein { from { opacity: 0; } }
     @keyframes age-hoch { from { opacity: 0; transform: translateY(18px); } }
     @keyframes age-sheet { from { opacity: 0; transform: translateY(44px); } }
     @media (max-width: 767px) {
       .age { align-items: flex-end; padding: 0; }
-      .age__card { width: 100%; min-height: 36vh; min-height: 36svh; display: flex; flex-direction: column; justify-content: center; border-radius: 22px 22px 0 0; border-bottom: 0;
-        padding: 26px 22px calc(22px + env(safe-area-inset-bottom)); animation-name: age-sheet; }
+      .age__card { width: 100%; min-height: 44vh; min-height: 44svh; display: flex; flex-direction: column; justify-content: center; border-radius: 24px 24px 0 0; border-bottom: 0;
+        padding: 32px 24px calc(24px + env(safe-area-inset-bottom)); animation-name: age-sheet; }
+      .age__card::before { border-radius: 19px 19px 0 0; border-bottom: 0; }
+      .age__corner { display: none; }
+      .age__title { font-size: 26px; }
+      .age__title::after { margin-top: 16px; }
+      .age__actions { gap: 12px; margin-top: 24px; }
+      .age__btn { padding: 16px 8px; font-size: 16px; }
+      .age__note { margin-top: 24px; font-size: 15px; }
+      .age__privacy { margin-top: 12px; }
+      .age__links { margin-top: 16px; }
     }
     @media (prefers-reduced-motion: reduce) { .age, .age-gate .age, .age__card { animation: none; transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
@@ -308,12 +323,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=b0f59d8a" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=b0f59d8a" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=b0f59d8a" /></noscript>
+  <link rel="preload" href="css/style.css?v=8db1cca4" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=8db1cca4" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=8db1cca4" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=b0f59d8a"></script>
+  <script type="module" src="js/main.js?v=8db1cca4"></script>
 </head>
 <body>
 
@@ -325,6 +340,7 @@
   <!-- Altersabfrage 16+: liegt nur über der Seite, alle Inhalte bleiben im HTML (js/altersabfrage.js) -->
   <div class="age" id="altersabfrage" role="dialog" aria-modal="true" aria-labelledby="age-title" tabindex="-1" data-nosnippet>
     <div class="age__card">
+      <i class="age__corner" aria-hidden="true"></i><i class="age__corner" aria-hidden="true"></i><i class="age__corner" aria-hidden="true"></i><i class="age__corner" aria-hidden="true"></i>
       <div class="age__ask">
         <h2 class="age__title" id="age-title">Bist du 16 Jahre oder älter?</h2>
         <div class="age__actions">
@@ -336,7 +352,9 @@
         <h2 class="age__title">Schade!</h2>
         <p>Berghof Hell gibt es erst ab 16 Jahren. Schau gern wieder vorbei, wenn es so weit ist.</p>
       </div>
-      <p class="age__note"><span class="age__hint">Jugendschutz: Berghof Hell gibt es erst ab 16 Jahren. Bitte genieße verantwortungsvoll.<br /></span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+      <p class="age__note age__hint">Jugendschutz: Berghof Hell gibt es erst ab 16 Jahren. Bitte genieße verantwortungsvoll.</p>
+      <p class="age__privacy">Wir verwenden keine Cookies und kein Tracking. Deine Antwort wird nur lokal in deinem Browser gespeichert.</p>
+      <p class="age__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </div>
   </div>
   <!-- Tastatur: springt ohne die zwei Übergänge direkt zum Inhalt (js/sequenz.js) -->
@@ -481,34 +499,23 @@
               <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M86 21C97 7 122 5 137 16C126 29 101 33 86 21Z" fill="#F7F4EC"/>
               <path d="M86 21C103 18 121 16 137 16M101 19.5l5-7M101 19.5l6 6M116 17.5l5-8M116 17.5l6 7" stroke-width="1"/>
-              <path d="M81 31C72 26 61 28 57 37C53 46 60 54 68 51C75 48 74 40 68 40C64 40 63 45 66 46" stroke="#B8913A" stroke-width="1.1"/>
               <path d="M80 42C80 32 82 23 88 13"/>
               <path d="M71.0 120.0C71.0 132.1 76.8 140.5 80.0 142.0C83.2 140.5 89.0 132.1 89.0 120.0" fill="#F7F4EC"/>
-              <path d="M80 133.2V138.5" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M58.0 106.0C58.0 119.2 65.2 128.3 69.0 130.0C72.8 128.3 80.0 119.2 80.0 106.0" fill="#F7F4EC"/>
               <path d="M80.0 106.0C80.0 119.2 87.2 128.3 91.0 130.0C94.8 128.3 102.0 119.2 102.0 106.0" fill="#F7F4EC"/>
-              <path d="M91 120.4V126.2" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M48.0 92.0C48.0 105.8 55.8 115.2 60.0 117.0C64.2 115.2 72.0 105.8 72.0 92.0" fill="#F7F4EC"/>
-              <path d="M60 107.0V113.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M68.0 92.0C68.0 105.8 75.8 115.2 80.0 117.0C84.2 115.2 92.0 105.8 92.0 92.0" fill="#F7F4EC"/>
               <path d="M88.0 92.0C88.0 105.8 95.8 115.2 100.0 117.0C104.2 115.2 112.0 105.8 112.0 92.0" fill="#F7F4EC"/>
-              <path d="M100 107.0V113.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M43.5 78.0C43.5 91.8 51.6 101.2 56.0 103.0C60.4 101.2 68.5 91.8 68.5 78.0" fill="#F7F4EC"/>
               <path d="M59.5 78.0C59.5 91.8 67.6 101.2 72.0 103.0C76.4 101.2 84.5 91.8 84.5 78.0" fill="#F7F4EC"/>
-              <path d="M72 93.0V99.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M75.5 78.0C75.5 91.8 83.6 101.2 88.0 103.0C92.4 101.2 100.5 91.8 100.5 78.0" fill="#F7F4EC"/>
               <path d="M91.5 78.0C91.5 91.8 99.6 101.2 104.0 103.0C108.4 101.2 116.5 91.8 116.5 78.0" fill="#F7F4EC"/>
-              <path d="M104 93.0V99.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M47.5 64.0C47.5 77.8 55.6 87.2 60.0 89.0C64.4 87.2 72.5 77.8 72.5 64.0" fill="#F7F4EC"/>
-              <path d="M60 79.0V85.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M67.5 64.0C67.5 77.8 75.6 87.2 80.0 89.0C84.4 87.2 92.5 77.8 92.5 64.0" fill="#F7F4EC"/>
               <path d="M87.5 64.0C87.5 77.8 95.6 87.2 100.0 89.0C104.4 87.2 112.5 77.8 112.5 64.0" fill="#F7F4EC"/>
-              <path d="M100 79.0V85.0" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M56.5 51.0C56.5 63.6 64.0 72.4 68.0 74.0C72.0 72.4 79.5 63.6 79.5 51.0" fill="#F7F4EC"/>
               <path d="M80.5 51.0C80.5 63.6 88.0 72.4 92.0 74.0C96.0 72.4 103.5 63.6 103.5 51.0" fill="#F7F4EC"/>
-              <path d="M92 64.8V70.3" stroke="#B8913A" stroke-width="0.9"/>
               <path d="M70.0 40.0C70.0 51.5 76.5 59.5 80.0 61.0C83.5 59.5 90.0 51.5 90.0 40.0" fill="#F7F4EC"/>
-              <path d="M80 52.6V57.6" stroke="#B8913A" stroke-width="0.9"/>
               </svg>
               <h3>Hopfen</h3>
               <p>Hopfen schenkt dem Hellen seine feine, milde Würze und ein frisches Aroma.</p>
@@ -517,20 +524,7 @@
               <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M80 134C71 121 58 110 40 104C56 101 71 108 80 121" fill="#F7F4EC"/>
               <path d="M80 162C80 130 80 96 80.5 40"/>
-              <path d="M68.7 53.6L53.7 25.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 62.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 62.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 47.6L106.3 19.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 56.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 56.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M68.7 66.1L53.7 37.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 74.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 74.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 60.1L106.3 31.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 68.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 68.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M68.7 78.6L53.7 50.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 87.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 87.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 72.6L106.3 44.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 81.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 81.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M68.7 91.1L53.7 62.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 99.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 99.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 85.1L106.3 56.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 93.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 93.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M68.7 103.6L53.7 75.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 112.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 112.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 97.6L106.3 69.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 106.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 106.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M68.7 116.1L53.7 87.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 124.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 124.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M91.3 110.1L106.3 81.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 118.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 118.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-              <path d="M80.5 34.5L80.5 -1.5" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(80.5 44) rotate(0)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(80.5 44) rotate(0)" stroke="#B8913A" stroke-width="0.7"/>
-              </svg>
+<path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 62.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 56.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 74.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 68.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 87.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 81.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 99.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 93.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 112.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 106.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 124.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 118.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(80.5 44) rotate(0)" fill="#F7F4EC"/>              </svg>
               <h3>Malz</h3>
               <p>Helles Gerstenmalz gibt dem Bier die goldene Farbe und seinen runden Körper.</p>
             </li>
@@ -538,10 +532,7 @@
               <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <ellipse cx="80" cy="148" rx="54" ry="9" stroke-opacity=".35"/>
               <ellipse cx="80" cy="148" rx="36" ry="6"/>
-              <ellipse cx="80" cy="148" rx="19" ry="3.2" stroke="#B8913A"/>
               <path d="M80 16C80 16 49 57 49 84C49 102 63 116 80 116C97 116 111 102 111 84C111 57 80 16 80 16Z" fill="#F7F4EC"/>
-              <path d="M63 87C63 98 70 106 80 107" stroke="#B8913A" stroke-width="1.3"/>
-              <circle cx="67" cy="73" r="2" fill="#B8913A" stroke="none"/>
               </svg>
               <h3>Wasser</h3>
               <p>Weiches, klares Wasser: die Grundlage für ein süffiges bayerisches Helles.</p>

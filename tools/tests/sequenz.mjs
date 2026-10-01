@@ -307,7 +307,7 @@ async function zustandB() {
 // Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
 // Geste 2: zwei Phasen nacheinander (gleiche Zahlen wie in js/sequenz.js, window.__sequenz.phasen wird in „phasen“ gegengeprüft)
-const PH = { PH_IN: 300, PH1: 2600, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3750, DRINK: [[420, 0.2, 'io'], [640, 0.23, 'io'], [1120, 0.54, 'io'], [1330, 0.57, 'io'], [1700, 0.77, 'io'], [1860, 0.79, 'io'], [2300, 1, 'in']] };
+const PH = { PH_IN: 300, PH1: 2600, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3750, DRINK: { surges: 2.5, depth: 0.45, ramp: 0.1, intro: 0.6 } };
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn von Geste 2
 const tOf = (P) => (P - 1) * PH.T2;
 const easeOutT = (t) => 1 - (1 - t) ** 3;
@@ -315,8 +315,11 @@ const rampT = (x, a, b) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 const rideT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.RIDE));          // gemeinsame Fahrt 0 … 1
 const einT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.FADE));           // gemeinsames Einblenden 0 … 1
 // Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): erst Schaumkrone ein (0,3 s ease-out), dann drei Schlucke mit Pausen (js/sequenz.js: levelOf)
-const drinkT = (ms) => { let t0 = 0, d0 = 0; for (const [t1, d1, f] of PH.DRINK) { if (ms <= t1) { const u = (ms - t0) / (t1 - t0); return d0 + (d1 - d0) * (f === 'in' ? 1 - Math.cos(u * Math.PI / 2) : easeSine(u)); } t0 = t1; d0 = d1; } return 1; };
-const lvlT = (T, H) => { const foamH = Math.min(100, Math.max(56, H * 0.09)), p1 = (foamH + 12 + 16) / (H + foamH + 126); return T >= PH.PH1 ? 1 : T <= PH.PH_IN ? p1 * easeOutT(T / PH.PH_IN) : p1 + (1 - p1) * drinkT(T - PH.PH_IN); };
+const smoothT = (x) => x * x * (3 - 2 * x);
+const drinkTab = (v0) => { const n = 256, t = new Float64Array(n + 1), D = PH.DRINK; for (let k = 1; k <= n; k++) { const u = (k - 0.5) / n, w = smoothT(Math.min(1, u / D.ramp)); t[k] = t[k - 1] + (v0 + (1 - v0) * w) * (1 + 0.35 * u) * (1 + D.depth * Math.sin(2 * Math.PI * D.surges * u - Math.PI / 2) * w); } for (let k = 1; k <= n; k++) t[k] /= t[n]; return t; };
+const drinkT = (ms, v0) => { const t = drinkTab(v0), u = Math.min(1, Math.max(0, ms / (PH.PH1 - PH.PH_IN))), x = u * 256, k = Math.min(255, Math.floor(x)); return t[k] + (t[k + 1] - t[k]) * (x - k); };
+// Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): erst Schaumkrone ein (0,3 s ease-out mit Resttempo), dann ohne Halt das Trinken (js/sequenz.js: levelOf)
+const lvlT = (T, H) => { const c = PH.DRINK.intro, foamH = Math.min(100, Math.max(56, H * 0.09)), p1 = (foamH + 12 + 16) / (H + foamH + 126), v0 = (1 - c) * p1 * (PH.PH1 - PH.PH_IN) / (PH.PH_IN * (1 - p1)); return T >= PH.PH1 ? 1 : T <= PH.PH_IN ? p1 * (T / PH.PH_IN) * (1 + c - c * (T / PH.PH_IN)) : p1 + (1 - p1) * drinkT(T - PH.PH_IN, v0); };
 async function geste2() {
   for (const [name, view] of Object.entries(DEVICES)) {
     if (name === 'desktop-2560' && !only.length) continue;   // gleiche Logik wie 1440, spart Zeit im Gesamtlauf
@@ -358,10 +361,12 @@ async function geste2() {
       const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), ein = alle.find((x) => x.input === 1 && x.P >= 1 && x.P < 1.01), sicht = alle.find((x) => x.P > 1 && x.level + 170 > 0);
       const wartezeit = ein && sicht ? sicht.t - ein.t : null;
       check(`geste2 ${name}: erste sichtbare Bewegung (Schaumkrone) ${wartezeit} ms nach der Geste (≤ 120)`, wartezeit != null && wartezeit <= 120, JSON.stringify({ ein: ein && ein.t, sicht: sicht && sicht.t }));
-      const T0 = S.length ? S[0].t - tOf(S[0].P) : 0, D = S.filter((x) => tOf(x.P) >= PH.PH_IN && tOf(x.P) <= PH.PH1 - 100);
+      const D = S.filter((x) => tOf(x.P) >= PH.PH_IN + 60 && tOf(x.P) <= PH.PH1 - 150);
       const v = []; for (let i = 0, j = 1; j < D.length; j++) { if (D[j].t - D[i].t >= 90) { v.push({ t: tOf(D[j].P), v: (D[j].level - D[i].level) / (D[j].t - D[i].t) }); i = j; } }
-      const vmax = Math.max(...v.map((x) => x.v)); let tiefs = 0; for (let k = 1; k < v.length - 1; k++) if (v[k].v < 0.3 * vmax && v[k].v <= v[k - 1].v && v[k].v <= v[k + 1].v) tiefs++;
-      check(`geste2 ${name}: Bier läuft unregelmäßig wie getrunken: ${tiefs} Pausen (Tempo unter 30 % des schnellsten Zugs, ≥ 2), schnellster Zug ${(vmax * 1000).toFixed(0)} px/s`, tiefs >= 2 && vmax > 0, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
+      const vm = v.reduce((a, x) => a + x.v, 0) / v.length, vlo = Math.min(...v.map((x) => x.v)), vhi = Math.max(...v.map((x) => x.v));
+      let sprung = 0; for (let k = 1; k < v.length; k++) if (Math.abs(v[k].v - v[k - 1].v) > 0.9 * vm) sprung++;
+      check(`geste2 ${name}: Bier wandert glatt und mit wechselndem Tempo, ohne Stillstand: langsamster Abschnitt ${(vlo * 1000).toFixed(0)} px/s (≥ 25 % des Mittels ${(vm * 1000).toFixed(0)}), schnellster ${(vhi * 1000).toFixed(0)} px/s (≥ 1,4 × langsamster), kein Tempo-Sprung (${sprung})`,
+        v.length > 10 && vlo >= 0.25 * vm && vhi >= 1.4 * vlo && sprung === 0, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
   }
@@ -1082,20 +1087,42 @@ async function alter() {
       await b.send('Page.navigate', { url: BASE + '?alter=' + Date.now() });
       await waitReady(b); await sleep(900);
       const g = JSON.parse(await b.js(`JSON.stringify((() => { const q = (x) => document.querySelector(x), cs = (x) => getComputedStyle(q(x)), c = q('.age__card').getBoundingClientRect(), vh = innerHeight, vw = innerWidth;
-        const txt = [...document.querySelectorAll('.age__title, .age__note, .age__note a, .age__btn')].map((e) => parseFloat(getComputedStyle(e).fontSize));
+        const txt = [...document.querySelectorAll('.age__title, .age__note, .age__privacy, .age__links, .age__links a, .age__btn')].map((e) => parseFloat(getComputedStyle(e).fontSize));
         return { gate: document.documentElement.classList.contains('age-gate'), disp: cs('.age').display, w: Math.round(c.width), h: Math.round(c.height), cx: Math.round(c.left + c.width / 2 - vw / 2), cy: Math.round(c.top + c.height / 2 - vh / 2), bottom: Math.round(vh - c.bottom), anteil: +(c.height / vh).toFixed(2),
           radius: cs('.age__card').borderTopLeftRadius, radiusU: cs('.age__card').borderBottomLeftRadius, rand: cs('.age__card').borderTopColor, rw: cs('.age__card').borderTopWidth, bg: cs('.age__card').backgroundColor, dim: cs('.age').backgroundColor, blur: cs('.age').backdropFilter || cs('.age').webkitBackdropFilter,
           min: Math.min(...txt), btn: [...document.querySelectorAll('.age__btn')].map((e) => Math.round(e.getBoundingClientRect().height)), poster: getComputedStyle(q('.poster')).visibility, cv: getComputedStyle(q('#sequenz')).visibility, anim: cs('.age__card').animationName,
           inert: [...document.body.children].filter((e) => e.id !== 'altersabfrage').every((e) => e.inert), focus: document.activeElement.id || document.activeElement.className, vine: !!q('.age__vine'), sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, ja: q('.age__btn--ja').textContent.trim(), nein: q('[data-age="nein"]').textContent.trim() }; })())`));
       const alpha = +(g.dim.match(/[\d.]+/g)[3] ?? 1);
       if (phone) {
-        check(`alter ${name}: Handy: Bottom Sheet unten (Breite ${g.w}/${view.w}, Abstand unten ${g.bottom} px), ${Math.round(g.anteil * 100)} % der Höhe (35–47 %), obere Ecken rund (${g.radius}), untere eckig`, g.w === view.w && Math.abs(g.bottom) <= 1 && g.anteil >= 0.34 && g.anteil <= 0.47 && parseFloat(g.radius) >= 16 && parseFloat(g.radiusU) === 0, JSON.stringify(g));
+        check(`alter ${name}: Handy: Bottom Sheet unten (Breite ${g.w}/${view.w}, Abstand unten ${g.bottom} px), ${Math.round(g.anteil * 100)} % der Höhe (44–68 %), obere Ecken rund (${g.radius}), untere eckig`, g.w === view.w && Math.abs(g.bottom) <= 1 && g.anteil >= 0.44 && g.anteil <= 0.68 && parseFloat(g.radius) >= 16 && parseFloat(g.radiusU) === 0, JSON.stringify(g));
       } else {
-        check(`alter ${name}: Karte mittig (Abweichung ${g.cx}/${g.cy} px), ${g.w} px breit (≤ 420), ${g.h} px hoch, abgerundet (${g.radius}), feiner goldener Rand (${g.rw} ${g.rand}), beiger Hintergrund (${g.bg})`,
-          Math.abs(g.cx) <= 1 && Math.abs(g.cy) <= 2 && g.w <= 420 && g.w >= 380 && parseFloat(g.radius) >= 12 && g.rand === 'rgb(184, 145, 58)' && g.bg === 'rgb(247, 244, 236)', JSON.stringify(g));
+        check(`alter ${name}: Karte mittig (Abweichung ${g.cx}/${g.cy} px), ${g.w} px breit (520–560), ${g.h} px hoch, Rahmen wie die Seite: tannengrün (${g.rw} ${g.rand}), innen feine goldene Linie, beiger Hintergrund (${g.bg})`,
+          Math.abs(g.cx) <= 1 && Math.abs(g.cy) <= 2 && g.w <= 560 && g.w >= 520 && parseFloat(g.radius) >= 4 && g.rand === 'rgb(31, 77, 43)' && parseFloat(g.rw) === 1.5 && g.bg === 'rgb(247, 244, 236)', JSON.stringify(g));
       }
       check(`alter ${name}: Seite dahinter sichtbar (Standbild ${g.poster}, Bildfolge ${g.cv}), abgedunkelt (Deckkraft ${alpha}) und weichgezeichnet („${g.blur}“), keine Ranken mehr, kein horizontaler Scroll`, (g.poster === 'visible' || g.cv === 'visible') && alpha > 0.2 && alpha < 0.7 && /blur/.test(g.blur || '') && !g.vine && g.sw === g.cw, JSON.stringify({ alpha, blur: g.blur }));
-      check(`alter ${name}: Schrift mindestens 15 px (kleinste ${g.min} px), Schaltflächen mindestens 44 px hoch (${g.btn.join('/')} px), „${g.ja}“ und „${g.nein}“`, g.min >= 15 && g.btn.every((h) => h >= 44) && g.ja === 'Ja, ich bin 16' && g.nein === 'Nein', JSON.stringify({ min: g.min, btn: g.btn }));
+      check(`alter ${name}: Schrift mindestens 14 px (kleinste ${g.min} px), Schaltflächen mindestens 44 px hoch (${g.btn.join('/')} px), „${g.ja}“ und „${g.nein}“`, g.min >= 14 && g.btn.every((h) => h >= 44) && g.ja === 'Ja, ich bin 16' && g.nein === 'Nein', JSON.stringify({ min: g.min, btn: g.btn }));
+      // Beide Antworten gleichwertig, Reihenfolge, Hinweis zu Cookies, Kontrast (WCAG AA), Fokus
+      const gl = JSON.parse(await b.js(`JSON.stringify((() => { const ja = document.querySelector('[data-age="ja"]'), nein = document.querySelector('[data-age="nein"]'), st = (e) => { const c = getComputedStyle(e), r = e.getBoundingClientRect(); return { w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10, bg: c.backgroundColor, bd: c.borderTopColor, bw: c.borderTopWidth, fg: c.color, fs: c.fontSize, fw: c.fontWeight, x: r.left, y: r.top }; };
+        const priv = document.querySelector('.age__privacy'), c = (e) => getComputedStyle(e).color, bgOf = (e) => getComputedStyle(e).backgroundColor, hint = document.querySelector('.age__hint'), links = [...document.querySelectorAll('.age__links a')];
+        return { ja: st(ja), nein: st(nein), priv: priv.textContent.trim(), privFarbe: c(priv), hintFarbe: c(hint), linkFarbe: links.map(c), card: bgOf(document.querySelector('.age__card')), titel: c(document.querySelector('.age__title')), privSize: getComputedStyle(priv).fontSize, reihenfolge: [...document.querySelectorAll('.age__btn')].map((e) => e.dataset.age).join(','), links: links.map((a) => a.textContent.trim() + '>' + a.getAttribute('href')).join(' · ') }; })())`));
+      const lum = (c) => { const [r, g2, b2] = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g2 + 0.0722 * b2; };
+      const over = (fg, bg) => { const m = fg.match(/[\d.]+/g).map(Number), a = m.length > 3 ? m[3] : 1, f = m.slice(0, 3), bb = bg.match(/[\d.]+/g).map(Number).slice(0, 3); return `rgb(${f.map((v, i) => v * a + bb[i] * (1 - a)).join(',')})`; };
+      const kontrast = (fg, bg) => { const a = lum(fg), b3 = lum(bg); return (Math.max(a, b3) + 0.05) / (Math.min(a, b3) + 0.05); };
+      const gleich = gl.ja.w === gl.nein.w && gl.ja.h === gl.nein.h && gl.ja.bg === gl.nein.bg && gl.ja.bd === gl.nein.bd && gl.ja.bw === gl.nein.bw && gl.ja.fg === gl.nein.fg && gl.ja.fs === gl.nein.fs && gl.ja.fw === gl.nein.fw;
+      check(`alter ${name}: beide Antworten gleichwertig (${gl.ja.w}×${gl.ja.h} und ${gl.nein.w}×${gl.nein.h} px, Hintergrund ${gl.ja.bg}, Rahmen ${gl.ja.bw} ${gl.ja.bd}, Schrift ${gl.ja.fg}), nichts grün gefüllt`,
+        gleich && gl.ja.bd === 'rgb(31, 77, 43)' && parseFloat(gl.ja.bw) === 1.5 && gl.ja.fg === 'rgb(31, 77, 43)' && gl.ja.bg !== 'rgb(31, 77, 43)', JSON.stringify(gl));
+      check(`alter ${name}: „Ja, ich bin 16“ links, „Nein“ rechts (${gl.reihenfolge}, x ${Math.round(gl.ja.x)} / ${Math.round(gl.nein.x)}), gleiche Zeile`, gl.reihenfolge === 'ja,nein' && gl.ja.x < gl.nein.x && Math.abs(gl.ja.y - gl.nein.y) <= 1, JSON.stringify(gl));
+      const kJa = kontrast(gl.ja.fg, gl.ja.bg), kPriv = kontrast(over(gl.privFarbe, gl.card), gl.card), kHint = kontrast(gl.hintFarbe, gl.card), kTitel = kontrast(gl.titel, gl.card), kLink = Math.min(...gl.linkFarbe.map((f) => kontrast(f, gl.card)));
+      check(`alter ${name}: Kontrast WCAG AA: Knöpfe ${kJa.toFixed(1)}, Hinweis ${kHint.toFixed(1)}, Cookie-Absatz (14 px) ${kPriv.toFixed(1)}, Links ${kLink.toFixed(1)}, Überschrift ${kTitel.toFixed(1)} (alle ≥ 4,5)`, [kJa, kPriv, kHint, kLink].every((k) => k >= 4.5) && kTitel >= 3, JSON.stringify({ kJa, kPriv, kHint, kLink, kTitel }));
+      check(`alter ${name}: Hinweis zu Cookies und Speicherung unter dem Jugendschutz-Satz (${gl.privSize}), Links „${gl.links}“ darunter`,
+        gl.priv === 'Wir verwenden keine Cookies und kein Tracking. Deine Antwort wird nur lokal in deinem Browser gespeichert.' && parseFloat(gl.privSize) === 14 && gl.links === 'Impressum>impressum.html · Datenschutz>datenschutz.html', JSON.stringify(gl));
+      // Tastatur: Tab geht über beide Knöpfe und beide Links, der Fokus ist deutlich sichtbar und für beide Knöpfe gleich
+      const fokusStil = async () => JSON.parse(await b.js(`JSON.stringify((() => { const e = document.activeElement, c = getComputedStyle(e); return { id: e.dataset.age || e.textContent.trim(), ow: c.outlineWidth, os: c.outlineStyle, oc: c.outlineColor, oo: c.outlineOffset, sh: c.boxShadow, bg: c.backgroundColor, inAge: !!e.closest('#altersabfrage') }; })())`));
+      await b.js('document.querySelector("#altersabfrage").focus()'); const reihe = [];
+      for (let i = 0; i < 4; i++) { await keyPress(b, 'Tab'); reihe.push(await fokusStil()); }
+      const stiel = (x) => `${x.ow} ${x.os} ${x.oc} | ${x.sh}`;
+      check(`alter ${name}: Tab wechselt „${reihe.map((x) => x.id).join('“ → „')}“, Fokus sichtbar (Gold-Rahmen ${reihe[0].ow} ${reihe[0].oc} plus dunkelgrüner Ring), beide Knöpfe gleich`,
+        reihe.map((x) => x.id).join() === 'ja,nein,Impressum,Datenschutz' && reihe.every((x) => x.inAge && parseFloat(x.ow) >= 2 && x.os === 'solid' && x.oc === 'rgb(184, 145, 58)' && /rgb\(31, 77, 43\)/.test(x.sh)) && stiel(reihe[0]) === stiel(reihe[1]) && reihe[0].bg === reihe[1].bg, JSON.stringify(reihe));
       // Funktion: Seite gesperrt, Fokus in der Abfrage, Tab bleibt drin, Escape schließt nicht, Gesten ignoriert
       const innen = async () => b.js(`!!document.activeElement.closest('#altersabfrage')`);
       let bleibt = await innen();

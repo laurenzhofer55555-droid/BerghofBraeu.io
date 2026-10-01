@@ -420,6 +420,7 @@ h3 {
 .timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
 .timeline li p { grid-row: 3; grid-column: 1; margin: 0; padding-right: clamp(14px, 2.4vw, 32px); }
 .timeline__hint { display: none; }
+@media (min-width: 769px) { .timeline { transform: translateX(var(--tl-shift, 0px)); } }      /* js/timeline.js: der sichtbare Block (1556 … Heute) steht optisch genau mittig unter der Überschrift */
 
 .berghof__drawing { display: block; width: min(760px, 100%); margin: clamp(56px, 9vh, 96px) auto 0; }
 

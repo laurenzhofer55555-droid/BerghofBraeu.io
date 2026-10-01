@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=b0f59d8a';
-import { ladeHerde } from './herde.js?v=b0f59d8a';
+import { createBeer } from './bier-leeren.js?v=8db1cca4';
+import { ladeHerde } from './herde.js?v=8db1cca4';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -43,14 +43,14 @@ const DUR1 = 2800;            // ms, Geste 1 (Kamerafahrt bis zum Bier)
 // Geste 2 in zwei klar getrennten Phasen nacheinander (eine Zeitleiste, P läuft linear von 1 nach 2): erst nur das Bier (PH1), kurze Pause, dann fährt der ganze Block gleichzeitig
 // nach oben (RIDE): Titel „Berghof Hell“, Schafe, Einleitung und Gemälde gleiten gemeinsam an ihren Platz (alle um denselben Weg, der Block bleibt starr) und blenden dabei gemeinsam
 // ein (FADE), dazu der Seitenrahmen.
-// Phase 1 (Bier): sofort mit der Geste gleitet die Schaumkrone in 0,3 s von oben ins Bild (PH_IN, ease-out, der Spiegel steht danach direkt unter der Oberkante), danach trinkt „jemand“
-// das Glas leer: drei Schlucke mit kleinen Pausen dazwischen (DRINK), der letzte ist der lange Zug bis unter die Unterkante.
+// Phase 1 (Bier): sofort mit der Geste gleitet die Schaumkrone in 0,3 s von oben ins Bild (PH_IN, ease-out, der Spiegel steht danach direkt unter der Oberkante), danach, ohne Halt, trinkt „jemand“
+// das Glas leer: der Spiegel wandert glatt nach unten, mal etwas schneller (Schluck), mal etwas langsamer, aber nie stockend und ohne Stillstand (DRINK: Tempo ändert sich nur sanft).
 const PH_IN = 300, PH1 = 2600, PAUSE = 150, RIDE = 1000, FADE = 550;
 const T2 = PH1 + PAUSE + RIDE;                               // 3750 ms insgesamt (Phase 2 = 1 s)
 const FOAM_GAP = 12;                                         // px: nach dem Einblenden steht die Schaumkrone ganz im Bild, der Spiegel (mittlere Oberfläche) FOAM_GAP px darunter
-// Schlucke: [Ende in ms ab Beginn des Trinkens, Anteil des Weges am Ende, Verlauf]. 'io' = sine.inOut (Zug mit sanftem Anfang und Ende), 'in' = beschleunigt bis zum Schluss (der letzte Zug).
-// Kleine Anstiege (0,03) sind die Pausen zum Schlucken, in denen das Bier nur nachsackt und schwappt.
-const DRINK = [[420, 0.20, 'io'], [640, 0.23, 'io'], [1120, 0.54, 'io'], [1330, 0.57, 'io'], [1700, 0.77, 'io'], [1860, 0.79, 'io'], [PH1 - PH_IN, 1, 'in']];
+// Trinken: Tempo des Spiegels = sanfte Welle (surges Wellen über das ganze Trinken, depth = wie stark das Tempo schwankt, 0,45 = zwischen 55 % und 145 %), beginnt mit einem weichen Anlauf (ramp = Anteil)
+// und wird zum Ende hin etwas schneller (langer letzter Zug). Das Tempo wird nie null (außer ganz am Anfang), deshalb stockt nichts. Die Strecke ist das Integral des Tempos, auf 1 normiert.
+const DRINK = { surges: 2.5, depth: 0.45, ramp: 0.1, intro: 0.6 };      // intro: das Einblenden der Schaumkrone endet mit 40 % seines Anfangstempos, das Trinken setzt mit genau diesem Tempo fort (kein Halt dazwischen)
 const B_LEVEL = 0;            // Pegel im Zustand B (0 = Bierfläche über den ganzen Bildschirm, Spiegel über dem Bildrand, keine Schaumkrone; 1 = leer)
 const LOCK_AFTER = 400;       // ms Sperre nach jeder Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
@@ -68,7 +68,6 @@ const ramp = (g, a, b) => clamp01((g - a) / (b - a));         // 0 vor a, 1 nach
 const smooth = (x) => x * x * (3 - 2 * x);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2);   // power2.inOut (Geste 1)
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;                    // sine.inOut (ein Schluck: sanfter Anfang, sanftes Ende)
-const easeInSine = (t) => 1 - Math.cos(Math.PI * t / 2);                    // sine.in (der letzte Zug beschleunigt)
 const easeOut = (t) => 1 - (1 - t) ** 3;                                     // cubic.out (Titel und Einblenden in Phase 2)
 const linear = (t) => t;
 
@@ -296,13 +295,21 @@ function measureDy() {
     hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
   }
 }
-function drink(ms) {                                          // Anteil 0 … 1 des Weges nach dem Einblenden, ms ab Beginn des Trinkens
-  let t0 = 0, d0 = 0;
-  for (const [t1, d1, shape] of DRINK) {
-    if (ms <= t1) { const u = (ms - t0) / (t1 - t0); return d0 + (d1 - d0) * (shape === 'in' ? easeInSine(u) : easeSine(u)); }
-    t0 = t1; d0 = d1;
-  }
-  return 1;
+const drinkTabellen = new Map();                              // je Starttempo v0 (hängt nur von der Bildschirmhöhe ab) einmal berechnet
+function drinkTabelle(v0) {                                   // kumulierte Strecke 0 … 1 in 256 Schritten; v0 = Tempo am Anfang im Verhältnis zum mittleren Tempo des Trinkens
+  const key = Math.round(v0 * 100);
+  let tab = drinkTabellen.get(key);
+  if (tab) return tab;
+  const n = 256; tab = new Float64Array(n + 1);
+  const tempo = (u) => { const w = smooth(clamp01(u / DRINK.ramp)); return (v0 + (1 - v0) * w) * (1 + 0.35 * u) * (1 + DRINK.depth * Math.sin(2 * Math.PI * DRINK.surges * u - Math.PI / 2) * w); };
+  for (let i = 1; i <= n; i++) tab[i] = tab[i - 1] + tempo((i - 0.5) / n);
+  for (let i = 1; i <= n; i++) tab[i] /= tab[n];
+  drinkTabellen.set(key, tab);
+  return tab;
+}
+function drink(ms, v0) {                                      // Anteil 0 … 1 des Weges nach dem Einblenden, ms ab Beginn des Trinkens
+  const tab = drinkTabelle(v0), u = clamp01(ms / (PH1 - PH_IN)), x = u * 256, i = Math.min(255, Math.floor(x));
+  return tab[i] + (tab[i + 1] - tab[i]) * (x - i);
 }
 // Bierpegel 0 … 1 (Phase 1 von Geste 2: erst Schaumkrone ein, dann die Schlucke; danach leer). Start und Ende des Weges kommen aus der echten Höhe des Bier-Layers (beer.levelAt, 100lvh).
 function levelOf(p) {
@@ -310,8 +317,10 @@ function levelOf(p) {
   const T = (p - 1) * T2;                                      // ms seit Beginn von Geste 2
   if (T >= PH1) return 1;
   const p1 = beer.levelAt(beer.foamHeight() + FOAM_GAP);       // Pegel mit der Schaumkrone ganz im Bild
-  if (T <= PH_IN) return B_LEVEL + (p1 - B_LEVEL) * easeOut(T / PH_IN);
-  return p1 + (1 - p1) * drink(T - PH_IN);
+  const c = DRINK.intro;
+  if (T <= PH_IN) { const tau = T / PH_IN; return B_LEVEL + (p1 - B_LEVEL) * tau * (1 + c - c * tau); }      // Einblenden: ease-out, endet noch mit Tempo (1 − c)
+  const v0 = (1 - c) * (p1 - B_LEVEL) * (PH1 - PH_IN) / (PH_IN * (1 - p1));                                   // Tempo des Einblendens am Ende, im Verhältnis zum mittleren Tempo des Trinkens
+  return p1 + (1 - p1) * drink(T - PH_IN, v0);
 }
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
 
