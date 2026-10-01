@@ -179,6 +179,30 @@
       backdrop.visible = floor.visible = shadow.group.visible = true;
       bottle.pivot.rotation.set(0, 0, 0);
     };
+    // Produktbild der Flasche für die Seite (freigestellt): Frontansicht auf Augenhöhe wie Bild 1 der Sequenz (gleiche Kamera, gleiches Licht und Material),
+    // ohne Boden und Schatten. Dreimal rendern: vor Creme (Farbe, so wie die Seite sie zeigt: das gefärbte Glas lässt die Kanäle verschieden durch, das geht nicht als ein Alpha-Wert),
+    // vor Schwarz und vor Weiß (daraus die Silhouette, tools/flasche.py). Die Linsenverschiebung rückt die Flasche mittig, die Perspektive bleibt die von Bild 1.
+    window.__produkt = async (w = 1000, h = 2400) => {
+      const st = seq.sets.desktop.stations[0], pos = V(st.cam.pos);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.fov = (2 * Math.atan(BOTTLE_HEIGHT / 0.92 / 2 / pos.z) * 180) / Math.PI;      // Flasche füllt 92 % der Bildhöhe
+      camera.clearViewOffset(); camera.position.copy(pos); camera.lookAt(V(st.cam.target)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+      const oben = new THREE.Vector3(0, BOTTLE_HEIGHT / 2, 0).project(camera).y, unten = new THREE.Vector3(0, -BOTTLE_HEIGHT / 2, 0).project(camera).y;
+      camera.setViewOffset(w, h, 0, -((oben + unten) / 2) * h / 2, w, h);
+      bottle.pivot.rotation.y = st.rot;
+      backdrop.visible = floor.visible = shadow.group.visible = false;
+      for (const [name, color] of [['schwarz', 0x000000], ['weiss', 0xffffff], ['creme', new THREE.Color(CONFIG.colors.background)]]) {
+        scene.background = new THREE.Color(color);
+        renderer.render(scene, camera);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        const res = await fetch(`/__shot?dir=produkt-roh&name=${name}`, { method: 'POST', body: blob });
+        if (!res.ok) throw new Error('Upload fehlgeschlagen: ' + res.status);
+      }
+      scene.background = new THREE.Color(CONFIG.colors.background);
+      backdrop.visible = floor.visible = shadow.group.visible = true;
+      status('Produktbild fertig');
+    };
     const MM_ = 0.01;
     window.__pose = pose;
     window.__shoot = shoot;   // für Testbilder aus der Konsole
