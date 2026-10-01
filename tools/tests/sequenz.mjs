@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen, lade
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -411,7 +411,7 @@ async function herde() {
       check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
       if (breit) {
         check(`herde ${name}: zwei links und zwei rechts neben dem Titel (${info.links} / ${info.rechts}), ${Math.round(info.hMin)}–${Math.round(info.hMax)} px hoch`, info.links === 2 && info.rechts === 2 && info.hMax <= 100);
-        check(`herde ${name}: in A und B unsichtbar (Deckkraft ${A.op} / ${Bz.op}), in C sichtbar (${Cz.op}), stehen am Titel (Abstand in B ${Bz.d} px, in C ${Cz.d} px)`, A.op === 0 && Bz.op === 0 && Cz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1);
+        check(`herde ${name}: in A unsichtbar (Deckkraft ${A.op}), in B nur zum Vorbereiten fast unsichtbar (${Bz.op}), in C sichtbar (${Cz.op}), stehen am Titel (Abstand in B ${Bz.d} px, in C ${Cz.d} px)`, A.op === 0 && Bz.op <= 0.011 && Cz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1);
       }
       check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
       if (breit) {
@@ -439,7 +439,7 @@ async function herde() {
       await b.js('window.__sequenz.skip()'); await sleep(900);
       const qc = await b.js(`JSON.stringify([...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.hero__title').getBoundingClientRect().top + scrollY : 0))]; }))`).then(JSON.parse);
       check(`herde ${name}: vor dem Einleitungstext unsichtbar (Deckkraft ${q0.grp}), dann gleicher Verlauf wie der Text (${q1.grp.toFixed(2)} gegen ${q1.more.toFixed(2)}, ${q2.grp.toFixed(2)} gegen ${q2.more.toFixed(2)})`,
-        q0.more === 0 && q0.grp === 0 && q1.more > 0.05 && q1.more < 0.95 && Math.abs(q1.grp - q1.more) < 0.01 && Math.abs(q2.grp - q2.more) < 0.01 && q2.grp > q1.grp && !q1.anim && !q2.anim && (breit || q1.vis === 'visible'), JSON.stringify({ q0, q1, q2 }));
+        q0.more <= 0.011 && q0.grp <= 0.011 && q1.more > 0.05 && q1.more < 0.95 && Math.abs(q1.grp - q1.more) < 0.01 && Math.abs(q2.grp - q2.more) < 0.01 && q2.grp > q1.grp && !q1.anim && !q2.anim && (breit || q1.vis === 'visible'), JSON.stringify({ q0, q1, q2 }));
       check(`herde ${name}: die Schafe springen am Ende nicht (Lage bei P 1,99 gegen Zustand C, am Titel gemessen, höchstens 3 px)`, q2.pos.length === qc.length && q2.pos.every(([x, y], i) => Math.abs(x - qc[i][0]) <= 3 && Math.abs(y - qc[i][1]) <= 3), JSON.stringify({ q2: q2.pos.slice(0, 2), qc: qc.slice(0, 2) }));
     } finally { b.close(); }
   }
@@ -712,7 +712,7 @@ async function tasten() {
 async function skip() {
   const b = await browser({ view: 'desktop' });
   try {
-    await start(b, 'desktop');
+    await start(b, 'desktop'); await sleep(450);                 // der Pfeil blendet nach „bereit“ in 0,2 s ein
     const cue = await b.js(`(() => { const c = document.querySelector('.scroll-cue'); const r = c.getBoundingClientRect(); return { sichtbar: getComputedStyle(c).display !== 'none' && getComputedStyle(c).visibility === 'visible' && +getComputedStyle(c).opacity >= 0.75, unten: r.top > innerHeight * 0.85, text: c.innerText.trim() }; })()`);
     check('skip: Hinweis unten sichtbar (Desktop: „Scrollen“)', cue.sichtbar && cue.unten && /scrollen/i.test(cue.text), JSON.stringify(cue));
     await keyPress(b, 'Tab'); await sleep(200); // echte Tastatur: erst dann gilt :focus-visible
@@ -834,8 +834,8 @@ async function rahmen() {
       await start(b, view);
       const op = async (p) => { await b.js(`window.__sequenz.zeige(${p})`); await sleep(300); return JSON.parse(await b.js(`JSON.stringify({ page: +getComputedStyle(document.querySelector('.frame--page')).opacity, hero: +getComputedStyle(document.querySelector('.hero > .frame')).opacity, fo: parseFloat(getComputedStyle(document.querySelector('.site-header')).getPropertyValue('--frame-o')) })`)); };
       const A = await op(0), B = await op(1), m1 = await op(1.8), m2 = await op(1.94), m3 = await op(1.97), E = await op(2);
-      check(`rahmen ${name}: Startrahmen in A sichtbar (${A.hero}), in B weg (${B.hero}); Seitenrahmen in A, B und bei 80 % unsichtbar (${A.page}/${B.page}/${m1.page}), dann weicher Fade (${m2.page.toFixed(2)} → ${m3.page.toFixed(2)}), am Ende ${E.page}`,
-        A.hero === 1 && B.hero === 0 && A.page === 0 && B.page === 0 && m1.page === 0 && Math.abs(m2.page - 0.5) <= 0.02 && Math.abs(m3.page - 0.75) <= 0.02 && E.page === 1, JSON.stringify({ A, B, m1, m2, m3, E }));
+      check(`rahmen ${name}: Startrahmen in A sichtbar (${A.hero}), in B weg (${B.hero}); Seitenrahmen in A unsichtbar, in B und bei 80 % nur zum Vorbereiten fast unsichtbar (${A.page}/${B.page}/${m1.page}), dann weicher Fade (${m2.page.toFixed(2)} → ${m3.page.toFixed(2)}), am Ende ${E.page}`,
+        A.hero === 1 && B.hero === 0 && A.page === 0 && B.page <= 0.011 && m1.page <= 0.011 && Math.abs(m2.page - 0.5) <= 0.02 && Math.abs(m3.page - 0.75) <= 0.02 && E.page === 1, JSON.stringify({ A, B, m1, m2, m3, E }));
       check(`rahmen ${name}: Creme-Fläche hinter „Hofer Bräu“ folgt dem sichtbaren Rahmen (A ${A.fo}, B ${B.fo}, Ende ${E.fo})`, A.fo === 1 && B.fo === 0 && E.fo === 1 && Math.abs(m2.fo - 0.5) <= 0.02);
     } finally { b.close(); }
     b = await browser({ view });
@@ -887,8 +887,50 @@ async function rahmen() {
   }
 }
 
+// 17. Ladesymbol am Start: das HB-Logo dreht sich in der Mitte, bis das Standbild da ist, danach klein unten („Lädt“), bis die Sequenz spielbereit ist; dann Weiter-Pfeil
+async function lade() {
+  for (const name of ['iphone-se', 'iphone15', 'desktop-1440']) {
+    const view = GERAETE[name];
+    const b = await browser({ view });
+    try {
+      await setView(b, view); await throttle(b);
+      await b.send('Page.navigate', { url: BASE + '?lade=' + Date.now() });
+      const st = () => b.js(`JSON.stringify((() => { const q = (s) => document.querySelector(s), o = (e) => (e ? +getComputedStyle(e).opacity : null), c = q('.lade__mitte .lade__muenze'), l = q('.lade');
+        const m = c ? getComputedStyle(c).transform : '', mid = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+        return { cls: document.documentElement.className, disp: l ? getComputedStyle(l).display : null, role: l && l.getAttribute('role'), nosnip: l && l.hasAttribute('data-nosnippet'), mitte: o(q('.lade__mitte')), dock: o(q('.lade__dock')), cue: o(q('.scroll-cue')),
+          anim: c ? getComputedStyle(c).animationName : '', m, hit: !!(mid && mid.closest('.lade')), img: getComputedStyle(document.querySelector('.lade__muenze i')).backgroundImage.startsWith('url("data:image/webp'), text: q('.lade__text') && q('.lade__text').textContent.trim() }; })())`).then(JSON.parse);
+      let a = null; for (let i = 0; i < 40 && !(a && a.disp === 'block'); i++) { a = await st().catch(() => null); await sleep(100); }
+      await sleep(700);
+      const x1 = await st(); await sleep(300); const x2 = await st();
+      check(`lade ${name}: Ladesymbol sichtbar (Anzeige ${x1.disp}, Rolle ${x1.role}, nicht für Suchmaschinen-Auszüge), Logo in der Mitte dreht sich (Animation ${x1.anim}, Lage ändert sich), fängt keine Eingaben`,
+        x1.disp === 'block' && x1.role === 'status' && x1.nosnip && /lade-dreh/.test(x1.anim) && x1.m !== x2.m && !x1.hit && (x1.mitte > 0 || x1.cls.includes('start-ok')), JSON.stringify({ x1, x2: x2.m }));   // auf schnellen Verbindungen ist das Standbild schon da
+      let ok = null; for (let i = 0; i < 300 && !(ok && ok.cls.includes('start-ok')); i++) { ok = await st().catch(() => null); await sleep(100); }
+      await sleep(700);
+      const y = await st();
+      check(`lade ${name}: mit dem Standbild (start-ok): Logo in der Mitte aus (${y.mitte}), unten „${y.text}“ mit drehendem Logo an (${y.dock}), Weiter-Pfeil noch aus (${y.cue}) solange nicht bereit`,
+        y.cls.includes('start-ok') && y.mitte === 0 && ((!y.cls.includes('bereit') && y.dock === 1 && y.cue === 0) || y.cls.includes('bereit')) && /Lädt/i.test(y.text) && y.img, JSON.stringify(y));
+      await waitReady(b, 120000); await sleep(800);
+      const z = await st();
+      check(`lade ${name}: spielbereit (bereit): beide Ladesymbole aus (${z.mitte}/${z.dock}), Weiter-Pfeil an (${z.cue})`, z.cls.includes('bereit') && z.mitte === 0 && z.dock === 0 && z.cue > 0.8, JSON.stringify(z));
+      check(`lade ${name}: keine Fehler, keine externen Anfragen, CLS 0`, b.errors.length === 0 && b.external.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || b.external[0] || '');
+    } finally { b.close(); }
+  }
+  // Ohne Intro (Bewegung reduzieren, Neuladen mitten auf der Seite): kein Ladesymbol
+  for (const reduced of [true, false]) {
+    const view = GERAETE.iphone15, b = await browser({ view, reducedMotion: reduced });
+    try {
+      await setView(b, view);
+      if (!reduced) { await b.send('Page.navigate', { url: BASE }); await waitReady(b); await b.js('window.__sequenz.skip()'); await sleep(600); await b.js('window.scrollTo(0, 900)'); await sleep(400); await b.send('Page.reload'); }
+      else await b.send('Page.navigate', { url: BASE });
+      await sleep(1500);
+      const d = await b.js(`getComputedStyle(document.querySelector('.lade')).display`);
+      check(`lade ${reduced ? 'Bewegung reduzieren' : 'Neuladen mitten auf der Seite'}: kein Ladesymbol (${d})`, d === 'none');
+    } finally { b.close(); }
+  }
+}
+
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen]];
+  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['lade', lade]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

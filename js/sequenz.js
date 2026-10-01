@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=0b565984';
-import { ladeHerde } from './herde.js?v=0b565984';
+import { createBeer } from './bier-leeren.js?v=e1c74548';
+import { ladeHerde } from './herde.js?v=e1c74548';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -157,6 +157,7 @@ async function loadAll() {
   }
   if (!blobs.some(Boolean)) { skipToContent(); return; }
   ready = true;
+  root.classList.add('bereit');                                // Ladesymbol aus, Weiter-Pfeil an (CSS)
   setTimeout(ladeHerde, 300);
   if (pending) { const to = pending; pending = null; root.classList.remove('wartet'); begin(to); }
 }
@@ -289,15 +290,17 @@ function overlays(pv) {
 
   // Der Titel gleitet durch den Bereich der Einleitung nach oben; sie blendet erst ein, wenn er darüber angekommen ist (letzte 7 % des Wegs)
   const more = ramp(h, 0.93, 1);
-  put('more', el.more, 'opacity', String(more));
-  put('flock', el.flock, 'opacity', String(more));            // Schafe neben dem Titel (Tablet/Desktop): erscheinen mit dem Einleitungstext, ohne eigene Animation (die Herde am Handy liegt in .hero__more)
-  put('moreV', el.more, 'visibility', more > 0 ? 'visible' : 'hidden');
+  const prime = pv >= 1 ? 0.01 : 0;                            // ab B: Einleitung, Gemälde, Schafe und Seitenrahmen unmerklich (1 %) schon gezeichnet: Dekodieren und Rastern
+                                                               // passiert vor dem Einblenden und nicht mittendrin (sonst ruckelt das Auftauchen am Ende von Geste 2)
+  put('more', el.more, 'opacity', String(Math.max(more, prime)));
+  put('flock', el.flock, 'opacity', String(Math.max(more, prime)));            // Schafe neben dem Titel (Tablet/Desktop): erscheinen mit dem Einleitungstext, ohne eigene Animation (die Herde am Handy liegt in .hero__more)
+  put('moreV', el.more, 'visibility', more > 0 || prime ? 'visible' : 'hidden');
 
   // Rahmen mit Eckverzierung blendet auf allen Geräten aus; „Hofer Bräu“ oben bleibt frei (Hintergrund folgt über --frame-o)
   const frameA = 1 - ramp(g, 0.5, 0.72);                       // Startrahmen: noch während des Zooms weg, vor dem flachen Bier-Gold
   const frameC = ramp(h, 0.88, 1);                              // Seitenrahmen (C): blendet am Ende von Geste 2 ein (≈ 0,6 s von 2,7 s), aus dem Fortschritt
   put('frame', el.frame, 'opacity', String(frameA));
-  put('pageFrame', el.pageFrame, 'opacity', String(frameC));
+  put('pageFrame', el.pageFrame, 'opacity', String(Math.max(frameC, prime)));
   put('frameO', el.header, '--frame-o', String(Math.max(frameA, frameC)));   // Creme-Fläche hinter „Hofer Bräu“ unterbricht die Rahmenlinie, solange ein Rahmen steht
 
   // Bierfläche (mit Bläschen) legt sich über den Farbwechsel des Kronkorkens
@@ -381,7 +384,7 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') { unlock(); measureDy(); teardown(); }
+  if (to === 'C') { unlock(); detach(); setTimeout(() => { measureDy(); teardown(); }, 350); }   // das Schwere (Speicher freigeben, Canvas verkleinern, messen) erst kurz nach dem letzten Bild: kein Ruckler am Ende
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -426,7 +429,7 @@ async function replay() {                                      // „Bier Animat
   replaying = true;
   await scrollToTop();
   window.scrollTo(0, 0);
-  root.classList.remove('frei', 'wartet');
+  root.classList.remove('frei', 'wartet', 'bereit');            // „bereit“ erst wieder, wenn die Bilder neu geladen sind (bis dahin zeigt das Ladesymbol unten „Lädt“)
   lock(true);
   state = 'A'; P = 0; busy = false; pending = null; lockUntil = performance.now() + LOCK_AFTER;
   canvas.style.display = ''; resizeCanvas(); useSet();

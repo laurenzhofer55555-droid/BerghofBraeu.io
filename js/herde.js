@@ -14,6 +14,7 @@ export function ladeHerde() {
     img.decoding = 'async';
     img.srcset = img.dataset.srcset;
     img.src = img.dataset.src;
+    if (img.decode) img.decode().catch(() => {});                // früh dekodieren: beim Einblenden steht das Bild schon bereit
     img.removeAttribute('data-src');
     img.removeAttribute('data-srcset');
   });

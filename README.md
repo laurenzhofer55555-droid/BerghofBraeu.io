@@ -54,6 +54,12 @@ Dann http://localhost:5173 öffnen.
     (links und rechts gleich, Füße auf einer Linie). Sie gehören zum Titelblock (`.hero__text`) und werden mit demselben Verlauf eingeblendet wie der Einleitungstext (keine eigene Animation).
   In A und B sitzt der Titelblock unten im Bild (`--dy`). Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern
   und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern der Fenstergröße kommt der Rest nach).
+- Ladesymbol (`.lade`, erstes Element im `body`, nur mit Intro): Das HB-Logo (als Hintergrundbild im Start-CSS, 8 KB, keine eigene Anfrage) dreht sich wie eine Münze (rotateY, zwei Flächen, nur `transform`/`opacity`) in der Mitte des
+  noch leeren Starts, erst nach 0,25 s sichtbar (bei schnellem Laden blitzt nichts auf). Sobald das Standbild geladen ist (`.start-ok`, `js/main.js`, spätestens nach 6 s), blendet es aus und ein kleines
+  Logo mit „Lädt“ steht unten, wo gleich der Weiter-Pfeil steht, bis alle Bilder der Sequenz geladen sind (`.bereit`, `js/sequenz.js`); erst dann erscheint der Pfeil. Es fängt keine Eingaben, liegt unter der
+  Altersabfrage, hat `role="status"` und `data-nosnippet`; ohne Intro (Bewegung reduzieren, Neuladen mitten auf der Seite) gibt es kein Ladesymbol. Notausgang per CSS nach 15 s.
+- Kein Ruckeln beim Auftauchen (Ende von Geste 2): Ab B werden Einleitung, Gemälde, Schafe und Seitenrahmen mit 1 % Deckkraft unmerklich schon gezeichnet (`prime` in `overlays`), `js/herde.js` dekodiert die
+  Bilder früh (`decode()`); das Schwere am Ende (Messen, Speicher freigeben, Canvas verkleinern) läuft erst 350 ms nach dem letzten Bild.
 - Seitenrahmen (`.frame--page`, erstes Kind von `main`): derselbe feine Doppelrahmen mit Eckverzierungen wie im Startbild, um den ganzen Hauptinhalt, `position: absolute` mit `inset: --frame-inset`
   (Handy 10 px, Desktop 22 px), also ohne feste Höhe: er wächst mit der Seite, scrollt mit und endet direkt vor dem Fuß (der liegt außerhalb). „Hofer Bräu“ (`.site-header__brand`) sitzt mittig in
   der oberen Linie. Er blendet am Ende von Geste 2 in ca. 0,6 s ein (`ramp(h, .88, 1)` in `js/sequenz.js`, aus dem Fortschritt); der Startrahmen im Hero (`.hero > .frame`) blendet in Geste 1 aus und
