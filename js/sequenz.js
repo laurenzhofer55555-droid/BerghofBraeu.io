@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=8fd56b72';
-import { ladeHerde } from './herde.js?v=8fd56b72';
+import { createBeer } from './bier-leeren.js?v=36fccb05';
+import { ladeHerde } from './herde.js?v=36fccb05';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -58,6 +58,8 @@ const WHEEL_WINDOW = 50, WHEEL_MIN = 30, WHEEL_TOTAL = 120;   // Summe über 50 
 const QUEUE_QUIET = 300, QUEUE_AGE = 1200;   // Mausrad/Trackpad: eine zweite Geste wird nur gemerkt, wenn davor 300 ms Ruhe war und Geste 1 seit 1,2 s läuft (ein Nachläufer nach einem Hänger zählt nicht)
 const TOUCH_MIN = 40;         // px senkrecht
 const LOAD_TIMEOUT = 30000;   // ms: dauert das Laden so lange, springt Geste 1 direkt zum Inhalt
+const LOAD_PARALLEL = 14;     // gleichzeitige Abrufe der Bildfolge (HTTP/2 teilt sich eine Verbindung; vorher 6)
+const READY_AT = 0.5;         // Anteil der Bilder (von vorn gezählt), ab dem die Sequenz spielbereit ist und das Ladesymbol weicht; der Rest lädt weiter (Geste 1 braucht die hinteren Bilder erst nach ca. 1,4 s, reicht die Leitung nicht, hält die Zeit kurz an)
 const AHEAD = 22, BEHIND = 6; // dekodierte Bilder um die Position (Speicher am Handy schonen)
 const GOLD = '#C5A149', GOLD_RGB = '197,161,73';   // = --gold-beer
 
@@ -169,26 +171,33 @@ async function loadAll() {
     const old = still; still = fresh; if (old && old !== fresh) old.close?.();
     stale = true; render(P);
   }
-  let next = 0;
+  let next = 0, prefix = 0;
+  const K = Math.ceil(N * READY_AT);
+  const freigeben = () => {                                    // die erste Hälfte (lückenlos von vorn) ist da: spielbereit
+    if (ready || my !== run) return;
+    ready = true;
+    root.classList.add('bereit');                              // Ladesymbol aus, Weiter-Pfeil an (CSS)
+    setTimeout(ladeHerde, 300);
+    if (pending) { const to = pending; pending = null; root.classList.remove('wartet'); begin(to); }
+  };
   const worker = async () => {
     for (;;) {
       const i = next++;
       if (i >= N || my !== run) return;
       blobs[i] = await fetchBlob(urlOf(i), i < 8 ? 'high' : 'auto');
       loadedCount++;
+      while (prefix < N && blobs[prefix] !== undefined) prefix++;
+      if (prefix >= K) freigeben();
     }
   };
-  await Promise.all(Array.from({ length: 6 }, worker));
+  await Promise.all(Array.from({ length: LOAD_PARALLEL }, worker));
   if (my !== run) return;
   for (let i = 0; i < N; i++) {                                // fehlgeschlagene Bilder durch das nächstliegende ersetzen: nie ein fehlender Frame
     if (blobs[i]) continue;
     for (let d = 1; d < N && !blobs[i]; d++) blobs[i] = blobs[i - d] || blobs[i + d] || null;
   }
   if (!blobs.some(Boolean)) { skipToContent(); return; }
-  ready = true;
-  root.classList.add('bereit');                                // Ladesymbol aus, Weiter-Pfeil an (CSS)
-  setTimeout(ladeHerde, 300);
-  if (pending) { const to = pending; pending = null; root.classList.remove('wartet'); begin(to); }
+  freigeben();
 }
 function ensureLoaded() { if (!loadStarted) loadAll(); }
 

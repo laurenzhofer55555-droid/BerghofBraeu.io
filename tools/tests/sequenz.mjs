@@ -228,7 +228,7 @@ async function kalt() {
       const früh = await state(b);
       check(`kalt ${view}: zu frühe Geste wartet (Pfeil pulsiert), Seite bleibt oben`, früh.wartet === true && früh.z === 'A' && früh.y === 0, `wartet ${früh.wartet}, geladen ${früh.geladen}, Zustand ${früh.z}`);
       check(`kalt ${view}: wartende Geste ist sichtbar (Klasse „wartet“)`, await b.js(`document.documentElement.classList.contains('wartet')`) === true);
-      check(`kalt ${view}: startet von selbst, sobald alles geladen ist`, await waitZustand(b, 'B', 120000) && await idle(b));
+      check(`kalt ${view}: startet von selbst, sobald die erste Hälfte der Bilder geladen ist`, await waitZustand(b, 'B', 120000) && await idle(b));
       const l = await log(b), s = await state(b);
       check(`kalt ${view}: nie ein leeres Canvas, CLS 0, Ende in B`, (await b.js('window.__blank')) === 0 && (await b.js('window.__cls')) === 0 && s.z === 'B', `leer ${await b.js('window.__blank')}, CLS ${await b.js('window.__cls')}, Stillstände ${s.stalls}`);
       check(`kalt ${view}: Übergang lief genau einmal, Seite blieb oben`, l.filter((e) => e.art === 'start').length === 1 && s.y === 0, `${l.filter((e) => e.art === 'start').length} Übergänge`);
@@ -992,6 +992,9 @@ async function lade() {
       await waitReady(b, 120000); await sleep(900);
       const z = await st();
       check(`lade ${name}: spielbereit: Ladesymbol aus (${z.box}), Weiter-Pfeil an (${z.cue})`, z.cls.includes('bereit') && z.box === 0 && z.cue > 0.8, JSON.stringify(z));
+      const Sm = await samples(b), erst = Sm.find((x) => x.bereit), n = erst ? await b.js('window.__sequenz.anzahl') : 0;
+      check(`lade ${name}: spielbereit schon nach der ersten Hälfte der Bilder (${erst && erst.geladen} von ${n} geladen, Soll ≥ ${Math.ceil(n / 2)} und bei Fast 3G noch nicht alle), danach lädt der Rest weiter (${await b.js('window.__sequenz.geladen')})`,
+        !!erst && erst.geladen >= Math.ceil(n / 2) && erst.geladen < n && (await b.js('window.__sequenz.geladen')) >= erst.geladen, JSON.stringify({ geladen: erst && erst.geladen, n }));
       check(`lade ${name}: keine Fehler, keine externen Anfragen, CLS 0`, b.errors.length === 0 && b.external.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || b.external[0] || '');
     } finally { b.close(); }
   }

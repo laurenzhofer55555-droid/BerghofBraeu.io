@@ -69,7 +69,7 @@ export async function browser({ view = 'desktop', reducedMotion = false } = {}) 
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(WORK, { recursive: true });
   const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, '--no-first-run',
-    '--hide-scrollbars', ...(process.env.NOGPU ? ['--disable-gpu'] : ['--use-angle=metal', '--enable-gpu']), 'about:blank'], { stdio: 'ignore' });
+    '--hide-scrollbars', ...(process.env.NOGPU ? ['--disable-gpu'] : ['--use-angle=metal', '--enable-gpu']), ...(process.env.CHROME_EXTRA ? process.env.CHROME_EXTRA.split(' ') : []), 'about:blank'], { stdio: 'ignore' });
   let t = [];
   for (let i = 0; i < 100 && !t.some((x) => x.type === 'page'); i++) { try { t = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch { await sleep(200); } }
   const ws = new WebSocket(t.find((x) => x.type === 'page').webSocketDebuggerUrl);

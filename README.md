@@ -36,7 +36,7 @@ Dann http://localhost:5173 öffnen.
   **Aufräumen in C (`teardown`)**: alle Gesten-Listener (wheel, touch, keydown, scroll) werden entfernt, Bitmaps, Dateien und Standbild
   freigegeben, das Canvas ausgeblendet und auf 0 px verkleinert (die Seite läuft danach am Handy flüssiger). `replay()` (Link „Bier Animation erneut
   ansehen“ im Fuß) scrollt nach oben, baut A neu auf (Bilder kommen aus dem Browser-Cache) und räumt in C wieder auf.
-  Bilder: alle Dateien werden nach dem Startbild geladen, dekodiert (`createImageBitmap`) wird ein Fenster um die Position und nach
+  Bilder: alle Dateien werden nach dem Startbild mit 14 gleichzeitigen Abrufen (`LOAD_PARALLEL`, HTTP/2) von vorn nach hinten geladen; **spielbereit** (Ladesymbol aus, Pfeil an) ist die Sequenz, sobald die erste Hälfte lückenlos da ist (`READY_AT` 0,5), der Rest lädt weiter (Geste 1 braucht die hinteren Bilder erst nach ca. 1,4 s; fehlt eines, hält die Zeit kurz an). Gemessen (Chrome, HTTP/2, 60 ms, 4 MB/s): Ladesymbol 2,0 s → 1,0 s (−52 %), bei Fast 3G (nur Bandbreite) 9,3 → 6,2 s. Dateien werden dann, dekodiert (`createImageBitmap`) wird ein Fenster um die Position und nach
   jeder Animation wieder freigegeben (Speicher am Handy). Fehlt ein Bild, hält die Zeit an (nie ein fehlender Frame); Geste zu früh:
   der Pfeil pulsiert und die Animation startet von selbst. Der Kronkorken geht während des Zooms von der Mitte aus in Bierfarbe über.
   `js/bier-leeren.js` zeichnet die Bierfläche als SVG (`.beer`, Höhe 100lvh, Rand zu Rand): Welle (Amplitude fest in Pixeln, Wellenlänge
