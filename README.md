@@ -3,7 +3,7 @@
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
 Geste 2: das Bier leert sich (2,7 s, ruhig), der Titel rutscht nach oben, darunter erscheinen Einleitung, Schafe und (Tablet/Desktop) Gemälde gemeinsam.
-Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Intro nochmal ansehen“ im Fuß).
+Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Bier Animation erneut anzeigen“ im Fuß).
 
 Live: https://berghof-hell.de
 
@@ -34,7 +34,7 @@ Dann http://localhost:5173 öffnen.
   in A und B `inert`. Unten mittig steht der Knopf „Weiter“ (`.scroll-cue`: ein dunkelgrüner Linienpfeil ↓ als Inline-SVG (Schaft mit offener V-Spitze), rechts daneben „Wischen“ bzw.
   „Scrollen“): sichtbar in A und B, während einer Animation und in C aus (Klasse `.aus`, 200 ms), Klick oder Tippen löst dieselbe Geste aus.
   **Aufräumen in C (`teardown`)**: alle Gesten-Listener (wheel, touch, keydown, scroll) werden entfernt, Bitmaps, Dateien und Standbild
-  freigegeben, das Canvas ausgeblendet und auf 0 px verkleinert (die Seite läuft danach am Handy flüssiger). `replay()` (Link „Intro nochmal
+  freigegeben, das Canvas ausgeblendet und auf 0 px verkleinert (die Seite läuft danach am Handy flüssiger). `replay()` (Link „Bier Animation erneut
   ansehen“ im Fuß) scrollt nach oben, baut A neu auf (Bilder kommen aus dem Browser-Cache) und räumt in C wieder auf.
   Bilder: alle Dateien werden nach dem Startbild geladen, dekodiert (`createImageBitmap`) wird ein Fenster um die Position und nach
   jeder Animation wieder freigegeben (Speicher am Handy). Fehlt ein Bild, hält die Zeit an (nie ein fehlender Frame); Geste zu früh:
@@ -43,15 +43,22 @@ Dann http://localhost:5173 öffnen.
   wächst mit der Breite), Schaumkrone, Bläschen (nach Fläche gezählt, gleichmäßig verteilt). Pegel nur aus P, das Schwappen verformt nur
   die Welle. Nur der Start unterscheidet sich: Handy ohne Titel und mit Pfeil, Desktop mit Titel, der ausblendet, bevor die Flasche in
   seinen Bereich kommt (`titleClear`).
-- Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel mit Zierlinie und Untertitel, darunter die
-  Einleitung (`.hero__lead`). Die Schafe sind einzeln aus dem Etikettenbild freigestellt (`assets/img/herde-*.webp`) und je nach Gerät verschieden angeordnet:
-  - **Handy (unter 768 px):** fünf Schafe (`.herd`) stehen unten auf dem Hintergrund, in dem Bereich unter der Einleitung (`--zone`, von `js/sequenz.js` gemessen,
-    damit keines den Text überdeckt); sie liegen in `.hero__more` und erscheinen zusammen mit dem Einleitungstext, ohne eigene Animation. Das Gemälde gibt es am Handy nicht (nicht angezeigt, nicht geladen).
-  - **Tablet und Desktop (ab 768 px):** vier kleine Schafe (`.flock`) stehen links und rechts neben dem Titel, außerhalb seiner Breite. Sie gehören zum Titelblock
-    (`.hero__text`) und stehen dadurch immer an seiner Seite, `js/sequenz.js` blendet sie mit demselben Verlauf ein wie den Einleitungstext (keine eigene Animation).
-    Neben der Einleitung steht das Gemälde (`.painting`, zwei Spalten); es blendet mit dem Text ein.
+- Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel, Zierlinie, Untertitel, Einleitung (`.hero__lead`, zentriert, höchstens
+  60 Zeichen je Zeile) und Stallhofer-Gemälde (`.painting` mit Bildunterschrift) stehen als **ein zentrierter Block untereinander**, Abstände im 8-px-Raster (`--g2`: 24 px Handy, 32 px
+  ab 768 px, 40 px ab 1800 px). Das Gemälde ist am Tablet/Desktop 58 % (iPad hoch 70 %) der Inhaltsbreite breit, am Handy voll und beginnt dort unter dem ersten Bildschirm (`--fold`).
+  Ist der Block niedriger als der Bildschirm (iPad hoch, sehr große Fenster), stellt `js/sequenz.js` ihn mit `--lift` mittig; der Titel bleibt in A/B unten verankert (nichts springt).
+  Die Schafe sind einzeln aus dem Etikettenbild freigestellt (`assets/img/herde-*.webp`):
+  - **Handy (unter 768 px):** fünf Schafe (`.herd`) stehen unten im ersten Bildschirm auf dem Hintergrund, im Bereich unter der Einleitung (`--zone`, von `js/sequenz.js` gemessen, damit keines
+    den Text überdeckt), innerhalb des Seitenrahmens; sie liegen in `.hero__more` und erscheinen zusammen mit dem Einleitungstext, ohne eigene Animation.
+  - **Tablet und Desktop (ab 768 px):** vier kleine Schafe (`.flock`, je zwei links und rechts) neben dem Titel: Abstand zum Titel, Abstand untereinander und Größen hängen an der Titelhöhe
+    (links und rechts gleich, Füße auf einer Linie). Sie gehören zum Titelblock (`.hero__text`) und werden mit demselben Verlauf eingeblendet wie der Einleitungstext (keine eigene Animation).
   In A und B sitzt der Titelblock unten im Bild (`--dy`). Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern
   und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern der Fenstergröße kommt der Rest nach).
+- Seitenrahmen (`.frame--page`, erstes Kind von `main`): derselbe feine Doppelrahmen mit Eckverzierungen wie im Startbild, um den ganzen Hauptinhalt, `position: absolute` mit `inset: --frame-inset`
+  (Handy 10 px, Desktop 22 px), also ohne feste Höhe: er wächst mit der Seite, scrollt mit und endet direkt vor dem Fuß (der liegt außerhalb). „Hofer Bräu“ (`.site-header__brand`) sitzt mittig in
+  der oberen Linie. Er blendet am Ende von Geste 2 in ca. 0,6 s ein (`ramp(h, .88, 1)` in `js/sequenz.js`, aus dem Fortschritt); der Startrahmen im Hero (`.hero > .frame`) blendet in Geste 1 aus und
+  ist in C aus. Bei „Bewegung reduzieren“, ohne JavaScript und nach Neuladen in C ist er sofort da. Abschnitte (`.section`) haben `margin-inline: --frame-gap`, Inhalt des Starts `--gutter`: nichts
+  berührt die Linie (Trennlinien enden innerhalb, die Timeline am Handy wird an der Rahmeninnenkante abgeschnitten).
   Ohne Sequenz (Bewegung reduzieren, ohne JavaScript) zeigt der erste Bildschirm nur das Standbild.
 - Farben der Browserleisten (Statusleiste oben, Leiste unten am iPhone): A beige, B bierfarben (#C5A149); in Geste 2 wird **oben** beige, sobald die Schaumkrone
   ins Bild kommt, **unten** bleibt es bierfarben, solange unten Bier zu sehen ist, und blendet erst danach weich auf beige (`setGold` in `js/sequenz.js`, berechnet aus der
@@ -72,7 +79,7 @@ Dann http://localhost:5173 öffnen.
 
 Prüft in Headless Chrome (Node ≥ 22, Google Chrome) mit echten Mausrad-, Touch- und Tastaturereignissen: genau 2 Gesten von A bis C,
 der Rückweg nur in B, in C keine Animation mehr (10 schnelle Gesten nach oben; keine Listener, Canvas und Bilder aus dem Speicher),
-„Intro nochmal ansehen“ spielt A → B → C erneut ab, Titel oben und Einleitung im ersten Bildschirm nach 2 Gesten, der Titel gleitet
+„Bier Animation erneut anzeigen“ spielt A → B → C erneut ab, Titel oben und Einleitung im ersten Bildschirm nach 2 Gesten, der Titel gleitet
 ohne Sprung, Schafe je nach Gerät (Handy: Herde unten ohne Gemälde, Tablet/Desktop: vier neben dem Titel, Gemälde neben dem Text), Timeline komplett sichtbar (Tablet/Desktop) bzw. mit Peek, Punkten und Hinweis (Handy), Pfeil gefüllt, ein starker Trackpad-Flick löst nur Übergang 1 aus, Gesten während der Animation und in der Sperre werden ignoriert,
 Endzustände sind jedes Mal exakt gleich, Scrollen direkt nach dem Laden (auch kalt, Fast 3G, CPU 4x), zu frühe Geste wartet und startet
 von selbst, Bilder von Geste 1 bei 50 bis 100 % (Farbwechsel Kronkorken → Bier), Zustand B auf iPhone, iPad und Desktop (Bier von Rand

@@ -12,9 +12,7 @@
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://berghof-hell.de/" />
   <meta name="theme-color" content="#F7F4EC" />
-  <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
-  <link rel="icon" href="assets/img/favicon-96.png?v=2" sizes="96x96" type="image/png" />
-  <link rel="icon" href="assets/img/favicon-32.png?v=2" sizes="32x32" type="image/png" />
+  <link rel="icon" href="data:," />      <!-- kein Tab-Symbol (leer, verhindert die automatische Anfrage nach /favicon.ico) -->
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="manifest" href="site.webmanifest" />
 
@@ -115,7 +113,7 @@
     @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
     :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #46644B; --gold: #B8913A; --ink: #22301f;
       --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
-      --frame-inset: clamp(10px, 1.6vw, 22px); }
+      --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; background: var(--cream); color: var(--ink); }
     body { font-family: var(--font-text); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -139,30 +137,31 @@
        (js/sequenz.js setzt dafür die genaue Verschiebung, --dy-css ist der Startwert bis dahin). */
     .hero {
       position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
-      padding: var(--hero-top) 24px 28px; text-align: center;
-      --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px);
+      padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
+      --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
       --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
       --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
       --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
     }
     html:not(.seq) .hero { padding-top: 100svh; }                          /* ohne Sequenz (Bewegung reduzieren, ohne JavaScript): erster Bildschirm = Standbild, Titel darunter */
-    html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inset)); }
+    html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
+    .frame--page { z-index: 3; }
+    .seq:not(.frei) .frame--page { opacity: 0; }                            /* blendet am Ende von Geste 2 ein (js/sequenz.js) */
     .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
     .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
-    .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: clamp(18px, 3vh, 30px); }
+    .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
     .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
-    .hero__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; width: 100%; max-width: 1040px; margin: 0 auto; align-items: center; }
-    .hero__lead { position: relative; margin: 0 auto; max-width: 38ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
-    .painting { display: none; position: relative; margin: 0; }          /* nur ab Tablet, am Handy bleibt der Hintergrund frei */
+    /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
+    .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
+    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
+    .painting { position: relative; margin: 0; width: 100%; }           /* Handy: volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js) */
     .painting img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
-    @media (min-width: 768px) {
-      .painting { display: block; }
-      .hero__cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4.5vw, 64px); }
-      .hero__lead { margin: 0; max-width: none; font-size: 19px; text-align: left; }
-    }
-    @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } }
+    @media (max-width: 767px) { .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); } }
+    @media (min-width: 768px) { .hero { --g2: 32px; } .hero__lead { font-size: 19px; } .painting { width: 58%; } }
+    @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } .painting { width: 70%; } }
+    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
     /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
-    .herd { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
     .flock { display: none; }
     @media (min-width: 768px) { .herd { display: none; } .flock { display: block; position: absolute; inset: 0; pointer-events: none; } }
@@ -260,12 +259,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=6cf9368a" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=6cf9368a" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=6cf9368a" /></noscript>
+  <link rel="preload" href="css/style.css?v=0b565984" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=0b565984" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=0b565984" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=6cf9368a"></script>
+  <script type="module" src="js/main.js?v=0b565984"></script>
 </head>
 <body>
 
@@ -351,6 +350,13 @@
   </header>
 
   <main>
+    <!-- Seitenrahmen (Zustand C): derselbe feine Doppelrahmen wie im Startbild um den ganzen Hauptinhalt; scrollt mit, endet vor dem Fuß, blendet am Ende von Geste 2 ein (js/sequenz.js) -->
+    <div class="frame frame--page" aria-hidden="true">
+      <i class="frame__corner frame__corner--tl"></i>
+      <i class="frame__corner frame__corner--tr"></i>
+      <i class="frame__corner frame__corner--bl"></i>
+      <i class="frame__corner frame__corner--br"></i>
+    </div>
     <!-- ── Start ─────────────────────────────── -->
     <section class="hero" id="start" aria-labelledby="hero-title">
       <!-- Bier (Zustand B): füllt den Bildschirm, leert sich mit der zweiten Geste (js/bier-leeren.js) – nur Dekoration -->
@@ -381,10 +387,14 @@
         </h1>
         <!-- Tablet und Desktop: vier kleine Schafe aus dem Etikettenbild (Gemälde von J. Stallhofer) links und rechts neben dem Titel, sie gleiten mit ihm nach oben (Anordnung: css/style.css) -->
         <div class="flock" role="img" aria-label="Vier kleine Schafe und Lämmer aus dem Etikettenbild, links und rechts neben dem Titel">
-          <img class="sheep sheep--a" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="80px" width="124" height="153" decoding="async" alt="" />
-          <img class="sheep sheep--b" data-nur="breit" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="80px" width="180" height="160" decoding="async" alt="" />
-          <img class="sheep sheep--c" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="90px" width="224" height="160" decoding="async" alt="" />
-          <img class="sheep sheep--d" data-nur="breit" data-src="assets/img/herde-ruhend-braun-2x.webp" data-srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="60px" width="132" height="102" decoding="async" alt="" />
+          <div class="flock__side flock__side--l">
+            <img class="sheep sheep--b" data-nur="breit" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="80px" width="180" height="160" decoding="async" alt="" />
+            <img class="sheep sheep--a" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="80px" width="124" height="153" decoding="async" alt="" />
+          </div>
+          <div class="flock__side flock__side--r">
+            <img class="sheep sheep--c" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="90px" width="224" height="160" decoding="async" alt="" />
+            <img class="sheep sheep--d" data-nur="breit" data-src="assets/img/herde-ruhend-braun-2x.webp" data-srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="60px" width="132" height="102" decoding="async" alt="" />
+          </div>
         </div>
       </div>
 
@@ -393,8 +403,8 @@
         <div class="hero__cols">
           <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
           <figure class="painting">
-            <img data-nur="breit" data-src="assets/img/berghof-gemaelde-1030.webp" data-srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
-                 sizes="(min-width: 768px) 460px, calc(100vw - 48px)" width="1030" height="687" decoding="async"
+            <img data-src="assets/img/berghof-gemaelde-1030.webp" data-srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
+                 sizes="(min-width: 1800px) 820px, (min-width: 1001px) 630px, (min-width: 768px) 520px, calc(100vw - 68px)" width="1030" height="687" decoding="async"
                  alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge" />
             <figcaption>Gemälde von J. Stallhofer (1978), das Motiv des Etiketts.</figcaption>
           </figure>
@@ -622,7 +632,7 @@
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
-    <p class="site-footer__intro"><a href="#start" data-intro>Intro nochmal ansehen</a></p>
+    <p class="site-footer__intro"><a href="#start" data-intro>Bier Animation erneut anzeigen</a></p>
   </footer>
 
 </body>

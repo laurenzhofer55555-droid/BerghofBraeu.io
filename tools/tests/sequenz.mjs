@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -327,16 +327,26 @@ async function titel() {
       check(`titel ${name}: Titel oben (${Math.round(r.titel.t)} px), Einleitungstext ganz im ersten Bildschirm (Ende ${Math.round(r.lead.b)} von ${r.vh} px)`, r.titel.t < r.vh * 0.22 && r.lead.t > r.titel.b && r.lead.b <= r.vh - 8 && l.op === 1 && l.vis === 'visible', JSON.stringify({ titelTop: Math.round(r.titel.t), leadEnde: Math.round(r.lead.b) }));
       const zeichen = Math.round(l.w / (l.fs * 0.5));          // grob: Breite / halbe Schriftgröße = Zeichen je Zeile
       check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, sonst ≈ 60 Zeichen)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : 74), `${zeichen} Zeichen`);
-      const lay = JSON.parse(await b.js(`JSON.stringify((() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }; const i = document.querySelector('.painting img');
-        return { lead: R(document.querySelector('.hero__lead')), bild: R(document.querySelector('.painting')), disp: getComputedStyle(document.querySelector('.painting')).display, img: { ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 30, ohneQuelle: !i.getAttribute('src') }, vw: innerWidth, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; })())`));
-      const breit = view.w >= 768;
+      const lay = JSON.parse(await b.js(`JSON.stringify((() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width }; };
+        const tg = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); return R(rg); };
+        const i = document.querySelector('.painting img'), cap = document.querySelector('.painting figcaption');
+        return { title: tg('.hero__title'), claim: tg('.hero__claim'), lead: R(document.querySelector('.hero__lead')), fig: R(document.querySelector('.painting')), cols: R(document.querySelector('.hero__cols')),
+          align: getComputedStyle(document.querySelector('.hero__lead')).textAlign, img: { ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 30, border: getComputedStyle(i).borderTopWidth }, cap: cap.textContent.trim(),
+          vw: innerWidth, vh: innerHeight, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; })())`));
+      const breit = view.w >= 768, mid = (x) => (x.l + x.r) / 2;
+      check(`titel ${name}: Titel, Text und Gemälde als ein zentrierter Block untereinander (Mitten ${[lay.title, lay.lead, lay.fig].map((x) => Math.round(mid(x))).join('/')} von ${lay.vw / 2}), Text zentriert`,
+        [lay.title, lay.lead, lay.fig].every((x) => Math.abs(mid(x) - lay.vw / 2) <= 3) && lay.align === 'center' && lay.lead.b <= lay.fig.t - 8 && lay.claim.b <= lay.lead.t, JSON.stringify({ title: lay.title, lead: lay.lead, fig: lay.fig }));
+      check(`titel ${name}: Gemälde geladen, mit Beschreibung, Rahmen ${lay.img.border} und Bildunterschrift „${lay.cap}“, Breite ${Math.round(lay.fig.w / lay.cols.w * 100)} % der Inhaltsbreite (${breit ? '50–75 %' : 'voll'}), kein horizontaler Scroll`,
+        lay.img.ok && lay.img.alt && parseFloat(lay.img.border) >= 1 && /Stallhofer/.test(lay.cap) && lay.sw === lay.cw && (breit ? lay.fig.w / lay.cols.w >= 0.5 && lay.fig.w / lay.cols.w <= 0.75 : lay.fig.w / lay.cols.w >= 0.98));
       if (breit) {
-        check(`titel ${name}: Gemälde neben dem Text (zwei Spalten), geladen, mit Beschreibung, kein horizontaler Scroll`,
-          lay.img.ok && lay.img.alt && lay.sw === lay.cw && lay.bild.l >= lay.lead.r + 16 && lay.bild.t < lay.lead.b && lay.bild.b > lay.lead.t, JSON.stringify({ lead: [lay.lead.l, lay.lead.r, lay.lead.t, lay.lead.b].map(Math.round), bild: [lay.bild.l, lay.bild.r, lay.bild.t, lay.bild.b].map(Math.round) }));
+        const g1 = lay.lead.t - lay.claim.b, g2 = lay.fig.t - lay.lead.b, lueck = lay.vh - lay.fig.b, top = lay.title.t;
+        check(`titel ${name}: gleichmäßige Abstände Untertitel → Text ${Math.round(g1)} px, Text → Gemälde ${Math.round(g2)} px (8-px-Raster, Unterschied ≤ 8 px)`, Math.abs(g1 - g2) <= 8 && [32, 40].some((x) => Math.abs(x - g2) <= 1.5), JSON.stringify({ g1, g2 }));
+        check(`titel ${name}: erster Bildschirm zeigt Titel, Text und ${lay.fig.b <= lay.vh ? 'das ganze Gemälde, Block oben ' + Math.round(top) + ' px / unten ' + Math.round(lueck) + ' px (ausgewogen, Unterschied ≤ 12 % der Höhe)' : 'den oberen Teil des Gemäldes (' + Math.round((lay.vh - lay.fig.t) / lay.fig.w * 1.5 * 100) + ' % sichtbar)'}`,
+          lay.fig.b <= lay.vh ? Math.abs(top - lueck) <= lay.vh * 0.12 : lay.fig.t < lay.vh - 80, JSON.stringify({ top, lueck, figT: lay.fig.t, vh: lay.vh }));
       } else {
         const H = JSON.parse(await b.js(`JSON.stringify([...document.querySelectorAll('.herd .sheep')].filter((e) => getComputedStyle(e).display !== 'none').map((e) => { const x = e.getBoundingClientRect(); return [Math.round(x.top), Math.round(x.bottom), Math.round(x.left), Math.round(x.right)]; }))`));
-        check(`titel ${name}: Handy ohne Gemälde (nicht angezeigt, nicht geladen), kein horizontaler Scroll`, lay.disp === 'none' && lay.img.ohneQuelle && lay.sw === lay.cw, JSON.stringify({ disp: lay.disp, ohneQuelle: lay.img.ohneQuelle }));
-        check(`titel ${name}: Herde (${H.length} Schafe) im ersten Bildschirm`, H.length === 5 && H.every(([t, bo, le, ri]) => bo <= r.vh + 1 && t >= 0), JSON.stringify(H.slice(0, 2)));
+        check(`titel ${name}: Handy: Gemälde beginnt unter dem ersten Bildschirm (${Math.round(lay.fig.t)} ≥ ${lay.vh} px), Titel und Text im ersten Bildschirm`, lay.fig.t >= lay.vh - 2 && lay.lead.b <= lay.vh - 8, JSON.stringify({ figT: lay.fig.t, vh: lay.vh }));
+        check(`titel ${name}: Herde (${H.length} Schafe) im ersten Bildschirm, innerhalb des Rahmens`, H.length === 5 && H.every(([t, bo, le, ri]) => bo <= r.vh + 1 && t >= 0 && le >= -1 && ri <= lay.vw + 1), JSON.stringify(H.slice(0, 2)));
       }
       // Flüssigkeit: Titelposition während Geste 2
       const S = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.P < 2 && x.z !== 'C');
@@ -404,6 +414,13 @@ async function herde() {
         check(`herde ${name}: in A und B unsichtbar (Deckkraft ${A.op} / ${Bz.op}), in C sichtbar (${Cz.op}), stehen am Titel (Abstand in B ${Bz.d} px, in C ${Cz.d} px)`, A.op === 0 && Bz.op === 0 && Cz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1);
       }
       check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
+      if (breit) {
+        const sy = JSON.parse(await b.js(`JSON.stringify((() => { const R = (q) => { const r = document.querySelector(q).getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; };
+          const rg = document.createRange(); rg.selectNodeContents(document.querySelector('.hero__title')); const T = rg.getBoundingClientRect(); return { T: { l: T.left, r: T.right }, a: R('.sheep--a'), b: R('.sheep--b'), c: R('.sheep--c'), d: R('.sheep--d') }; })())`));
+        const gi = [sy.T.l - sy.a.r, sy.c.l - sy.T.r], go = [sy.a.l - sy.b.r, sy.d.l - sy.c.r], bo = [sy.a.b, sy.b.b, sy.c.b, sy.d.b], wl = sy.a.w + sy.b.w, wr = sy.c.w + sy.d.w;
+        check(`herde ${name}: symmetrisch zum Titel: Abstand zum Titel ${gi.map(Math.round).join(' / ')} px, untereinander ${go.map(Math.round).join(' / ')} px, Füße auf einer Linie (${Math.round(Math.max(...bo) - Math.min(...bo))} px Unterschied), Breite links ${Math.round(wl)} / rechts ${Math.round(wr)} px`,
+          Math.abs(gi[0] - gi[1]) <= 3 && Math.abs(go[0] - go[1]) <= 3 && Math.max(...bo) - Math.min(...bo) <= 3 && Math.abs(wl - wr) / Math.max(wl, wr) <= 0.2 && Math.min(sy.a.h, sy.b.h, sy.c.h, sy.d.h) >= 0.35 * Math.max(sy.a.h, sy.b.h, sy.c.h, sy.d.h), JSON.stringify({ gi, go, bo }));
+      }
       check(`herde ${name}: keine externen Anfragen, keine Fehler, CLS 0`, b.external.length === 0 && b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.external[0] || b.errors[0] || '');
     } finally { b.close(); }
   }
@@ -438,8 +455,8 @@ async function herde() {
         await sleep(3500);
         if (!reduced) await b.js('window.scrollTo(0, 0)');
         const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
-          an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return ${breit} ? i.complete && i.naturalWidth > 0 : !i.getAttribute('src'); })() })`));
-        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 4 Schafe und das Gemälde' : 'alle 5 Schafe, kein Gemälde'} sofort sichtbar, ohne Einblenden`, r.n === (breit ? 4 : 5) && !r.an && r.bild, JSON.stringify(r));
+          an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return i.complete && i.naturalWidth > 0; })() })`));
+        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 4 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 4 : 5) && !r.an && r.bild, JSON.stringify(r));
       } finally { b.close(); }
     }
   }
@@ -544,7 +561,7 @@ async function einmalig() {
   }
 }
 
-// „Intro nochmal ansehen“ im Fuß: scrollt nach oben und spielt A → B → C erneut ab, danach wieder einmalig
+// „Bier Animation erneut anzeigen“ im Fuß: scrollt nach oben und spielt A → B → C erneut ab, danach wieder einmalig
 async function replay() {
   for (const name of ['desktop-1440', 'iphone15']) {
     const view = GERAETE[name];
@@ -553,7 +570,7 @@ async function replay() {
       await nachC(b, view);
       await b.js('window.scrollTo(0, document.documentElement.scrollHeight)'); await sleep(600);
       const link = JSON.parse(await b.js(`JSON.stringify((() => { const a = document.querySelector('[data-intro]'), r = a.getBoundingClientRect(), c = getComputedStyle(a); return { text: a.textContent.trim(), up: c.textTransform, fs: parseFloat(c.fontSize), color: c.color, h: r.height, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, sichtbar: r.top >= 0 && r.bottom <= innerHeight }; })())`));
-      check(`replay ${name}: Link „${link.text}“ im Fuß: kleine Versalien (${link.fs} px), dunkelgrün, Tippfläche ≥ 44 px`, /Intro nochmal ansehen/i.test(link.text) && link.up === 'uppercase' && link.fs <= 13 && link.color === 'rgb(31, 77, 43)' && link.h >= 44 && link.sichtbar, JSON.stringify(link));
+      check(`replay ${name}: Link „${link.text}“ im Fuß: kleine Versalien (${link.fs} px), dunkelgrün, Tippfläche ≥ 44 px`, /Bier Animation erneut anzeigen/i.test(link.text) && link.up === 'uppercase' && link.fs <= 13 && link.color === 'rgb(31, 77, 43)' && link.h >= 44 && link.sichtbar, JSON.stringify(link));
       await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: link.x, y: link.y, button: 'left', clickCount: 1 });
       await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: link.x, y: link.y, button: 'left', clickCount: 1 });
       check(`replay ${name}: Klick scrollt nach oben und startet das Intro in Zustand A (gesperrt)`, await waitZustand(b, 'A', 15000) && (await state(b)).y === 0 && (await state(b)).overflow === 'hidden');
@@ -808,8 +825,70 @@ async function leisten() {
     } finally { b.close(); } }
 }
 
+// 16. Seitenrahmen (Zustand C): feiner Doppelrahmen um den ganzen Hauptinhalt, blendet am Ende von Geste 2 ein, scrollt mit, endet vor dem Fuß, nichts überlappt die Linie
+async function rahmen() {
+  for (const [name, view] of Object.entries(GERAETE)) {
+    const phone = view.w < 768;
+    let b = await browser({ view });
+    try {
+      await start(b, view);
+      const op = async (p) => { await b.js(`window.__sequenz.zeige(${p})`); await sleep(300); return JSON.parse(await b.js(`JSON.stringify({ page: +getComputedStyle(document.querySelector('.frame--page')).opacity, hero: +getComputedStyle(document.querySelector('.hero > .frame')).opacity, fo: parseFloat(getComputedStyle(document.querySelector('.site-header')).getPropertyValue('--frame-o')) })`)); };
+      const A = await op(0), B = await op(1), m1 = await op(1.8), m2 = await op(1.94), m3 = await op(1.97), E = await op(2);
+      check(`rahmen ${name}: Startrahmen in A sichtbar (${A.hero}), in B weg (${B.hero}); Seitenrahmen in A, B und bei 80 % unsichtbar (${A.page}/${B.page}/${m1.page}), dann weicher Fade (${m2.page.toFixed(2)} → ${m3.page.toFixed(2)}), am Ende ${E.page}`,
+        A.hero === 1 && B.hero === 0 && A.page === 0 && B.page === 0 && m1.page === 0 && Math.abs(m2.page - 0.5) <= 0.02 && Math.abs(m3.page - 0.75) <= 0.02 && E.page === 1, JSON.stringify({ A, B, m1, m2, m3, E }));
+      check(`rahmen ${name}: Creme-Fläche hinter „Hofer Bräu“ folgt dem sichtbaren Rahmen (A ${A.fo}, B ${B.fo}, Ende ${E.fo})`, A.fo === 1 && B.fo === 0 && E.fo === 1 && Math.abs(m2.fo - 0.5) <= 0.02);
+    } finally { b.close(); }
+    b = await browser({ view });
+    try {
+      await nachC(b, view);
+      const geo = JSON.parse(await b.js(`JSON.stringify((() => {
+        const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top + scrollY, r: r.right, b: r.bottom + scrollY, w: r.width, h: r.height }; };
+        const f = document.querySelector('.frame--page'), main = document.querySelector('main'), foot = document.querySelector('.site-footer'), F = R(f), M = R(main), T = R(foot), vw = document.documentElement.clientWidth;
+        const gold = F.l + 1.5 + 5 + 1, goldR = F.r - 1.5 - 5 - 1, bad = [];
+        for (const e of main.querySelectorAll('*')) {
+          if (e.closest('.frame--page, .beer, .site-header, svg:not(:scope)') || (e.matches('.sheep') && e.closest('.herd')) || e.tagName === 'SECTION' || e.classList.contains('hero') || (${phone} && e.closest('.timeline') && !e.matches('.timeline'))) continue;
+          if (e.ownerSVGElement) continue;
+          const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+          const r = R(e); if (r.w < 2 || r.h < 2) continue;
+          if (r.l < gold + 8 || r.r > goldR - 8) bad.push((e.className && e.className.baseVal === undefined ? e.className : e.tagName) + ' ' + Math.round(r.l) + '–' + Math.round(r.r));
+        }
+        const secs = [...document.querySelectorAll('.section')].map((e) => R(e)).filter((r) => r.w > 0), rb = document.querySelector('.site-header__brand').getBoundingClientRect(), fo = parseFloat(getComputedStyle(document.querySelector('.site-header')).getPropertyValue('--frame-o'));
+        const cor = [...f.querySelectorAll('.frame__corner')].map((c, k) => { const r = R(c); return [Math.round(k % 2 ? F.r - r.r : r.l - F.l), Math.round(k < 2 ? r.t - F.t : F.b - r.b)]; });   // tl, tr, bl, br: Abstand zur jeweiligen Ecke
+        return { F, M, T, vw, inset: F.l, op: +getComputedStyle(f).opacity, pos: getComputedStyle(f).position, par: f.offsetParent === main, bad: bad.slice(0, 8), nbad: bad.length, secs: secs.every((r) => r.l >= gold + 8 && r.r <= goldR - 8), nsec: secs.length,
+          brandY: (rb.top + rb.bottom) / 2 + scrollY, fo, cor, sw: document.documentElement.scrollWidth, cw: vw, hero: getComputedStyle(document.querySelector('.hero > .frame')).display }; })())`));
+      const ok1 = phone ? geo.inset >= 10 && geo.inset <= 12 : view.w >= 1400 ? geo.inset >= 20 && geo.inset <= 24 : geo.inset >= 10 && geo.inset <= 24;
+      check(`rahmen ${name}: nach Geste 2 sichtbar (${geo.op}), Abstand zum Bildschirmrand ${geo.inset.toFixed(1)} px (${phone ? '10–12' : view.w >= 1400 ? '20–24' : '10–24'}), eine Fläche um den Hauptinhalt (absolut in main), Startrahmen aus`, geo.op === 1 && ok1 && geo.pos === 'absolute' && geo.par && geo.hero === 'none', JSON.stringify({ op: geo.op, inset: geo.inset, pos: geo.pos, par: geo.par, hero: geo.hero }));
+      check(`rahmen ${name}: oben wie im Startbild (${geo.F.t.toFixed(1)} px), unten direkt vor dem Fuß (Rahmen endet ${Math.round(geo.F.b)}, Fuß beginnt ${Math.round(geo.T.t)}; Lücke ${Math.round(geo.T.t - geo.F.b)} px ≤ Abstand ${geo.inset.toFixed(0)} + 2), Höhe = Hauptinhalt − 2 × Abstand, Fuß außerhalb`,
+        Math.abs(geo.F.t - geo.inset) <= 1 && geo.F.b <= geo.T.t + 0.5 && geo.T.t - geo.F.b <= geo.inset + 2 && Math.abs(geo.F.h - (geo.M.h - 2 * geo.inset)) <= 1.5, JSON.stringify({ F: geo.F, M: geo.M, T: geo.T }));
+      check(`rahmen ${name}: Eckverzierungen an den vier Enden (Abstände ${geo.cor.map((c) => c.join('/')).join(' · ')}), „Hofer Bräu“ mittig in der oberen Linie (Mitte ${Math.round(geo.brandY)} px, Linie ${Math.round(geo.F.t)}), Creme dahinter ${geo.fo}`,
+        geo.cor.length === 4 && geo.cor.every((c) => c.every((v) => v >= 0 && v <= 4)) && Math.abs(geo.brandY - (geo.F.t + 0.75)) <= 5 && geo.fo === 1, JSON.stringify(geo.cor));
+      check(`rahmen ${name}: nichts berührt oder überlappt die Linie (${geo.nbad} Elemente zu nah, alle ${geo.nsec} Abschnitte samt Trennlinien innerhalb), kein horizontaler Scroll (${geo.sw}/${geo.cw})`, geo.nbad === 0 && geo.secs && geo.sw === geo.cw, geo.bad.join('; '));
+      // scrollt mit der Seite
+      const ft = () => b.js(`document.querySelector('.frame--page').getBoundingClientRect().top`), sy = () => b.js('scrollY');
+      const y0 = await ft(), s0 = await sy();
+      await b.js('window.scrollTo(0, 900)'); await sleep(300);
+      const y1 = await ft(), s1 = await sy();
+      check(`rahmen ${name}: scrollt mit der Seite (nicht fixiert): Oberkante ${Math.round(y0)} → ${Math.round(y1)} px bei ${Math.round(s1 - s0)} px Scroll`, s1 - s0 > 800 && Math.abs((y0 - y1) - (s1 - s0)) <= 1.5);
+      check(`rahmen ${name}: keine Fehler, CLS 0, keine externen Anfragen`, b.errors.length === 0 && (await b.js('window.__cls')) === 0 && b.external.length === 0, b.errors[0] || '');
+    } finally { b.close(); }
+  }
+  // Bewegung reduzieren und Neuladen mitten auf der Seite: Rahmen sofort sichtbar
+  for (const reduced of [true, false]) {
+    const view = GERAETE['iphone15'];
+    const b = await browser({ view, reducedMotion: reduced });
+    try {
+      await setView(b, view);
+      if (!reduced) { await b.send('Page.navigate', { url: BASE }); await waitReady(b); await b.js('window.__sequenz.skip()'); await sleep(600); await b.js('window.scrollTo(0, 900)'); await sleep(400); await b.send('Page.reload'); }
+      else await b.send('Page.navigate', { url: BASE });
+      await sleep(3500);
+      const r = JSON.parse(await b.js(`JSON.stringify((() => { const f = document.querySelector('.frame--page'), r = f.getBoundingClientRect(); return { op: +getComputedStyle(f).opacity, h: Math.round(r.height), main: Math.round(document.querySelector('main').getBoundingClientRect().height), hero: getComputedStyle(document.querySelector('.hero > .frame')).display }; })())`));
+      check(`rahmen ${reduced ? 'Bewegung reduzieren' : 'Neuladen mitten auf der Seite'}: Seitenrahmen sofort sichtbar (${r.op}), ganze Seitenhöhe (${r.h} von ${r.main} px), Startrahmen aus`, r.op === 1 && r.h >= r.main - 60 && r.hero === 'none', JSON.stringify(r));
+    } finally { b.close(); }
+  }
+}
+
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten]];
+  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

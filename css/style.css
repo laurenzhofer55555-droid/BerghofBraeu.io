@@ -42,6 +42,8 @@
   --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
   --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
+  --frame-gap: calc(var(--frame-inset) + 18px);    /* Abschnitte und ihre Trennlinien: innerhalb des Seitenrahmens */
+  --gutter: calc(var(--frame-inset) + 24px);       /* Inhalt des Starts: Abstand zum Bildrand, mindestens 24 px hinter dem Rahmen */
   --ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E");
 }
 
@@ -162,28 +164,29 @@ html:not(.seq) .skip, .frei .skip { display: none; }
    (js/sequenz.js setzt dafür die genaue Verschiebung, --dy-css ist der Startwert bis dahin). */
 .hero {
   position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
-  padding: var(--hero-top) 24px 28px; text-align: center;
-  --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px);
+  padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
+  --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
   --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
   --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
   --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
 }
 html:not(.seq) .hero { padding-top: 100svh; }                          /* ohne Sequenz (Bewegung reduzieren, ohne JavaScript): erster Bildschirm = Standbild, Titel darunter */
-html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inset)); }
+html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
+.frame--page { z-index: 3; }
+.seq:not(.frei) .frame--page { opacity: 0; }                            /* blendet am Ende von Geste 2 ein (js/sequenz.js) */
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
-.hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: clamp(18px, 3vh, 30px); }
+.hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
 .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
-.hero__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; width: 100%; max-width: 1040px; margin: 0 auto; align-items: center; }
-.hero__lead { position: relative; margin: 0 auto; max-width: 38ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
-.painting { display: none; position: relative; margin: 0; }          /* nur ab Tablet, am Handy bleibt der Hintergrund frei */
+/* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
+.hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
+.hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
+.painting { position: relative; margin: 0; width: 100%; }           /* Handy: volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js) */
 .painting img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
-@media (min-width: 768px) {
-  .painting { display: block; }
-  .hero__cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4.5vw, 64px); }
-  .hero__lead { margin: 0; max-width: none; font-size: 19px; text-align: left; }
-}
-@media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } }
+@media (max-width: 767px) { .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); } }
+@media (min-width: 768px) { .hero { --g2: 32px; } .hero__lead { font-size: 19px; } .painting { width: 58%; } }
+@media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } .painting { width: 70%; } }
+@media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
 
 /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
    Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
@@ -230,13 +233,14 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 .sheep--lamm-stehend { --l: 36%; --b: 0; --h: .22; --z: 7; }
 .sheep--gefleckt { --l: 6%; --b: .34; --h: .17; --z: 3; }
 .sheep--ruhend-hell { --r: 14%; --b: .36; --h: .11; --z: 2; }
-@media (min-width: 1100px) and (max-height: 1000px) { .hero { --sz: 1.3; } }        /* breite, nicht so hohe Fenster: Schafe neben dem Titel etwas größer */
 @media (min-width: 768px) {
-  .flock .sheep { top: var(--fy); bottom: auto; left: auto; right: auto; height: calc(var(--fh) * var(--sz, 1)); z-index: var(--z, 2); }
-  .flock .sheep--a { right: calc(100% + 16px); --fy: 6px; --fh: 70px; }
-  .flock .sheep--b { right: calc(100% + 16px + 84px * var(--sz, 1)); --fy: 22px; --fh: 58px; --z: 3; }
-  .flock .sheep--c { left: calc(100% + 16px); --fy: 10px; --fh: 64px; }
-  .flock .sheep--d { left: calc(100% + 16px + 96px * var(--sz, 1)); --fy: 32px; --fh: 42px; --z: 3; }
+  /* Tablet/Desktop: je zwei Schafe links und rechts neben dem Titel, Füße auf der Schriftlinie; Abstände (zum Titel und untereinander) und Größen hängen an der Titelhöhe,
+     links und rechts gleich, die Größen sind aufeinander abgestimmt (stehendes Lamm innen ↔ grasendes Schaf innen, grasend ↔ liegend außen) */
+  .flock__side { position: absolute; top: calc(var(--title-f) * .9); transform: translateY(-100%); display: flex; align-items: flex-end; gap: calc(var(--title-f) * .2); }
+  .flock__side--l { right: calc(100% + var(--title-f) * .2); }
+  .flock__side--r { left: calc(100% + var(--title-f) * .2); }
+  .flock .sheep { position: static; width: auto; max-width: none; height: calc(var(--title-f) * var(--k)); }
+  .flock .sheep--a { --k: .66; } .flock .sheep--b { --k: .5; } .flock .sheep--c { --k: .5; } .flock .sheep--d { --k: .4; }
 }
 
 .painting figcaption { margin-top: 10px; font-size: 14px; font-style: italic; color: var(--green-soft); text-align: center; }
@@ -296,7 +300,8 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 .section {
   position: relative; z-index: 2;
   background: var(--cream);           /* deckt die fixierte Sequenz ab */
-  padding: clamp(80px, 13vh, 150px) 24px;
+  padding: clamp(80px, 13vh, 150px) 6px;
+  margin-inline: var(--frame-gap);    /* Abschnitt und Trennlinie enden innerhalb des Seitenrahmens */
 }
 .section + .section { border-top: 1px solid rgba(184, 145, 58, .35); }
 .section__inner { max-width: 1080px; margin: 0 auto; }
@@ -427,7 +432,7 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   letter-spacing: .2em; text-transform: uppercase; font-size: 13px;
 }
 .site-footer__nav a:hover { color: var(--gold-text); }
-/* „Intro nochmal ansehen“: dezent, kleine Versalien, dunkelgrün (js/sequenz.js spielt das Intro ab A erneut ab) */
+/* „Bier Animation erneut anzeigen“: dezent, kleine Versalien, dunkelgrün (js/sequenz.js spielt das Intro ab A erneut ab) */
 .site-footer__intro { flex: 1 0 100%; text-align: center; }
 .site-footer__intro a { display: inline-block; padding: 14px 10px; font-size: 12px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--green); text-decoration: none; }
 .site-footer__intro a:hover { color: var(--gold-text); }
@@ -471,11 +476,11 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   /* Timeline: seitlich wischbar; die nächste Station ragt ca. 18 % herein (Peek), der Hinweis darunter zeigt Punkte und „Wischen“ */
   .timeline {
     display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
-    margin: 0 -24px; padding: 0 18vw 0 24px; scroll-padding-inline-start: 24px; scrollbar-width: none;
+    margin: 0 -6px; padding: 0 18vw 0 6px; scroll-padding-inline-start: 6px; scrollbar-width: none;
   }
   .timeline::-webkit-scrollbar { display: none; }
   .timeline:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 4px; }
-  .timeline li { flex: 0 0 calc(82vw - 24px); scroll-snap-align: start; }
+  .timeline li { flex: 0 0 calc((100vw - 2 * var(--frame-gap) - 6px) / 1.18); scroll-snap-align: start; }   /* Breite des Rahmens abgezogen, die nächste Karte ragt ca. 18 % herein */
   .timeline li p { font-size: 17px; }
   /* aktive Station hervorheben (nur wenn das Skript läuft, sonst alles voll sichtbar) */
   .timeline--live li { opacity: .5; transition: opacity .3s ease; }

@@ -10,7 +10,7 @@
 //
 // Rückweg: nur innerhalb des Intros (Geste nach oben in B spielt Übergang 1 rückwärts: B → A). Das Intro läuft EINMAL: in C sind alle
 // Gesten-Listener entfernt, die Seitensperre ist aufgehoben, Canvas und Bilder sind aus dem Speicher (teardown). Nichts wird im Browser
-// gespeichert. Der Link „Intro nochmal ansehen“ im Fuß scrollt nach oben und spielt das Intro ab A erneut ab (replay), danach wieder einmalig.
+// gespeichert. Der Link „Bier Animation erneut anzeigen“ im Fuß scrollt nach oben und spielt das Intro ab A erneut ab (replay), danach wieder einmalig.
 //
 // Grundsätze
 //   · Die Seite ist in A und B gesperrt (CSS .seq ohne .frei, ab dem ersten Pixel). Die Gesten erkennt dieses Skript selbst.
@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=6cf9368a';
-import { ladeHerde } from './herde.js?v=6cf9368a';
+import { createBeer } from './bier-leeren.js?v=0b565984';
+import { ladeHerde } from './herde.js?v=0b565984';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -59,6 +59,7 @@ const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;                    // s
 const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
+  pageFrame: document.querySelector('.frame--page'),
   text: hero.querySelector('.hero__text'),
   more: hero.querySelector('.hero__more'),
   flock: hero.querySelector('.flock'),
@@ -241,9 +242,19 @@ function measureDy() {
   const H = probe.getBoundingClientRect().height;
   const bPad = hero.getBoundingClientRect().bottom - pad.getBoundingClientRect().bottom;
   probe.remove(); pad.remove();
+  // Block aus Titel, Einleitung und Gemälde mittig im ersten Bildschirm (Tablet/Desktop), wenn er niedriger ist als der Bildschirm: --lift schiebt ihn nach unten.
+  // Das wirkt nur auf das Layout in C; in A und B bleibt der Titel unten verankert (textDy wird danach mit dem neuen Platz gemessen), nichts springt.
+  hero.style.setProperty('--lift', '0px');
+  const fig = hero.querySelector('.painting'), top0 = el.text.offsetTop;
+  const lift = fig && window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - (fig.offsetTop + fig.offsetHeight - top0)) / 2 - top0))) : 0;
+  hero.style.setProperty('--lift', lift + 'px');
   textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
-  const lead = hero.querySelector('.hero__lead');   // Zone für die Herde (Handy): unter der Einleitung, mit 16 px Abstand zum Text
-  if (lead) hero.style.setProperty('--zone', Math.max(0, hero.clientHeight - (lead.offsetTop + lead.offsetHeight) - 16 - 28) + 'px');
+  const lead = hero.querySelector('.hero__lead');   // Handy: Herde im Bereich unter der Einleitung (--zone, 16 px Abstand zum Text) und das Gemälde darunter, unter dem ersten Bildschirm (--fold)
+  if (lead) {
+    const bottom = lead.offsetTop + lead.offsetHeight;
+    hero.style.setProperty('--zone', Math.max(0, H - bottom - 16 - 28) + 'px');
+    hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
+  }
 }
 const levelOf = (p) => (p > 1 ? B_LEVEL + (1 - B_LEVEL) * (p - 1) : B_LEVEL * smooth(ramp(p, 0.78, 1)));   // Bierpegel 0 … 1
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
@@ -283,9 +294,11 @@ function overlays(pv) {
   put('moreV', el.more, 'visibility', more > 0 ? 'visible' : 'hidden');
 
   // Rahmen mit Eckverzierung blendet auf allen Geräten aus; „Hofer Bräu“ oben bleibt frei (Hintergrund folgt über --frame-o)
-  const frame = String(1 - ramp(g, 0.5, 0.72));                // noch während des Zooms, vor dem flachen Bier-Gold
-  put('frame', el.frame, 'opacity', frame);
-  put('frameO', el.header, '--frame-o', frame);
+  const frameA = 1 - ramp(g, 0.5, 0.72);                       // Startrahmen: noch während des Zooms weg, vor dem flachen Bier-Gold
+  const frameC = ramp(h, 0.88, 1);                              // Seitenrahmen (C): blendet am Ende von Geste 2 ein (≈ 0,6 s von 2,7 s), aus dem Fortschritt
+  put('frame', el.frame, 'opacity', String(frameA));
+  put('pageFrame', el.pageFrame, 'opacity', String(frameC));
+  put('frameO', el.header, '--frame-o', String(Math.max(frameA, frameC)));   // Creme-Fläche hinter „Hofer Bräu“ unterbricht die Rahmenlinie, solange ein Rahmen steht
 
   // Bierfläche (mit Bläschen) legt sich über den Farbwechsel des Kronkorkens
   put('beer', el.beer, 'opacity', String(ramp(g, 0.6, 0.8)));
@@ -408,7 +421,7 @@ const scrollToTop = () => new Promise((ok) => {
   const t = performance.now();
   (function wait() { if (window.scrollY < 2 || performance.now() - t > 2000) ok(); else requestAnimationFrame(wait); })();
 });
-async function replay() {                                      // „Intro nochmal ansehen“: nach oben, dann das Intro ab A erneut
+async function replay() {                                      // „Bier Animation erneut anzeigen“: nach oben, dann das Intro ab A erneut
   if (state !== 'C' || busy || replaying) return;
   replaying = true;
   await scrollToTop();
