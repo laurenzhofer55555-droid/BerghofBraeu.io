@@ -3,9 +3,9 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=e1c74548';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './timeline.js?v=e1c74548';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=e1c74548';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import './altersabfrage.js?v=d6376cec';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './timeline.js?v=d6376cec';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=d6376cec';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -28,19 +28,11 @@ if (css) {
 }
 
 const root = document.documentElement;
-// Ladesymbol (index.html .lade): das drehende Logo steht in der Mitte, bis das Standbild der Flasche da ist (.start-ok), spätestens nach 6 s; js/sequenz.js setzt .bereit, sobald alle Bilder geladen sind
-{
-  const poster = document.querySelector('.poster img');
-  const fertig = () => root.classList.add('start-ok');
-  if (!poster || poster.complete) fertig();
-  else { poster.addEventListener('load', fertig, { once: true }); poster.addEventListener('error', fertig, { once: true }); }
-  setTimeout(fertig, 6000);
-}
 const unlock = () => { root.classList.remove('seq'); root.classList.add('frei'); ladeHerde(); };
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=e1c74548').catch((e) => {
+  import('./sequenz.js?v=d6376cec').catch((e) => {
     console.warn('Startsequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
     unlock();
   });

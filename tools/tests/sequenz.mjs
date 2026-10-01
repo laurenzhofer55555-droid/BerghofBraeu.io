@@ -887,31 +887,34 @@ async function rahmen() {
   }
 }
 
-// 17. Ladesymbol am Start: das HB-Logo dreht sich in der Mitte, bis das Standbild da ist, danach klein unten („Lädt“), bis die Sequenz spielbereit ist; dann Weiter-Pfeil
+// 17. Ladesymbol am Start: das HB-Logo dreht sich auf einer runden Scheibe mitten auf der Seite und dreht sich so lange, bis die Sequenz spielbereit ist; dann aus, Weiter-Pfeil an
 async function lade() {
-  for (const name of ['iphone-se', 'iphone15', 'desktop-1440']) {
+  for (const name of ['iphone-se', 'iphone15', 'ipad-hoch', 'desktop-1440']) {
     const view = GERAETE[name];
     const b = await browser({ view });
     try {
       await setView(b, view); await throttle(b);
       await b.send('Page.navigate', { url: BASE + '?lade=' + Date.now() });
-      const st = () => b.js(`JSON.stringify((() => { const q = (s) => document.querySelector(s), o = (e) => (e ? +getComputedStyle(e).opacity : null), c = q('.lade__mitte .lade__muenze'), l = q('.lade');
-        const m = c ? getComputedStyle(c).transform : '', mid = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
-        return { cls: document.documentElement.className, disp: l ? getComputedStyle(l).display : null, role: l && l.getAttribute('role'), nosnip: l && l.hasAttribute('data-nosnippet'), mitte: o(q('.lade__mitte')), dock: o(q('.lade__dock')), cue: o(q('.scroll-cue')),
-          anim: c ? getComputedStyle(c).animationName : '', m, hit: !!(mid && mid.closest('.lade')), img: getComputedStyle(document.querySelector('.lade__muenze i')).backgroundImage.startsWith('url("data:image/webp'), text: q('.lade__text') && q('.lade__text').textContent.trim() }; })())`).then(JSON.parse);
+      const st = () => b.js(`JSON.stringify((() => { const q = (s) => document.querySelector(s), l = q('.lade'), mi = q('.lade__mitte'), c = q('.lade__muenze'), r = mi ? mi.getBoundingClientRect() : null, p = q('.poster img');
+        const mid = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+        return { cls: document.documentElement.className, disp: l ? getComputedStyle(l).display : null, role: l && l.getAttribute('role'), nosnip: l && l.hasAttribute('data-nosnippet'), box: l ? +getComputedStyle(l).opacity : null, mitte: mi ? +getComputedStyle(mi).opacity : null,
+          cx: r ? Math.round(r.left + r.width / 2 - innerWidth / 2) : null, cy: r ? Math.round(r.top + r.height / 2 - innerHeight / 2) : null, w: r ? Math.round(r.width) : 0, rund: mi ? getComputedStyle(mi).borderRadius : '',
+          anim: c ? getComputedStyle(c).animationName + ' ' + getComputedStyle(c).animationIterationCount : '', m: c ? getComputedStyle(c).transform : '', hit: !!(mid && mid.closest('.lade')), cue: +getComputedStyle(q('.scroll-cue')).opacity,
+          poster: !!(p && p.complete && p.naturalWidth > 0), text: q('.lade__text') && q('.lade__text').textContent.trim(), bild: getComputedStyle(q('.lade__muenze i')).backgroundImage.startsWith('url("data:image/webp') }; })())`).then(JSON.parse);
       let a = null; for (let i = 0; i < 40 && !(a && a.disp === 'block'); i++) { a = await st().catch(() => null); await sleep(100); }
-      await sleep(700);
+      await sleep(900);
       const x1 = await st(); await sleep(300); const x2 = await st();
-      check(`lade ${name}: Ladesymbol sichtbar (Anzeige ${x1.disp}, Rolle ${x1.role}, nicht für Suchmaschinen-Auszüge), Logo in der Mitte dreht sich (Animation ${x1.anim}, Lage ändert sich), fängt keine Eingaben`,
-        x1.disp === 'block' && x1.role === 'status' && x1.nosnip && /lade-dreh/.test(x1.anim) && x1.m !== x2.m && !x1.hit && (x1.mitte > 0 || x1.cls.includes('start-ok')), JSON.stringify({ x1, x2: x2.m }));   // auf schnellen Verbindungen ist das Standbild schon da
-      let ok = null; for (let i = 0; i < 300 && !(ok && ok.cls.includes('start-ok')); i++) { ok = await st().catch(() => null); await sleep(100); }
-      await sleep(700);
-      const y = await st();
-      check(`lade ${name}: mit dem Standbild (start-ok): Logo in der Mitte aus (${y.mitte}), unten „${y.text}“ mit drehendem Logo an (${y.dock}), Weiter-Pfeil noch aus (${y.cue}) solange nicht bereit`,
-        y.cls.includes('start-ok') && y.mitte === 0 && ((!y.cls.includes('bereit') && y.dock === 1 && y.cue === 0) || y.cls.includes('bereit')) && /Lädt/i.test(y.text) && y.img, JSON.stringify(y));
-      await waitReady(b, 120000); await sleep(800);
+      check(`lade ${name}: Ladesymbol mitten auf der Seite (Abweichung von der Mitte ${x1.cx}/${x1.cy} px, ${x1.w} px große runde Scheibe), „${x1.text}“, Logo dreht sich ohne Ende (${x1.anim}, Lage ändert sich), sichtbar (${x1.mitte}), fängt keine Eingaben`,
+        x1.disp === 'block' && x1.role === 'status' && x1.nosnip && Math.abs(x1.cx) <= 2 && Math.abs(x1.cy) <= 2 && x1.w >= 150 && /50%|%/.test(x1.rund) && /lade-dreh infinite/.test(x1.anim) && x1.m !== x2.m && x1.mitte === 1 && !x1.hit && x1.bild && /Lädt/i.test(x1.text), JSON.stringify({ x1, x2: x2.m }));
+      // Standbild da, Bilder der Sequenz noch nicht: Symbol bleibt in der Mitte und dreht sich weiter
+      let pz = null; for (let i = 0; i < 300 && !(pz && pz.poster); i++) { pz = await st().catch(() => null); await sleep(100); }
+      await sleep(600);
+      const y1 = await st(); await sleep(400); const y2 = await st();
+      check(`lade ${name}: auch mit dem Standbild bleibt es mitten auf der Seite und dreht sich weiter (${y1.cx}/${y1.cy} px, sichtbar ${y1.box}, ${y1.cls.includes('bereit') ? 'schon bereit' : 'noch nicht bereit'})`,
+        y1.cls.includes('bereit') || (Math.abs(y1.cx) <= 2 && Math.abs(y1.cy) <= 2 && y1.box === 1 && y1.m !== y2.m && y1.cue === 0), JSON.stringify({ y1, y2: y2.m }));
+      await waitReady(b, 120000); await sleep(900);
       const z = await st();
-      check(`lade ${name}: spielbereit (bereit): beide Ladesymbole aus (${z.mitte}/${z.dock}), Weiter-Pfeil an (${z.cue})`, z.cls.includes('bereit') && z.mitte === 0 && z.dock === 0 && z.cue > 0.8, JSON.stringify(z));
+      check(`lade ${name}: spielbereit: Ladesymbol aus (${z.box}), Weiter-Pfeil an (${z.cue})`, z.cls.includes('bereit') && z.box === 0 && z.cue > 0.8, JSON.stringify(z));
       check(`lade ${name}: keine Fehler, keine externen Anfragen, CLS 0`, b.errors.length === 0 && b.external.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || b.external[0] || '');
     } finally { b.close(); }
   }
