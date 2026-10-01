@@ -307,12 +307,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=a730112e" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=a730112e" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=a730112e" /></noscript>
+  <link rel="preload" href="css/style.css?v=064a4012" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=064a4012" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=064a4012" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=a730112e"></script>
+  <script type="module" src="js/main.js?v=064a4012"></script>
 </head>
 <body>
 
@@ -535,12 +535,26 @@
           </li>
         </ul>
 
-        <dl class="facts">
-          <div><dt>Sorte</dt><dd>Vollbier Hell</dd></div>
-          <div><dt>Alkohol</dt><dd>4,9 % vol</dd></div>
-          <div><dt>Inhalt</dt><dd>0,5 l Flasche</dd></div>
-          <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
-        </dl>
+        <!-- Steckbrief um die Flasche: Sorte und Alkohol oben, Inhalt und Zutaten unten, je links und rechts der Flasche, goldene Linien führen zu ihr (Desktop ab 1100 px, js/etikett.js zeichnet sie beim ersten Erscheinen); schmal: Flasche mittig über dem Steckbrief -->
+        <div class="steckbrief" data-etikett>
+          <svg class="etikett__linie steckbrief__linien" viewBox="0 0 100 44" aria-hidden="true" focusable="false">
+            <path class="etikett__pfad" pathLength="1" d="M31.5 6.5H37Q41 6.5 42.8 8.6T44.8 9.8"/>
+            <path class="etikett__pfad" pathLength="1" d="M68.5 6.5H63Q59 6.5 57.2 8.6T55.2 9.8"/>
+            <path class="etikett__pfad" pathLength="1" d="M31.5 30.3H37Q41 30.3 42.6 29.4T44.3 28.6"/>
+            <path class="etikett__pfad" pathLength="1" d="M68.5 30.3H63Q59 30.3 57.4 29.4T55.7 28.6"/>
+          </svg>
+          <i class="etikett__raute sr1" aria-hidden="true"></i><i class="etikett__raute sr2" aria-hidden="true"></i><i class="etikett__raute sr3" aria-hidden="true"></i><i class="etikett__raute sr4" aria-hidden="true"></i>
+          <figure class="steckbrief__flasche">
+            <img class="sb__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="300px" width="426" height="159" loading="lazy" decoding="async" alt="" />
+            <img class="sb__bild" src="assets/img/flasche-360.webp" srcset="assets/img/flasche-180.webp 180w, assets/img/flasche-360.webp 360w, assets/img/flasche-540.webp 540w" sizes="(min-width: 1100px) 130px, 100px" width="360" height="1165" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell" />
+          </figure>
+          <dl class="facts">
+            <div><dt>Sorte</dt><dd>Vollbier Hell</dd></div>
+            <div><dt>Alkohol</dt><dd>4,9 % vol</dd></div>
+            <div><dt>Inhalt</dt><dd>0,5 l Flasche</dd></div>
+            <div><dt>Zutaten</dt><dd>Wasser, <strong>Gerstenmalz</strong>, Hopfen</dd></div>
+          </dl>
+        </div>
         <p class="brewer">
           Gebraut in kleinen Mengen von der Brauerei &amp; Brennerei Silbernagl in Hausham, einem Familienbetrieb
           in fünfter Generation mit eigenem Getränkeladen und Schnapsbrennerei, gleich beim Förderturm,
