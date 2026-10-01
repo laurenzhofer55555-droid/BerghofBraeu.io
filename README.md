@@ -43,22 +43,18 @@ Dann http://localhost:5173 öffnen.
   wächst mit der Breite), Schaumkrone, Bläschen (nach Fläche gezählt, gleichmäßig verteilt). Pegel nur aus P, das Schwappen verformt nur
   die Welle. Nur der Start unterscheidet sich: Handy ohne Titel und mit Pfeil, Desktop mit Titel, der ausblendet, bevor die Flasche in
   seinen Bereich kommt (`titleClear`).
-- Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel, Zierlinie, Untertitel, Einleitung (`.hero__lead`, zentriert, höchstens
-  60 Zeichen je Zeile) und Stallhofer-Gemälde (`.painting` mit Bildunterschrift) stehen als **ein zentrierter Block untereinander**, Abstände im 8-px-Raster (`--g2`: 24 px Handy, 32 px
-  ab 768 px, 40 px ab 1800 px). Das Gemälde ist am Tablet/Desktop 58 % (iPad hoch 70 %) der Inhaltsbreite breit, am Handy voll und beginnt dort unter dem ersten Bildschirm (`--fold`).
-  Ist der Block niedriger als der Bildschirm (iPad hoch, sehr große Fenster), stellt `js/sequenz.js` ihn mit `--lift` mittig; der Titel bleibt in A/B unten verankert (nichts springt).
-  Die Schafe sind einzeln aus dem Etikettenbild freigestellt (`assets/img/herde-*.webp`):
-  - **Handy (unter 768 px):** fünf Schafe (`.herd`) stehen unten im ersten Bildschirm auf dem Hintergrund, im Bereich unter der Einleitung (`--zone`, von `js/sequenz.js` gemessen, damit keines
-    den Text überdeckt), innerhalb des Seitenrahmens; sie liegen in `.hero__more` und erscheinen zusammen mit dem Einleitungstext, ohne eigene Animation.
-  - **Tablet und Desktop (ab 768 px):** vier kleine Schafe (`.flock`, je zwei links und rechts) neben dem Titel: Abstand zum Titel, Abstand untereinander und Größen hängen an der Titelhöhe
-    (links und rechts gleich, Füße auf einer Linie). Sie gehören zum Titelblock (`.hero__text`) und werden mit demselben Verlauf eingeblendet wie der Einleitungstext (keine eigene Animation).
-  In A und B sitzt der Titelblock unten im Bild (`--dy`). Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern
-  und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern der Fenstergröße kommt der Rest nach).
-- Ladesymbol (`.lade`, erstes Element im `body`, nur mit Intro): Das HB-Logo (als Hintergrundbild im Start-CSS, 10 KB, keine eigene Anfrage) dreht sich wie eine Münze (rotateY, zwei Flächen, nur
-  `transform`/`opacity`) auf einer runden hellen Scheibe mit „Lädt“, genau in der Mitte des Fensters, damit es auch über der Flasche eindeutig zu sehen ist. Es dreht sich ohne Ende, bis alle Bilder der
-  Sequenz geladen sind (`.bereit`, `js/sequenz.js`), wandert nicht weg und blendet dann aus (0,45 s); erst dann erscheint der Weiter-Pfeil. Es erscheint erst nach 0,25 s (bei schnellem Laden blitzt nichts
-  auf), fängt keine Eingaben, liegt unter der Altersabfrage, hat `role="status"` und `data-nosnippet`; ohne Intro (Bewegung reduzieren, Neuladen mitten auf der Seite) gibt es kein Ladesymbol.
-  Notausgang per CSS nach 40 s (die Sequenz springt selbst nach `LOAD_TIMEOUT` zum Inhalt).
+- Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel, Zierlinie, Untertitel, Einleitung (`.hero__lead`, zentriert, höchstens 60 Zeichen je Zeile)
+  und Stallhofer-Gemälde (`.painting` mit Bildunterschrift) stehen als **ein zentrierter Block untereinander**, Abstände im 8-px-Raster (`--g2`: 28 px, am sehr großen Fenster 40 px). Ist der Block
+  niedriger als der Bildschirm (iPad hoch, sehr große Fenster), stellt `js/sequenz.js` ihn mit `--lift` mittig; der Titel bleibt in A/B unten verankert (nichts springt). Zwei Gestaltungen:
+  - **Handy (unter 768 px), Variante „Editorial“:** Leadtext größer (17 px am iPhone SE, 19 px am iPhone 15, wächst mit der Bildschirmhöhe), erster Buchstabe als Initiale in Tannengrün; das Gemälde
+    steht in voller Inhaltsbreite unter dem ersten Bildschirm (`--fold`) mit Passepartout (heller Innenrand), feinem goldenem Rahmen, weichem Schatten und kursiver Bildunterschrift. Im ersten
+    Bildschirm steht unten die Herde (`.herd`, fünf Schafe im Bereich unter der Einleitung, `--zone`, innerhalb des Seitenrahmens); sie fährt in Geste 2 gemeinsam mit dem Block hoch.
+  - **Tablet und Desktop (ab 768 px), Variante „Bühne“:** Text kompakt (18 px, max. 52 Zeichen), das Gemälde breit und so hoch, dass der Block samt Schafen in den ersten Bildschirm passt
+    (`min(80 %, max(520 px, (100svh − 520 px) · 1,5))`), ringsum steht eine Herde aus 16 freigestellten Schafen (`.painting__herde`): vier links, vier rechts und acht vor der Unterkante, Füße auf
+    der Kante (Anordnung über `--x`/`--y`/`--k` je Schaf, Größe in `cqw` der Bildbreite, gespiegelt über `--f`; am Tablet enger gestellt, damit nichts den Seitenrahmen berührt). Die Schafe liegen im
+    Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
+  Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
+  der Fenstergröße kommt der Rest nach).
 - Geste 2 in zwei Phasen (`PH1`, `PAUSE`, `RIDE`, `FADE`, `T2` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 3,65 s): **Phase 1** (2,5 s) leert nur das Bier
   (Pegel sine.inOut), der Titel bleibt ruhig unten; **Pause** 150 ms; **Phase 2** (1 s): der ganze Block fährt **gleichzeitig** nach oben und blendet gleichzeitig ein: Titel „Berghof Hell“ (mit den Schafen
   daneben), Einleitung, Gemälde und die Herde am Handy gleiten um denselben Weg `textDy` (der Block bleibt starr, FLIP: der Weg wird vorher gemessen, bewegt wird nur `translate3d`), der Seitenrahmen

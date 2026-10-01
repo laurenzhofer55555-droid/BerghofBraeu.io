@@ -173,18 +173,35 @@
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
     .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
-    .painting { position: relative; margin: 0; width: 100%; }           /* Handy: volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js) */
-    .painting img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
-    @media (max-width: 767px) { .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); } }
-    @media (min-width: 768px) { .hero { --g2: 32px; } .hero__lead { font-size: 19px; } .painting { width: 58%; } }
-    @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } .painting { width: 70%; } }
+    /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
+       größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
+    .painting { position: relative; margin: 0; width: 100%; }
+    .painting__bild { position: relative; container-type: inline-size; }
+    .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
+    .painting__herde { display: none; }
+    @media (max-width: 767px) {
+      .hero { --g2: 28px; }
+      .hero__lead { font-size: clamp(17px, calc(17px + (100svh - 667px) * .0108), 19px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
+      .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
+      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
+      .painting__bild > img { border: 1px solid var(--green); outline: 0; box-shadow: 0 0 0 1px rgba(184, 145, 58, .5); }
+    }
+    @media (min-width: 768px) {
+      .hero { --g2: 28px; }
+      .hero__lead { font-size: 18px; line-height: 1.58; max-width: 52ch; }
+      .painting { width: min(80%, max(520px, calc((100svh - 520px) * 1.5))); }
+      .painting__herde { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 2; pointer-events: none; }
+      .painting__herde .sheep { left: calc(50% + (var(--x) - 50) * var(--sp, 1) * 1%); bottom: calc(var(--y) * 1px); height: calc(var(--k) * 8px); transform: scaleX(var(--f, 1)); transform-origin: 50% 100%; }
+    }
+    @supports (width: 1cqw) { @media (min-width: 768px) { .painting__herde .sheep { height: calc(var(--k) * 1cqw); } } }
+    @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 17px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
     @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
     /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
     img[data-src] { visibility: hidden; }          /* noch nicht geladene Bilder (Schafe, Gemälde) zeigen keinen leeren Platzhalter; js/herde.js entfernt data-src, sobald die Quelle gesetzt ist */
-    .flock { display: none; }
-    @media (min-width: 768px) { .herd { display: none; } .flock { display: block; position: absolute; inset: 0; pointer-events: none; } }
+    @media (min-width: 768px) { .herd { display: none; } }
 
     /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
        Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
@@ -286,12 +303,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=46474755" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=46474755" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=46474755" /></noscript>
+  <link rel="preload" href="css/style.css?v=a730112e" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=a730112e" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=a730112e" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=46474755"></script>
+  <script type="module" src="js/main.js?v=a730112e"></script>
 </head>
 <body>
 
@@ -374,27 +391,37 @@
           <span class="visually-hidden">, </span>
           <span class="hero__claim">Helles aus Agatharied</span>
         </h1>
-        <!-- Tablet und Desktop: vier kleine Schafe aus dem Etikettenbild (Gemälde von J. Stallhofer) links und rechts neben dem Titel, sie gleiten mit ihm nach oben (Anordnung: css/style.css) -->
-        <div class="flock" role="img" aria-label="Vier kleine Schafe und Lämmer aus dem Etikettenbild, links und rechts neben dem Titel">
-          <div class="flock__side flock__side--l">
-            <img class="sheep sheep--b" data-nur="breit" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="80px" width="180" height="160" decoding="async" alt="" />
-            <img class="sheep sheep--a" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="80px" width="124" height="153" decoding="async" alt="" />
-          </div>
-          <div class="flock__side flock__side--r">
-            <img class="sheep sheep--c" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="90px" width="224" height="160" decoding="async" alt="" />
-            <img class="sheep sheep--d" data-nur="breit" data-src="assets/img/herde-ruhend-braun-2x.webp" data-srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="60px" width="132" height="102" decoding="async" alt="" />
-          </div>
-        </div>
       </div>
 
       <!-- Einleitung und Bildgestaltung: erscheinen, während das Bier sich leert (Zustand C, js/sequenz.js) -->
       <div class="hero__more">
         <div class="hero__cols">
-          <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
+          <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
           <figure class="painting">
-            <img data-src="assets/img/berghof-gemaelde-1030.webp" data-srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
-                 sizes="(min-width: 1800px) 820px, (min-width: 1001px) 630px, (min-width: 768px) 520px, calc(100vw - 68px)" width="1030" height="687" decoding="async"
-                 alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge" />
+            <div class="painting__bild">
+              <img data-src="assets/img/berghof-gemaelde-1030.webp" data-srcset="assets/img/berghof-gemaelde-640.webp 640w, assets/img/berghof-gemaelde-1030.webp 1030w"
+                   sizes="(min-width: 1800px) 820px, (min-width: 1001px) 630px, (min-width: 768px) 520px, calc(100vw - 68px)" width="1030" height="687" decoding="async"
+                   alt="Gemälde von J. Stallhofer: Schafe auf einer herbstlichen Weide im bayerischen Oberland, dahinter ein Dorf mit Kirchturm, Wälder und die Berge" />
+              <!-- Tablet und Desktop: eine Herde einzeln freigestellter Schafe aus dem Etikettenbild steht ringsum: links, rechts und vor der Unterkante des Gemäldes (Anordnung per CSS-Variablen --x/--y/--k) -->
+              <div class="painting__herde" role="img" aria-label="Eine Herde weißer und brauner Schafe und Lämmer steht links, rechts und vor dem Gemälde">
+              <img class="sheep" style="--x:-40;--y:-6;--k:9.5" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="130px" width="224" height="160" decoding="async" alt="" />
+              <img class="sheep" style="--x:-30;--y:-16;--k:12.5" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="130px" width="124" height="153" decoding="async" alt="" />
+              <img class="sheep" style="--x:-21;--y:-4;--k:10.5;--f:-1" data-nur="breit" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="130px" width="180" height="160" decoding="async" alt="" />
+              <img class="sheep" style="--x:-11;--y:-14;--k:10" data-nur="breit" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 188w" sizes="130px" width="189" height="149" decoding="async" alt="" />
+              <img class="sheep" style="--x:4;--y:-12;--k:9.5;--f:-1" data-nur="breit" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="130px" width="170" height="145" decoding="async" alt="" />
+              <img class="sheep" style="--x:16;--y:-6;--k:11.5;--f:-1" data-nur="breit" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 170w" sizes="130px" width="171" height="165" decoding="async" alt="" />
+              <img class="sheep" style="--x:30;--y:-12;--k:6" data-nur="breit" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 168w" sizes="130px" width="169" height="99" decoding="async" alt="" />
+              <img class="sheep" style="--x:42;--y:-16;--k:8.8;--f:-1" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="130px" width="224" height="160" decoding="async" alt="" />
+              <img class="sheep" style="--x:56;--y:-6;--k:10" data-nur="breit" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="130px" width="180" height="160" decoding="async" alt="" />
+              <img class="sheep" style="--x:69;--y:-14;--k:11.5;--f:-1" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="130px" width="124" height="153" decoding="async" alt="" />
+              <img class="sheep" style="--x:81;--y:-8;--k:6.4" data-nur="breit" data-src="assets/img/herde-ruhend-braun-2x.webp" data-srcset="assets/img/herde-ruhend-braun-1x.webp 66w, assets/img/herde-ruhend-braun-2x.webp 132w" sizes="130px" width="132" height="102" decoding="async" alt="" />
+              <img class="sheep" style="--x:89;--y:-16;--k:10;--f:-1" data-nur="breit" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 188w" sizes="130px" width="189" height="149" decoding="async" alt="" />
+              <img class="sheep" style="--x:102;--y:-8;--k:11.5;--f:-1" data-nur="breit" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 170w" sizes="130px" width="171" height="165" decoding="async" alt="" />
+              <img class="sheep" style="--x:111;--y:-16;--k:10.5" data-nur="breit" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="130px" width="170" height="145" decoding="async" alt="" />
+              <img class="sheep" style="--x:120;--y:-4;--k:9.5;--f:-1" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="130px" width="224" height="160" decoding="async" alt="" />
+              <img class="sheep" style="--x:130;--y:-14;--k:12.5" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="130px" width="124" height="153" decoding="async" alt="" />
+              </div>
+            </div>
             <figcaption>Gemälde von J. Stallhofer (1978), das Motiv des Etiketts.</figcaption>
           </figure>
         </div>

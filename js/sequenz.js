@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=46474755';
-import { ladeHerde } from './herde.js?v=46474755';
+import { createBeer } from './bier-leeren.js?v=a730112e';
+import { ladeHerde } from './herde.js?v=a730112e';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -71,7 +71,6 @@ const el = {
   lead: hero.querySelector('.hero__lead'),
   art: hero.querySelector('.painting'),
   herd: hero.querySelector('.herd'),
-  flock: hero.querySelector('.flock'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -323,7 +322,6 @@ function overlays(pv) {
     put(key, node, 'opacity', Math.max(einblenden, prime).toFixed(3));
     if (move) put(key + 'Y', node, 'transform', ride >= 1 ? 'none' : `translate3d(0, ${dy.toFixed(1)}px, 0)`);
   };
-  show('flock', el.flock, false);                               // Schafe neben dem Titel (Tablet/Desktop): liegen im Titelblock und fahren mit ihm
   show('herd', el.herd, true);                                  // Herde unten (Handy)
   show('lead', el.lead, true);                                  // Einleitungstext
   show('art', el.art, true);                                    // Gemälde

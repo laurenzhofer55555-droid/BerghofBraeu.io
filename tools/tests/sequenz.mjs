@@ -335,7 +335,7 @@ async function titel() {
       const l = await b.js(`(() => { const e = document.querySelector('.hero__lead'), c = getComputedStyle(e); return { op: +getComputedStyle(document.querySelector('.hero__more')).opacity, vis: c.visibility, fs: parseFloat(c.fontSize), w: e.getBoundingClientRect().width, text: e.textContent.trim().length }; })()`);
       check(`titel ${name}: Titel oben (${Math.round(r.titel.t)} px), Einleitungstext ganz im ersten Bildschirm (Ende ${Math.round(r.lead.b)} von ${r.vh} px)`, r.titel.t < r.vh * 0.22 && r.lead.t > r.titel.b && r.lead.b <= r.vh - 8 && l.op === 1 && l.vis === 'visible', JSON.stringify({ titelTop: Math.round(r.titel.t), leadEnde: Math.round(r.lead.b) }));
       const zeichen = Math.round(l.w / (l.fs * 0.5));          // grob: Breite / halbe Schriftgröße = Zeichen je Zeile
-      check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, sonst ≈ 60 Zeichen)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : 74), `${zeichen} Zeichen`);
+      check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, sonst ≈ 60 Zeichen)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : 74), `${zeichen} Zeichen`);
       const lay = JSON.parse(await b.js(`JSON.stringify((() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width }; };
         const tg = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); return R(rg); };
         const i = document.querySelector('.painting img'), cap = document.querySelector('.painting figcaption');
@@ -345,11 +345,11 @@ async function titel() {
       const breit = view.w >= 768, mid = (x) => (x.l + x.r) / 2;
       check(`titel ${name}: Titel, Text und Gemälde als ein zentrierter Block untereinander (Mitten ${[lay.title, lay.lead, lay.fig].map((x) => Math.round(mid(x))).join('/')} von ${lay.vw / 2}), Text zentriert`,
         [lay.title, lay.lead, lay.fig].every((x) => Math.abs(mid(x) - lay.vw / 2) <= 3) && lay.align === 'center' && lay.lead.b <= lay.fig.t - 8 && lay.claim.b <= lay.lead.t, JSON.stringify({ title: lay.title, lead: lay.lead, fig: lay.fig }));
-      check(`titel ${name}: Gemälde geladen, mit Beschreibung, Rahmen ${lay.img.border} und Bildunterschrift „${lay.cap}“, Breite ${Math.round(lay.fig.w / lay.cols.w * 100)} % der Inhaltsbreite (${breit ? '50–75 %' : 'voll'}), kein horizontaler Scroll`,
-        lay.img.ok && lay.img.alt && parseFloat(lay.img.border) >= 1 && /Stallhofer/.test(lay.cap) && lay.sw === lay.cw && (breit ? lay.fig.w / lay.cols.w >= 0.5 && lay.fig.w / lay.cols.w <= 0.75 : lay.fig.w / lay.cols.w >= 0.98));
+      check(`titel ${name}: Gemälde geladen, mit Beschreibung, Rahmen ${lay.img.border} und Bildunterschrift „${lay.cap}“, Breite ${Math.round(lay.fig.w / lay.cols.w * 100)} % der Inhaltsbreite (${breit ? '45–85 %' : 'voll'}), kein horizontaler Scroll`,
+        lay.img.ok && lay.img.alt && parseFloat(lay.img.border) >= 1 && /Stallhofer/.test(lay.cap) && lay.sw === lay.cw && (breit ? lay.fig.w / lay.cols.w >= 0.45 && lay.fig.w / lay.cols.w <= 0.85 : lay.fig.w / lay.cols.w >= 0.98));
       if (breit) {
         const g1 = lay.lead.t - lay.claim.b, g2 = lay.fig.t - lay.lead.b, lueck = lay.vh - lay.fig.b, top = lay.title.t;
-        check(`titel ${name}: gleichmäßige Abstände Untertitel → Text ${Math.round(g1)} px, Text → Gemälde ${Math.round(g2)} px (8-px-Raster, Unterschied ≤ 8 px)`, Math.abs(g1 - g2) <= 8 && [32, 40].some((x) => Math.abs(x - g2) <= 1.5), JSON.stringify({ g1, g2 }));
+        check(`titel ${name}: gleichmäßige Abstände Untertitel → Text ${Math.round(g1)} px, Text → Gemälde ${Math.round(g2)} px (8-px-Raster, Unterschied ≤ 8 px)`, Math.abs(g1 - g2) <= 8 && [28, 40].some((x) => Math.abs(x - g2) <= 1.5), JSON.stringify({ g1, g2 }));
         check(`titel ${name}: erster Bildschirm zeigt Titel, Text und ${lay.fig.b <= lay.vh ? 'das ganze Gemälde, Block oben ' + Math.round(top) + ' px / unten ' + Math.round(lueck) + ' px (ausgewogen, Unterschied ≤ 12 % der Höhe)' : 'den oberen Teil des Gemäldes (' + Math.round((lay.vh - lay.fig.t) / lay.fig.w * 1.5 * 100) + ' % sichtbar)'}`,
           lay.fig.b <= lay.vh ? Math.abs(top - lueck) <= lay.vh * 0.12 : lay.fig.t < lay.vh - 80, JSON.stringify({ top, lueck, figT: lay.fig.t, vh: lay.vh }));
       } else {
@@ -389,8 +389,9 @@ async function herde() {
     const breit = view.w >= 768;
     try {
       await start(b, view);
-      const A = JSON.parse(await b.js(`JSON.stringify({ op: +getComputedStyle(document.querySelector('.flock')).opacity, flockAnzeige: getComputedStyle(document.querySelector('.flock')).display })`));
-      const Dz = () => b.js(`JSON.stringify((() => { const t = document.querySelector('.hero__title').getBoundingClientRect(), a = document.querySelector('.flock .sheep--a').getBoundingClientRect(); return { op: +getComputedStyle(document.querySelector('.flock')).opacity, d: Math.round(t.top - a.top) }; })())`);
+      const sel = breit ? '.painting__herde' : '.herd', art = '.painting';
+      const A = JSON.parse(await b.js(`JSON.stringify({ op: +getComputedStyle(document.querySelector('${breit ? art : '.herd'}')).opacity })`));
+      const Dz = () => b.js(`JSON.stringify({ op: +getComputedStyle(document.querySelector('${breit ? art : '.herd'}')).opacity })`);
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(1200);
       const Bz = JSON.parse(await Dz());
       await gesture(b, 1); await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(1200);
@@ -398,42 +399,38 @@ async function herde() {
       const t = await b.js(textRects);
       const info = JSON.parse(await b.js(`JSON.stringify((() => {
         const M = 16, R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
-        const T = ${JSON.stringify(t)}; const texts = [['Titel', T.titel], ['Untertitel', T.claim], ['Einleitung', T.lead]];
-        const sicht = (e) => getComputedStyle(e).display !== 'none';
-        const herd = [...document.querySelectorAll('.herd .sheep')], flock = [...document.querySelectorAll('.flock .sheep')];
-        const mine = ${breit} ? flock : herd, sheep = mine.filter((e) => getComputedStyle(e.parentElement).display !== 'none'), bad = [];
-        for (const e of sheep) { const r = R(e); for (const [n, x] of texts) if (!(r.b + (${breit} ? 6 : M) <= x.t || r.t >= x.b + (${breit} ? 6 : M) || r.r + (${breit} ? 6 : M) <= x.l || r.l >= x.r + (${breit} ? 6 : M))) bad.push(e.className.replace(/sheep\\s*(sheep--)?/, '') + ' × ' + n); }
-        const gr = document.querySelector(${breit} ? '.flock' : '.herd');
+        const T = ${JSON.stringify(t)}; const cap = R(document.querySelector('.painting figcaption')); const texts = [['Titel', T.titel], ['Untertitel', T.claim], ['Einleitung', T.lead], ['Bildunterschrift', cap]];
+        const herd = [...document.querySelectorAll('.herd .sheep')], stage = [...document.querySelectorAll('.painting__herde .sheep')];
+        const mine = ${breit} ? stage : herd, sheep = mine.filter((e) => getComputedStyle(e.parentElement).display !== 'none'), bad = [];
+        for (const e of sheep) { const r = R(e); for (const [n, x] of texts) if (!(r.b + (${breit} ? 4 : M) <= x.t || r.t >= x.b + (${breit} ? 4 : M) || r.r + (${breit} ? 4 : M) <= x.l || r.l >= x.r + (${breit} ? 4 : M))) bad.push(e.getAttribute('style') + ' × ' + n); }
+        const gr = document.querySelector('${sel}');
         const dauer = sheep.map((e) => { const c = getComputedStyle(e); return c.animationName === 'none' ? 0 : parseFloat(c.animationDelay) + parseFloat(c.animationDuration); });
-        const links = sheep.filter((e) => R(e).r <= (T.titel.l + T.titel.r) / 2), rechts = sheep.filter((e) => R(e).l >= (T.titel.l + T.titel.r) / 2);
-        const hoch = sheep.map((e) => R(e).b - R(e).t);
+        const hoch = sheep.map((e) => R(e).b - R(e).t), pr = R(document.querySelector('.painting__bild > img')), W = pr.r - pr.l;
+        const mid = (e) => (R(e).l + R(e).r) / 2, links = sheep.filter((e) => mid(e) < pr.l), rechts = sheep.filter((e) => mid(e) > pr.r), unten = sheep.filter((e) => mid(e) >= pr.l && mid(e) <= pr.r);
+        const fuss = sheep.map((e) => R(e).b - pr.b);
+        const ext = (a) => (a.length ? Math.max(...a.map((e) => Math.max(R(e).r - pr.r, pr.l - R(e).l))) : 0);
         return { n: sheep.length, bad, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
           geladen: sheep.every((e) => e.complete && e.naturalWidth > 0), attr: mine.every((e) => e.getAttribute('alt') === '' && e.width > 0 && e.height > 0 && (e.getAttribute('srcset') || e.dataset.srcset)),
           gruppe: gr.getAttribute('role') === 'img' && gr.getAttribute('aria-label').length > 20, dauer: Math.max(0, ...dauer), name: getComputedStyle(sheep[0]).animationName,
-          links: links.length, rechts: rechts.length, innen: sheep.every((e) => R(e).l >= 0 && R(e).r <= innerWidth), hMin: Math.min(...hoch), hMax: Math.max(...hoch),
-          andere: { anzeige: getComputedStyle(${breit} ? document.querySelector('.herd') : document.querySelector('.flock')).display, geladen: (${breit} ? herd : flock).filter((e) => !e.dataset.src).length },
+          links: links.length, rechts: rechts.length, unten: unten.length, innen: sheep.every((e) => R(e).l >= 0 && R(e).r <= innerWidth), hMin: Math.min(...hoch), hMax: Math.max(...hoch), W: Math.round(W),
+          fussMin: Math.round(Math.min(...fuss)), fussMax: Math.round(Math.max(...fuss)), extL: Math.round(pr.l - Math.min(...sheep.map((e) => R(e).l))), extR: Math.round(Math.max(...sheep.map((e) => R(e).r)) - pr.r),
+          andere: { anzeige: getComputedStyle(${breit} ? document.querySelector('.herd') : document.querySelector('.painting__herde')).display, geladen: (${breit} ? herd : stage).filter((e) => !e.dataset.src).length },
           farben: { weiss: sheep.filter((e) => /lamm|hell|grast/.test(e.src)).length, braun: sheep.filter((e) => /braun|kalb|gefleckt/.test(e.src)).length } }; })())`));
-      const soll = breit ? 4 : 5;
-      check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 1 && info.farben.braun >= 1 && info.hMin >= 12, JSON.stringify(info.farben));
-      check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel oder Text (am Handy stehen zwei absichtlich am Rand und ragen etwas hinaus), kein horizontaler Scroll`, info.bad.length === 0 && (!breit || info.innen) && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
+      const soll = breit ? 16 : 5;
+      check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 2 && info.farben.braun >= 2 && info.hMin >= 12, JSON.stringify(info.farben));
+      check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel, Text oder Bildunterschrift (am Handy stehen zwei absichtlich am Rand und ragen etwas hinaus), kein horizontaler Scroll`, info.bad.length === 0 && (!breit || info.innen) && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
       check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe);
       check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
       if (breit) {
-        check(`herde ${name}: zwei links und zwei rechts neben dem Titel (${info.links} / ${info.rechts}), ${Math.round(info.hMin)}–${Math.round(info.hMax)} px hoch`, info.links === 2 && info.rechts === 2 && info.hMax <= 100);
-        check(`herde ${name}: in A unsichtbar (Deckkraft ${A.op}), in B nur zum Vorbereiten fast unsichtbar (${Bz.op}), in C sichtbar (${Cz.op}), stehen am Titel (Abstand in B ${Bz.d} px, in C ${Cz.d} px: sie fahren mit dem Titelblock)`, A.op === 0 && Bz.op <= 0.011 && Cz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1.5);
+        check(`herde ${name}: Schafe stehen rund um das Gemälde (${info.W} px breit): ${info.links} links, ${info.unten} vor der Unterkante, ${info.rechts} rechts; Füße ${info.fussMin} bis ${info.fussMax} px an der Unterkante; links ragen sie ${info.extL} px hinaus, rechts ${info.extR} px (Unterschied ≤ 15 % der Bildbreite)`,
+          info.links >= 2 && info.rechts >= 2 && Math.abs(info.links - info.rechts) <= 2 && info.unten >= 7 && info.fussMin >= -4 && info.fussMax <= 28 && Math.abs(info.extL - info.extR) <= info.W * 0.15 && info.hMax <= info.W * 0.16 + 4, JSON.stringify(info));
+        check(`herde ${name}: mit dem Gemälde in A unsichtbar (Deckkraft ${A.op}), in B nur zum Vorbereiten fast unsichtbar (${Bz.op}), in C sichtbar (${Cz.op})`, A.op === 0 && Bz.op <= 0.011 && Cz.op === 1);
       }
       check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
-      if (breit) {
-        const sy = JSON.parse(await b.js(`JSON.stringify((() => { const R = (q) => { const r = document.querySelector(q).getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; };
-          const rg = document.createRange(); rg.selectNodeContents(document.querySelector('.hero__title')); const T = rg.getBoundingClientRect(); return { T: { l: T.left, r: T.right }, a: R('.sheep--a'), b: R('.sheep--b'), c: R('.sheep--c'), d: R('.sheep--d') }; })())`));
-        const gi = [sy.T.l - sy.a.r, sy.c.l - sy.T.r], go = [sy.a.l - sy.b.r, sy.d.l - sy.c.r], bo = [sy.a.b, sy.b.b, sy.c.b, sy.d.b], wl = sy.a.w + sy.b.w, wr = sy.c.w + sy.d.w;
-        check(`herde ${name}: symmetrisch zum Titel: Abstand zum Titel ${gi.map(Math.round).join(' / ')} px, untereinander ${go.map(Math.round).join(' / ')} px, Füße auf einer Linie (${Math.round(Math.max(...bo) - Math.min(...bo))} px Unterschied), Breite links ${Math.round(wl)} / rechts ${Math.round(wr)} px`,
-          Math.abs(gi[0] - gi[1]) <= 3 && Math.abs(go[0] - go[1]) <= 3 && Math.max(...bo) - Math.min(...bo) <= 3 && Math.abs(wl - wr) / Math.max(wl, wr) <= 0.2 && Math.min(sy.a.h, sy.b.h, sy.c.h, sy.d.h) >= 0.35 * Math.max(sy.a.h, sy.b.h, sy.c.h, sy.d.h), JSON.stringify({ gi, go, bo }));
-      }
       check(`herde ${name}: keine externen Anfragen, keine Fehler, CLS 0`, b.external.length === 0 && b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.external[0] || b.errors[0] || '');
     } finally { b.close(); }
   }
-  // Geste 2, Phase 2: die Schafe fahren gemeinsam mit Titel, Text und Gemälde nach oben und blenden gemeinsam ein; am Ende springen sie nicht
+  // Geste 2, Phase 2: die Schafe (am Handy die Herde, sonst die Schafe rund um das Gemälde) fahren gemeinsam mit Titel, Text und Gemälde nach oben und blenden gemeinsam ein; am Ende springen sie nicht
   for (const [name, view] of Object.entries(GERAETE)) {
     const breit = view.w >= 768;
     const b = await browser({ view });
@@ -441,16 +438,16 @@ async function herde() {
       await start(b, view);
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(600);
       const Q = (T) => b.js(`(async () => { window.__sequenz.zeige(${Pg2(T)}); await new Promise((r) => setTimeout(r, 450));
-        const g = document.querySelector('${breit ? '.flock' : '.herd'}'), sh = [...g.querySelectorAll('.sheep')], m = (e) => { const t = getComputedStyle(e).transform; return t === 'none' ? 0 : +t.slice(t.indexOf('(') + 1, -1).split(',')[5]; };
+        const g = document.querySelector('${breit ? '.painting' : '.herd'}'), sh = [...g.querySelectorAll('.sheep')], m = (e) => { const t = getComputedStyle(e).transform; return t === 'none' ? 0 : +t.slice(t.indexOf('(') + 1, -1).split(',')[5]; };
         return JSON.stringify({ op: +getComputedStyle(g).opacity, y: m(g), titel: m(document.querySelector('.hero__text')), lead: +getComputedStyle(document.querySelector('.hero__lead')).opacity, vis: getComputedStyle(sh[0]).visibility, anim: sh.some((e) => getComputedStyle(e).animationName !== 'none'),
-          pos: sh.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.hero__title').getBoundingClientRect().top + scrollY : 0))]; }) }); })()`).then(JSON.parse);
+          pos: sh.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.painting').getBoundingClientRect().top + scrollY : 0))]; }) }); })()`).then(JSON.parse);
       const S0 = PH.PH1 + PH.PAUSE, Tm = S0 + 250;
       const q0 = await Q(PH.PH1), q1 = await Q(Tm), q4 = await Q(PH.T2 - 2);
       await b.js('window.__sequenz.skip()'); await sleep(900);
-      const qc = await b.js(`JSON.stringify([...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.hero__title').getBoundingClientRect().top + scrollY : 0))]; }))`).then(JSON.parse);
+      const qc = await b.js(`JSON.stringify([...document.querySelectorAll('${breit ? '.painting' : '.herd'} .sheep')].map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.painting').getBoundingClientRect().top + scrollY : 0))]; }))`).then(JSON.parse);
       const e1 = einT(Tm), r1 = rideT(Tm);
       check(`herde ${name}: nach Phase 1 noch unsichtbar (${q0.op}), mitten in Phase 2 gleich weit wie Titel und Text (Deckkraft ${q1.op.toFixed(2)}, Soll ${e1.toFixed(2)}; Weg ${q1.y.toFixed(0)} px, Titel ${q1.titel.toFixed(0)} px), am Ende ${q4.op} und ${q4.y} px, keine CSS-Animation`,
-        q0.op <= 0.011 && Math.abs(q1.op - e1) <= 0.04 && Math.abs(q1.lead - e1) <= 0.04 && (breit || Math.abs(q1.y - q1.titel) <= 1.5) && q4.op === 1 && q4.y === 0 && !q1.anim && q1.vis === 'visible', JSON.stringify({ q0, q1, q4: q4.op, r1 }));
+        q0.op <= 0.011 && Math.abs(q1.op - e1) <= 0.04 && Math.abs(q1.lead - e1) <= 0.04 && Math.abs(q1.y - q1.titel) <= 1.5 && q4.op === 1 && q4.y === 0 && !q1.anim && q1.vis === 'visible', JSON.stringify({ q0, q1, q4: q4.op, r1 }));
       check(`herde ${name}: die Schafe springen am Ende nicht (Lage am Ende von Geste 2 gegen Zustand C, am Titel gemessen, höchstens 3 px)`, q4.pos.length === qc.length && q4.pos.every(([x, y], i) => Math.abs(x - qc[i][0]) <= 3 && Math.abs(y - qc[i][1]) <= 3), JSON.stringify({ q4: q4.pos.slice(0, 2), qc: qc.slice(0, 2) }));
     } finally { b.close(); }
   }
@@ -465,9 +462,9 @@ async function herde() {
         else await b.send('Page.navigate', { url: BASE });
         await sleep(3500);
         if (!reduced) await b.js('window.scrollTo(0, 0)');
-        const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
+        const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.painting__herde' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
           an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return i.complete && i.naturalWidth > 0; })() })`));
-        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 4 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 4 : 5) && !r.an && r.bild, JSON.stringify(r));
+        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 16 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 16 : 5) && !r.an && r.bild, JSON.stringify(r));
       } finally { b.close(); }
     }
   }
@@ -959,7 +956,7 @@ async function phasen() {
         const namen = (t) => (t || '').split(';').map((x) => x.split(':')[0].trim()).filter(Boolean);
         const val = (t, k) => { const m = (t || '').split(';').find((x) => x.split(':')[0].trim() === k); return m ? m.slice(m.indexOf(':') + 1).trim() : ''; };
         const mo = new MutationObserver((ms) => ms.forEach((m) => { const neu = m.target.getAttribute('style') || ''; for (const k of new Set([...namen(m.oldValue), ...namen(neu)])) if (val(m.oldValue, k) !== val(neu, k)) window.__chg[k] = (window.__chg[k] || 0) + 1; }));
-        document.querySelectorAll('.hero__text, .hero__more, .hero__lead, .painting, .herd, .flock, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
+        document.querySelectorAll('.hero__text, .hero__more, .hero__lead, .painting, .herd, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
         try { new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(Math.round(e.duration)))).observe({ entryTypes: ['longtask'] }); } catch (e) {} })()`);
       await b.send('Emulation.setCPUThrottlingRate', { rate: 4 });
       const n0 = (await samples(b)).length;
@@ -969,7 +966,7 @@ async function phasen() {
       await b.send('Emulation.setCPUThrottlingRate', { rate: 1 });
       const S = (await samples(b)).slice(n0).filter((x) => x.P > 1);
       const T = (x) => tOf(x.P);
-      const sheep = (x) => (breit ? x.ops.flock : x.ops.herd), ph1 = S.filter((x) => T(x) < PH.PH1), pause = S.filter((x) => T(x) >= PH.PH1 + 20 && T(x) < PH.PH1 + PH.PAUSE - 20);
+      const sheep = (x) => (breit ? x.ops.art : x.ops.herd), ph1 = S.filter((x) => T(x) < PH.PH1), pause = S.filter((x) => T(x) >= PH.PH1 + 20 && T(x) < PH.PH1 + PH.PAUSE - 20);
       const y0 = S[0].textY, allHidden = (x) => sheep(x) <= 0.011 && x.ops.lead <= 0.011 && x.ops.art <= 0.011 && x.ops.pf <= 0.011;
       let rueck = 0; for (let i = 1; i < ph1.length; i++) if (ph1[i].level - ph1[i - 1].level < -0.5) rueck++;
       check(`phasen ${name}: Phase 1 (${PH.PH1} ms, ${ph1.length} Bilder): nur das Bier läuft aus (Pegel ${ph1[0].level} → ${ph1.at(-1).level} px, sinkt gleichmäßig), Titel ruhig an seiner Stelle (${y0} px, Abweichung ${Math.max(...ph1.map((x) => Math.abs(x.textY - y0))).toFixed(1)}), Schafe, Text, Gemälde, Rahmen unsichtbar, Pfeil aus (nach 0,25 s)`,
@@ -988,7 +985,7 @@ async function phasen() {
       const P2 = S.filter((x) => T(x) > PH.PH1 + PH.PAUSE + 40 && T(x) < PH.PH1 + PH.PAUSE + PH.RIDE - 120);
       const starr = P2.every((x) => Math.abs(x.tys.lead - x.textY) <= 1.5 && Math.abs(x.tys.art - x.textY) <= 1.5 && (breit || Math.abs(x.tys.herd - x.textY) <= 1.5));
       const m = P2[Math.floor(P2.length / 2)];
-      check(`phasen ${name}: Titel, Text, Gemälde${breit ? ' (und die Schafe im Titelblock)' : ' und Herde'} fahren gemeinsam um denselben Weg nach oben (${P2.length} Bilder, mitten in Phase 2: Titel ${m.textY} px, Text ${m.tys.lead} px, Gemälde ${m.tys.art} px${breit ? '' : ', Herde ' + m.tys.herd + ' px'}), am Ende 0`,
+      check(`phasen ${name}: Titel, Text, Gemälde${breit ? ' (mit den Schafen ringsum)' : ' und Herde'} fahren gemeinsam um denselben Weg nach oben (${P2.length} Bilder, mitten in Phase 2: Titel ${m.textY} px, Text ${m.tys.lead} px, Gemälde ${m.tys.art} px${breit ? '' : ', Herde ' + m.tys.herd + ' px'}), am Ende 0`,
         P2.length > 15 && starr && S.at(-1).textY === 0 && S.at(-1).tys.lead === 0 && S.at(-1).tys.art === 0 && S.at(-1).tys.herd === 0, JSON.stringify({ n: P2.length, m }));
       const fin = S.at(-1), anim = S.filter((x) => x.anim);
       check(`phasen ${name}: will-change nur während der Animation (währenddessen „${anim[0] && anim[0].wc}“, danach „${fin.wc}“), Canvas schon vor Phase 1 freigegeben (Breite ${S[0].cw}, ${S.every((x) => x.cw === 0) ? 'durchgehend 0' : 'nicht 0'})`,
@@ -1016,7 +1013,7 @@ async function alter() {
         const txt = [...document.querySelectorAll('.age__title, .age__note, .age__note a, .age__btn')].map((e) => parseFloat(getComputedStyle(e).fontSize));
         return { gate: document.documentElement.classList.contains('age-gate'), disp: cs('.age').display, w: Math.round(c.width), h: Math.round(c.height), cx: Math.round(c.left + c.width / 2 - vw / 2), cy: Math.round(c.top + c.height / 2 - vh / 2), bottom: Math.round(vh - c.bottom), anteil: +(c.height / vh).toFixed(2),
           radius: cs('.age__card').borderTopLeftRadius, radiusU: cs('.age__card').borderBottomLeftRadius, rand: cs('.age__card').borderTopColor, rw: cs('.age__card').borderTopWidth, bg: cs('.age__card').backgroundColor, dim: cs('.age').backgroundColor, blur: cs('.age').backdropFilter || cs('.age').webkitBackdropFilter,
-          min: Math.min(...txt), btn: [...document.querySelectorAll('.age__btn')].map((e) => Math.round(e.getBoundingClientRect().height)), poster: getComputedStyle(q('.poster')).visibility, anim: cs('.age__card').animationName,
+          min: Math.min(...txt), btn: [...document.querySelectorAll('.age__btn')].map((e) => Math.round(e.getBoundingClientRect().height)), poster: getComputedStyle(q('.poster')).visibility, cv: getComputedStyle(q('#sequenz')).visibility, anim: cs('.age__card').animationName,
           inert: [...document.body.children].filter((e) => e.id !== 'altersabfrage').every((e) => e.inert), focus: document.activeElement.id || document.activeElement.className, vine: !!q('.age__vine'), sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, ja: q('.age__btn--ja').textContent.trim(), nein: q('[data-age="nein"]').textContent.trim() }; })())`));
       const alpha = +(g.dim.match(/[\d.]+/g)[3] ?? 1);
       if (phone) {
@@ -1025,7 +1022,7 @@ async function alter() {
         check(`alter ${name}: Karte mittig (Abweichung ${g.cx}/${g.cy} px), ${g.w} px breit (≤ 420), ${g.h} px hoch, abgerundet (${g.radius}), feiner goldener Rand (${g.rw} ${g.rand}), beiger Hintergrund (${g.bg})`,
           Math.abs(g.cx) <= 1 && Math.abs(g.cy) <= 2 && g.w <= 420 && g.w >= 380 && parseFloat(g.radius) >= 12 && g.rand === 'rgb(184, 145, 58)' && g.bg === 'rgb(247, 244, 236)', JSON.stringify(g));
       }
-      check(`alter ${name}: Seite dahinter sichtbar (Standbild ${g.poster}), abgedunkelt (Deckkraft ${alpha}) und weichgezeichnet („${g.blur}“), keine Ranken mehr, kein horizontaler Scroll`, g.poster === 'visible' && alpha > 0.2 && alpha < 0.7 && /blur/.test(g.blur || '') && !g.vine && g.sw === g.cw, JSON.stringify({ alpha, blur: g.blur }));
+      check(`alter ${name}: Seite dahinter sichtbar (Standbild ${g.poster}, Bildfolge ${g.cv}), abgedunkelt (Deckkraft ${alpha}) und weichgezeichnet („${g.blur}“), keine Ranken mehr, kein horizontaler Scroll`, (g.poster === 'visible' || g.cv === 'visible') && alpha > 0.2 && alpha < 0.7 && /blur/.test(g.blur || '') && !g.vine && g.sw === g.cw, JSON.stringify({ alpha, blur: g.blur }));
       check(`alter ${name}: Schrift mindestens 15 px (kleinste ${g.min} px), Schaltflächen mindestens 44 px hoch (${g.btn.join('/')} px), „${g.ja}“ und „${g.nein}“`, g.min >= 15 && g.btn.every((h) => h >= 44) && g.ja === 'Ja, ich bin 16' && g.nein === 'Nein', JSON.stringify({ min: g.min, btn: g.btn }));
       // Funktion: Seite gesperrt, Fokus in der Abfrage, Tab bleibt drin, Escape schließt nicht, Gesten ignoriert
       const innen = async () => b.js(`!!document.activeElement.closest('#altersabfrage')`);
