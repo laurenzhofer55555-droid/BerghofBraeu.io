@@ -183,7 +183,6 @@
     .painting__bild { position: relative; container-type: inline-size; }
     .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
     .painting__herde { display: none; }
-    .etikett { display: none; }                  /* Etikett trifft Gemälde (css/style.css, js/etikett.js) */
     @media (max-width: 767px) {
       .hero { --g2: 28px; }
       .hero__lead { font-size: clamp(17px, calc(17px + (100svh - 667px) * .0108), 19px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
@@ -308,12 +307,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=b2823633" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=b2823633" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=b2823633" /></noscript>
+  <link rel="preload" href="css/style.css?v=3422bb7f" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=3422bb7f" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=3422bb7f" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=b2823633"></script>
+  <script type="module" src="js/main.js?v=3422bb7f"></script>
 </head>
 <body>
 
@@ -426,24 +425,8 @@
               <img class="sheep" style="--x:120;--y:-4;--k:9.5;--f:-1" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="130px" width="224" height="160" decoding="async" alt="" />
               <img class="sheep" style="--x:130;--y:-14;--k:12.5" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="130px" width="124" height="153" decoding="async" alt="" />
               </div>
-              <!-- Etikett trifft Gemälde (Desktop ab 1300 px): die Flasche steht klein rechts unterhalb, eine feine goldene Linie führt vom Bauchetikett zum Gemälde (zeichnet sich beim ersten Erscheinen, js/etikett.js) -->
-              <div class="etikett etikett--seite" data-etikett>
-                <svg class="etikett__linie" viewBox="100 0 62 80" aria-hidden="true" focusable="false"><path class="etikett__pfad" pathLength="1" d="M145.6 63H143Q141.5 63 141.5 61.5V47Q141.5 45.5 140 45.5H100.4"/></svg>
-                <i class="etikett__raute" aria-hidden="true"></i>
-                <span class="etikett__text" aria-hidden="true">Das Motiv unseres Etiketts</span>
-                <img class="etikett__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="150px" width="426" height="159" loading="lazy" decoding="async" alt="" />
-                <img class="etikett__flasche" src="assets/img/flasche-360.webp" srcset="assets/img/flasche-180.webp 180w, assets/img/flasche-360.webp 360w, assets/img/flasche-540.webp 540w" sizes="90px" width="360" height="1165" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell: das Gemälde ist das Motiv ihres Etiketts" />
-              </div>
             </div>
             <figcaption>Gemälde von J. Stallhofer (1978), das Motiv des Etiketts.</figcaption>
-            <!-- Etikett trifft Gemälde (Handy, Tablet, kleine Fenster): die Flasche steht klein und mittig unter dem Gemälde, die Linie führt vom Bauchetikett nach oben zum Gemälde -->
-            <div class="etikett etikett--unten" data-etikett>
-              <svg class="etikett__linie" viewBox="0 0 100 54" aria-hidden="true" focusable="false"><path class="etikett__pfad" pathLength="1" d="M42.1 36.9H30Q28 36.9 28 34.9V0.6"/></svg>
-              <i class="etikett__raute" aria-hidden="true"></i>
-              <span class="etikett__text" aria-hidden="true">Das Motiv unseres Etiketts</span>
-              <img class="etikett__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="150px" width="426" height="159" loading="lazy" decoding="async" alt="" />
-              <img class="etikett__flasche" src="assets/img/flasche-360.webp" srcset="assets/img/flasche-180.webp 180w, assets/img/flasche-360.webp 360w, assets/img/flasche-540.webp 540w" sizes="110px" width="360" height="1165" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell: das Gemälde ist das Motiv ihres Etiketts" />
-            </div>
           </figure>
         </div>
 

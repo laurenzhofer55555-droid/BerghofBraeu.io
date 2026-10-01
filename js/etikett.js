@@ -1,4 +1,4 @@
-// Etikett trifft Gemälde: die goldene Linie von der Flasche zum Gemälde zeichnet sich beim ersten Erscheinen (CSS stroke-dashoffset, .ist-da je Gruppe).
+// Goldene Linien der Zutaten-Bühne (Hopfen, Malz, Wasser um die Flasche): sie zeichnen sich beim ersten Erscheinen (CSS stroke-dashoffset, .ist-da je Gruppe).
 // „Erscheinen“ heißt: das Intro ist vorbei (html.frei) und die Gruppe ist zu mindestens 35 % im Bild. Bei „Bewegung reduzieren“ (und ohne IntersectionObserver)
 // bleibt alles ohne Animation sichtbar (das CSS versteckt erst, wenn html.etikett-an gesetzt ist).
 const gruppen = document.querySelectorAll('[data-etikett]');
