@@ -328,10 +328,16 @@ async function titel() {
       const zeichen = Math.round(l.w / (l.fs * 0.5));          // grob: Breite / halbe Schriftgröße = Zeichen je Zeile
       check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, sonst ≈ 60 Zeichen)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein geschichtsträchtiges Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : 74), `${zeichen} Zeichen`);
       const lay = JSON.parse(await b.js(`JSON.stringify((() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }; const i = document.querySelector('.painting img');
-        return { lead: R(document.querySelector('.hero__lead')), bild: R(document.querySelector('.painting')), img: { ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 30 }, vw: innerWidth, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; })())`));
+        return { lead: R(document.querySelector('.hero__lead')), bild: R(document.querySelector('.painting')), disp: getComputedStyle(document.querySelector('.painting')).display, img: { ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 30, ohneQuelle: !i.getAttribute('src') }, vw: innerWidth, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; })())`));
       const breit = view.w >= 768;
-      check(`titel ${name}: Gemälde ${breit ? 'neben' : 'unter'} dem Text (${breit ? 'zwei Spalten' : 'untereinander'}), geladen, mit Beschreibung, kein horizontaler Scroll`,
-        lay.img.ok && lay.img.alt && lay.sw === lay.cw && (breit ? (lay.bild.l >= lay.lead.r + 16 && lay.bild.t < lay.lead.b && lay.bild.b > lay.lead.t) : (lay.bild.t >= lay.lead.b + 8 && lay.bild.r <= lay.vw)), JSON.stringify({ lead: [lay.lead.l, lay.lead.r, lay.lead.t, lay.lead.b].map(Math.round), bild: [lay.bild.l, lay.bild.r, lay.bild.t, lay.bild.b].map(Math.round) }));
+      if (breit) {
+        check(`titel ${name}: Gemälde neben dem Text (zwei Spalten), geladen, mit Beschreibung, kein horizontaler Scroll`,
+          lay.img.ok && lay.img.alt && lay.sw === lay.cw && lay.bild.l >= lay.lead.r + 16 && lay.bild.t < lay.lead.b && lay.bild.b > lay.lead.t, JSON.stringify({ lead: [lay.lead.l, lay.lead.r, lay.lead.t, lay.lead.b].map(Math.round), bild: [lay.bild.l, lay.bild.r, lay.bild.t, lay.bild.b].map(Math.round) }));
+      } else {
+        const H = JSON.parse(await b.js(`JSON.stringify([...document.querySelectorAll('.herd .sheep')].filter((e) => getComputedStyle(e).display !== 'none').map((e) => { const x = e.getBoundingClientRect(); return [Math.round(x.top), Math.round(x.bottom), Math.round(x.left), Math.round(x.right)]; }))`));
+        check(`titel ${name}: Handy ohne Gemälde (nicht angezeigt, nicht geladen), kein horizontaler Scroll`, lay.disp === 'none' && lay.img.ohneQuelle && lay.sw === lay.cw, JSON.stringify({ disp: lay.disp, ohneQuelle: lay.img.ohneQuelle }));
+        check(`titel ${name}: Herde (${H.length} Schafe) im ersten Bildschirm`, H.length === 5 && H.every(([t, bo, le, ri]) => bo <= r.vh + 1 && t >= 0), JSON.stringify(H.slice(0, 2)));
+      }
       // Flüssigkeit: Titelposition während Geste 2
       const S = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.P < 2 && x.z !== 'C');
       let auf = 0, maxStep = 0, dy = 0;
@@ -355,48 +361,68 @@ async function titel() {
   }
 }
 
-// Mini-Herde: einzeln freigestellte Schafe als kleines Zierelement über dem Titel (Handy 5, sonst 7), fliegt mit dem Titel nach oben, kein Text überdeckt
+// Schafe: Handy = fünf einzeln freigestellte Schafe unten auf dem Hintergrund (nacheinander eingeblendet, ohne Gemälde);
+// Tablet und Desktop = vier kleine Schafe links und rechts neben dem Titel (gleiten mit ihm, kein eigenes Einblenden), dazu das Gemälde neben dem Text
 async function herde() {
   for (const [name, view] of Object.entries(GERAETE)) {
     const b = await browser({ view });
+    const breit = view.w >= 768;
     try {
       await start(b, view);
-      const A = JSON.parse(await b.js(`JSON.stringify({ op: +getComputedStyle(document.querySelector('.flock')).opacity })`));
+      const A = JSON.parse(await b.js(`JSON.stringify({ op: +getComputedStyle(document.querySelector('.flock')).opacity, flockAnzeige: getComputedStyle(document.querySelector('.flock')).display })`));
+      const Dz = () => b.js(`JSON.stringify((() => { const t = document.querySelector('.hero__title').getBoundingClientRect(), a = document.querySelector('.flock .sheep--a').getBoundingClientRect(); return { op: +getComputedStyle(document.querySelector('.flock')).opacity, d: Math.round(t.top - a.top) }; })())`);
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(1200);
-      const Bz = JSON.parse(await b.js(`JSON.stringify((() => { const t = document.querySelector('.hero__title').getBoundingClientRect(), f = document.querySelector('.flock').getBoundingClientRect(); return { op: +getComputedStyle(document.querySelector('.flock')).opacity, d: Math.round(t.top - f.top) }; })())`));
+      const Bz = JSON.parse(await Dz());
       await gesture(b, 1); await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(1200);
+      const Cz = JSON.parse(await Dz());
+      const t = await b.js(textRects);
       const info = JSON.parse(await b.js(`JSON.stringify((() => {
-        const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
-        const G = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); return R(rg); };
-        const all = [...document.querySelectorAll('.flock .sheep')], sheep = all.filter((e) => getComputedStyle(e).display !== 'none'), M = 16;
-        const brand = R(document.querySelector('.site-header__brand span')), titel = R(document.querySelector('.hero__title')), claim = G('.hero__claim'), fl = R(document.querySelector('.flock'));
-        const hoch = sheep.map((e) => e.getBoundingClientRect().height);
-        return { n: sheep.length, alle: all.length, hMax: Math.max(...hoch), hMin: Math.min(...hoch), ueber: fl.t >= titel.b + 4 && fl.b <= claim.t, kopf: fl.t >= brand.b + 8, breite: Math.round(fl.r - fl.l), mitte: Math.abs((fl.l + fl.r) / 2 - innerWidth / 2) < 4, d: Math.round(titel.t - fl.t),
-          geladen: sheep.every((e) => e.complete && e.naturalWidth > 0), attr: all.every((e) => e.getAttribute('alt') === '' && e.width > 0 && e.height > 0 && e.getAttribute('srcset')), gruppe: document.querySelector('.flock').getAttribute('role') === 'img' && document.querySelector('.flock').getAttribute('aria-label').length > 20,
-          anim: sheep.map((e) => getComputedStyle(e).animationName).filter((x) => x !== 'none').length, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
+        const M = 16, R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+        const T = ${JSON.stringify(t)}; const texts = [['Titel', T.titel], ['Untertitel', T.claim], ['Einleitung', T.lead]];
+        const sicht = (e) => getComputedStyle(e).display !== 'none';
+        const herd = [...document.querySelectorAll('.herd .sheep')], flock = [...document.querySelectorAll('.flock .sheep')];
+        const mine = ${breit} ? flock : herd, sheep = mine.filter((e) => getComputedStyle(e.parentElement).display !== 'none'), bad = [];
+        for (const e of sheep) { const r = R(e); for (const [n, x] of texts) if (!(r.b + (${breit} ? 6 : M) <= x.t || r.t >= x.b + (${breit} ? 6 : M) || r.r + (${breit} ? 6 : M) <= x.l || r.l >= x.r + (${breit} ? 6 : M))) bad.push(e.className.replace(/sheep\\s*(sheep--)?/, '') + ' × ' + n); }
+        const gr = document.querySelector(${breit} ? '.flock' : '.herd');
+        const dauer = sheep.map((e) => { const c = getComputedStyle(e); return c.animationName === 'none' ? 0 : parseFloat(c.animationDelay) + parseFloat(c.animationDuration); });
+        const links = sheep.filter((e) => R(e).r <= (T.titel.l + T.titel.r) / 2), rechts = sheep.filter((e) => R(e).l >= (T.titel.l + T.titel.r) / 2);
+        const hoch = sheep.map((e) => R(e).b - R(e).t);
+        return { n: sheep.length, bad, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
+          geladen: sheep.every((e) => e.complete && e.naturalWidth > 0), attr: mine.every((e) => e.getAttribute('alt') === '' && e.width > 0 && e.height > 0 && (e.getAttribute('srcset') || e.dataset.srcset)),
+          gruppe: gr.getAttribute('role') === 'img' && gr.getAttribute('aria-label').length > 20, dauer: Math.max(0, ...dauer), name: getComputedStyle(sheep[0]).animationName,
+          links: links.length, rechts: rechts.length, innen: sheep.every((e) => R(e).l >= 0 && R(e).r <= innerWidth), hMin: Math.min(...hoch), hMax: Math.max(...hoch),
+          andere: { anzeige: getComputedStyle(${breit} ? document.querySelector('.herd') : document.querySelector('.flock')).display, geladen: (${breit} ? herd : flock).filter((e) => !e.dataset.src).length },
           farben: { weiss: sheep.filter((e) => /lamm|hell|grast/.test(e.src)).length, braun: sheep.filter((e) => /braun|kalb|gefleckt/.test(e.src)).length } }; })())`));
-      const soll = view.w < 768 ? 5 : 7;
-      check(`herde ${name}: ${info.n} Schafe als Mini-Element auf der Zierlinie (Soll ${soll}), weiß und braun gemischt (${info.farben.weiss} / ${info.farben.braun}), ${Math.round(info.hMin)}–${Math.round(info.hMax)} px hoch, ${info.breite} px breit`, info.n === soll && info.farben.weiss >= 2 && info.farben.braun >= 2 && info.hMax <= 36 && info.hMin >= 8 && info.breite >= 158 && info.breite <= 242, JSON.stringify(info.farben));
-      check(`herde ${name}: stehen mittig auf der Zierlinie zwischen Titel und Untertitel (berühren keinen Text), unter der Kopfzeile, kein horizontaler Scroll`, info.ueber && info.kopf && info.mitte && info.sw === info.cw, JSON.stringify({ ueber: info.ueber, kopf: info.kopf, mitte: info.mitte }));
-      check(`herde ${name}: nicht in A sichtbar (Deckkraft ${A.op}), in B sichtbar (${Bz.op}), fliegen mit dem Titel (Abstand zum Titel in B ${Bz.d} px, in C ${info.d} px)`, A.op === 0 && Bz.op === 1 && Math.abs(Bz.d - info.d) <= 1);
-      check(`herde ${name}: dieselbe Bewegung wie der Text, kein eigenes Einblenden („sonst ist es zu viel“)`, info.anim === 0);
-      check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe && info.alle === 7);
+      const soll = breit ? 4 : 5;
+      check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 1 && info.farben.braun >= 1 && info.hMin >= 12, JSON.stringify(info.farben));
+      check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel oder Text (am Handy stehen zwei absichtlich am Rand und ragen etwas hinaus), kein horizontaler Scroll`, info.bad.length === 0 && (!breit || info.innen) && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
+      check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe);
+      check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
+      if (breit) {
+        check(`herde ${name}: zwei links und zwei rechts neben dem Titel (${info.links} / ${info.rechts}), ${Math.round(info.hMin)}–${Math.round(info.hMax)} px hoch`, info.links === 2 && info.rechts === 2 && info.hMax <= 100);
+        check(`herde ${name}: nicht in A sichtbar (Deckkraft ${A.op}), in B sichtbar (${Bz.op}), gleiten mit dem Titel (Abstand zum Titel in B ${Bz.d} px, in C ${Cz.d} px), kein eigenes Einblenden`, A.op === 0 && Bz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1 && info.name === 'none', JSON.stringify({ name: info.name }));
+      } else {
+        check(`herde ${name}: Einblenden nacheinander, insgesamt höchstens 0,8 s (${info.dauer.toFixed(2)} s)`, info.dauer <= 0.801 && info.dauer > 0 && info.name === 'schaf-ein', `${info.name}`);
+      }
       check(`herde ${name}: keine externen Anfragen, keine Fehler, CLS 0`, b.external.length === 0 && b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.external[0] || b.errors[0] || '');
     } finally { b.close(); }
   }
-  // „Bewegung reduzieren“ und Neuladen in C: Mini-Herde und Gemälde sofort da
-  for (const reduced of [true, false]) {
-    const view = GERAETE['desktop-1440'];
-    const b = await browser({ view, reducedMotion: reduced });
-    try {
-      await setView(b, view);
-      if (!reduced) { await b.send('Page.navigate', { url: BASE }); await waitReady(b); await b.js('window.__sequenz.skip()'); await sleep(600); await b.js('window.scrollTo(0, 700)'); await sleep(400); await b.send('Page.reload'); }
-      else await b.send('Page.navigate', { url: BASE });
-      await sleep(3500);
-      if (!reduced) await b.js('window.scrollTo(0, 0)');
-      const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('.flock .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && e.complete && e.naturalWidth > 0; }).length, op: +getComputedStyle(document.querySelector('.flock')).opacity, bild: (() => { const i = document.querySelector('.painting img'); return i.complete && i.naturalWidth > 0; })() })`));
-      check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'}: alle 7 Schafe und das Gemälde sofort sichtbar`, r.n === 7 && r.bild && r.op === 1, JSON.stringify(r));
-    } finally { b.close(); }
+  // „Bewegung reduzieren“ und Neuladen in C: Schafe (und am Tablet/Desktop das Gemälde) sofort da, ohne Einblenden
+  for (const [vn, breit] of [['desktop-1440', true], ['iphone15', false]]) {
+    for (const reduced of [true, false]) {
+      const view = GERAETE[vn];
+      const b = await browser({ view, reducedMotion: reduced });
+      try {
+        await setView(b, view);
+        if (!reduced) { await b.send('Page.navigate', { url: BASE }); await waitReady(b); await b.js('window.__sequenz.skip()'); await sleep(600); await b.js('window.scrollTo(0, 700)'); await sleep(400); await b.send('Page.reload'); }
+        else await b.send('Page.navigate', { url: BASE });
+        await sleep(3500);
+        if (!reduced) await b.js('window.scrollTo(0, 0)');
+        const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
+          an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return ${breit} ? i.complete && i.naturalWidth > 0 : !i.getAttribute('src'); })() })`));
+        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 4 Schafe und das Gemälde' : 'alle 5 Schafe, kein Gemälde'} sofort sichtbar, ohne Einblenden`, r.n === (breit ? 4 : 5) && !r.an && r.bild, JSON.stringify(r));
+      } finally { b.close(); }
+    }
   }
 }
 
@@ -520,7 +546,7 @@ async function replay() {
       check(`replay ${name}: Geste 2 → C`, await waitZustand(b, 'C', 12000) && await idle(b, 12000));
       await sleep(800);
       const r = JSON.parse(await b.js(`JSON.stringify({ aktiv: window.__sequenz.aktiv, sp: window.__sequenz.speicher, ov: getComputedStyle(document.documentElement).overflow, herde: document.documentElement.classList.contains('herde-an') })`));
-      check(`replay ${name}: danach wieder einmalig (Listener weg, Speicher frei, Seite frei)`, r.aktiv === false && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.ov !== 'hidden');
+      check(`replay ${name}: danach wieder einmalig (Listener weg, Speicher frei, Seite frei, Herde erscheint erneut)`, r.aktiv === false && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.ov !== 'hidden' && r.herde);
       check(`replay ${name}: nie ein leeres Canvas, keine Fehler`, (await b.js('window.__blank')) === 0 && b.errors.length === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
