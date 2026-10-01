@@ -36,7 +36,7 @@
   --green: #1F4D2B;
   --green-soft: #46644B;   /* Nebentext – Kontrast ≥ 4,5:1 auf Creme */
   --gold: #A3AAB1;         /* nur für Linien und Ornamente */
-  --gold-beer: #D2D3D3;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
+  --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #5B636B;    /* Gold für kleine Schrift – gut lesbar */
   --ink: #22301f;
   --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
@@ -245,7 +245,7 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }
 .beer__foam { fill: #FFFFFF; }
-.beer__edge { fill: none; stroke: #B9BCC0; stroke-width: 2; stroke-linejoin: round; }
+.beer__edge { fill: none; stroke: #D8C9A4; stroke-width: 2; stroke-linejoin: round; }
 .beer__bubbles { position: absolute; left: 0; right: 0; top: 260px; bottom: 0; overflow: hidden; }
 .beer__bubbles i {
   position: absolute; bottom: -12px;

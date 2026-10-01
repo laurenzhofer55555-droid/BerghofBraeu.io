@@ -228,7 +228,7 @@ function createCap(loader, plain = false) {
   // schlichter goldener Kronkorken ohne Aufdruck (Scroll-Sequenz)
   if (plain) {
     topMat.color.set(c.color);
-    topMat.roughness = 0.62;          // matt gebürstetes Silber statt Spiegelung der Softbox
+    topMat.roughness = 0.34;          // etwas matter → sattes Gold statt Spiegelung der Softbox
     topMat.envMapIntensity = 1.1;
     return group;
   }

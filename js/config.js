@@ -8,7 +8,7 @@ export const CONFIG = {
   colors: {
     background: '#F7F4EC', // Creme – identisch mit CSS, damit Canvas und Seite nahtlos sind
     green: '#1F4D2B',      // Tannengrün (Druck auf dem Kronkorken)
-    gold: '#A3AAB1',
+    gold: '#B8913A',
   },
 
   // Achtung: Kamera-Änderungen verschieben die Flasche → Standbilder (assets/img/flasche-berghof-hell*.webp)
@@ -49,7 +49,7 @@ export const CONFIG = {
   },
 
   cap: {
-    color: '#C8CCD0',        // Silber
+    color: '#C9A24C',        // Gold
     roughness: 0.3,
     printColor: '#1F4D2B',   // Aufdruck in Tannengrün
   },
