@@ -12,7 +12,9 @@
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://berghof-hell.de/" />
   <meta name="theme-color" content="#F7F4EC" />
-  <link rel="icon" href="data:," />      <!-- kein Tab-Symbol (leer, verhindert die automatische Anfrage nach /favicon.ico) -->
+  <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+  <link rel="icon" href="assets/img/favicon-96.png?v=2" sizes="96x96" type="image/png" />
+  <link rel="icon" href="assets/img/favicon-32.png?v=2" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="manifest" href="site.webmanifest" />
 
@@ -210,7 +212,6 @@
     .age__vine { position: absolute; top: 50%; left: clamp(6px, 7vw, 120px); height: min(72vh, 540px); width: auto; transform: translateY(-50%); }
     .age__vine--right { left: auto; right: clamp(6px, 7vw, 120px); transform: translateY(-50%) scaleX(-1); }
     .age__card { position: relative; max-width: 30rem; }
-    .age__logo { display: block; width: 168px; height: auto; margin: 0 auto 18px; opacity: .9; }
     .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4.4vw, 46px); line-height: 1.15; color: var(--green); }
     .age__title::after { content: ''; display: block; width: 180px; height: 12px; margin: 22px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
@@ -313,7 +314,6 @@
       <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
     </svg>
     <div class="age__card">
-      <img class="age__logo" src="assets/img/logo-192.webp" srcset="assets/img/logo-192.webp 1x, assets/img/logo-384.webp 2x" width="192" height="155" alt="Logo Berghof Hell" />
       <div class="age__ask">
         <h2 class="age__title" id="age-title">Bist du 16 Jahre oder älter?</h2>
         <div class="age__actions">
