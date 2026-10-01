@@ -48,7 +48,7 @@ const WHEEL_WINDOW = 50, WHEEL_MIN = 30, WHEEL_TOTAL = 120;   // Summe über 50 
 const TOUCH_MIN = 40;         // px senkrecht
 const LOAD_TIMEOUT = 30000;   // ms: dauert das Laden so lange, springt Geste 1 direkt zum Inhalt
 const AHEAD = 22, BEHIND = 6; // dekodierte Bilder um die Position (Speicher am Handy schonen)
-const GOLD = '#C5A149', GOLD_RGB = '197,161,73';   // = --gold-beer
+const GOLD = '#D2D3D3', GOLD_RGB = '210,211,211';   // = --gold-beer
 
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const ramp = (g, a, b) => clamp01((g - a) / (b - a));         // 0 vor a, 1 nach b, dazwischen linear

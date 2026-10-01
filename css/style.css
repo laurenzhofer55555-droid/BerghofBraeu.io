@@ -35,14 +35,14 @@
   --cream-deep: #EFEADD;
   --green: #1F4D2B;
   --green-soft: #46644B;   /* Nebentext – Kontrast ≥ 4,5:1 auf Creme */
-  --gold: #B8913A;         /* nur für Linien und Ornamente */
-  --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
-  --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
+  --gold: #A3AAB1;         /* nur für Linien und Ornamente */
+  --gold-beer: #D2D3D3;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
+  --gold-text: #5B636B;    /* Gold für kleine Schrift – gut lesbar */
   --ink: #22301f;
   --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
   --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
-  --ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E");
+  --ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23A3AAB1'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23A3AAB1' stroke='none'/%3E%3C/svg%3E");
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -245,7 +245,7 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
 .beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
 .beer__gold { fill: var(--gold-beer); }
 .beer__foam { fill: #FFFFFF; }
-.beer__edge { fill: none; stroke: #D8C9A4; stroke-width: 2; stroke-linejoin: round; }
+.beer__edge { fill: none; stroke: #B9BCC0; stroke-width: 2; stroke-linejoin: round; }
 .beer__bubbles { position: absolute; left: 0; right: 0; top: 260px; bottom: 0; overflow: hidden; }
 .beer__bubbles i {
   position: absolute; bottom: -12px;
@@ -294,7 +294,7 @@ html:not(.seq) .frame { bottom: auto; height: calc(100svh - 2 * var(--frame-inse
   background: var(--cream);           /* deckt die fixierte Sequenz ab */
   padding: clamp(80px, 13vh, 150px) 24px;
 }
-.section + .section { border-top: 1px solid rgba(184, 145, 58, .35); }
+.section + .section { border-top: 1px solid rgba(163, 170, 177, .35); }
 .section__inner { max-width: 1080px; margin: 0 auto; }
 .section__head { max-width: 680px; margin: 0 auto clamp(44px, 7vh, 72px); text-align: center; }
 .eyebrow {
@@ -339,7 +339,7 @@ h3 {
   border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold);
 }
 .facts div { padding: 18px 16px; text-align: center; }
-.facts div + div { border-left: 1px solid rgba(184, 145, 58, .45); }
+.facts div + div { border-left: 1px solid rgba(163, 170, 177, .45); }
 .facts dt {
   font-size: 12px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase;
   color: var(--gold-text); margin-bottom: 4px;
@@ -449,7 +449,7 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   .location { grid-template-columns: 1fr; }
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .facts div:nth-child(3) { border-left: 0; }
-  .facts div:nth-child(n + 3) { border-top: 1px solid rgba(184, 145, 58, .45); }
+  .facts div:nth-child(n + 3) { border-top: 1px solid rgba(163, 170, 177, .45); }
 }
 @media (max-width: 767px) {
   body { font-size: 17px; }

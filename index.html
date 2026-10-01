@@ -113,7 +113,7 @@
     @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
     @font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
     @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
-    :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #46644B; --gold: #B8913A; --ink: #22301f;
+    :root { --cream: #F7F4EC; --gold-beer: #D2D3D3; --green: #1F4D2B; --green-soft: #46644B; --gold: #A3AAB1; --ink: #22301f;
       --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); }
     *, *::before, *::after { box-sizing: border-box; }
@@ -129,7 +129,7 @@
     /* Überspringen: nur mit Tastatur sichtbar (Fokus), springt direkt zum Inhalt */
     .skip { position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px; background: var(--green); color: var(--cream);
       font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transform: translateY(-300%); }
-    .skip:focus-visible { transform: none; outline: 2px solid #7A5C1C; outline-offset: 3px; }
+    .skip:focus-visible { transform: none; outline: 2px solid #5B636B; outline-offset: 3px; }
     html:not(.seq) .skip, .frei .skip { display: none; }
     /* Start: Zustand C (Inhalt) ist das Grundlayout: Titel oben, darunter Einleitung und Bild. In A und B (.seq ohne .frei) ist die Seite genau
        einen Bildschirm hoch und gesperrt; der Titel sitzt dort unten im Bild (um --dy verschoben) und rutscht beim Leeren des Biers nach oben
@@ -212,14 +212,14 @@
     .age__logo { display: block; width: 168px; height: auto; margin: 0 auto 18px; opacity: .9; }
     .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4.4vw, 46px); line-height: 1.15; color: var(--green); }
     .age__title::after { content: ''; display: block; width: 180px; height: 12px; margin: 22px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23A3AAB1'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23A3AAB1' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .age__actions { display: flex; gap: 14px; justify-content: center; margin: clamp(22px, 4vh, 34px) 0 0; }
     .age__btn { min-width: 124px; padding: 13px 30px; border: 1.5px solid var(--green); background: var(--green); color: var(--cream);
       font: 500 14px/1 var(--font-text); letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }
     .age__btn:hover { background: #173b21; }
     .age__btn--no { background: transparent; color: var(--green); }
     .age__btn--no:hover { background: rgba(31, 77, 43, .07); }
-    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #7A5C1C; outline-offset: 3px; }
+    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #5B636B; outline-offset: 3px; }
     .age__note { margin: clamp(20px, 3.5vh, 30px) 0 0; font-size: 14px; line-height: 1.5; color: var(--green-soft); }
     .age__note a { color: var(--green); }
     .age__no { display: none; }
@@ -251,7 +251,7 @@
     .hero__title em { font-style: italic; font-weight: 400; line-height: 0; }
     .hero__claim { display: block; font-size: 14px; line-height: 1.4; letter-spacing: .26em; text-transform: uppercase; color: var(--green-soft); }
     .hero__claim::before { content: ''; display: block; width: clamp(160px, 18vw, 240px); height: 14px; margin: clamp(14px, 2.2vh, 22px) auto;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23A3AAB1'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23A3AAB1' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .section { position: relative; z-index: 2; background: var(--cream); }
     .css-wait main { visibility: hidden; animation: css-wait 0s 3s forwards; } @keyframes css-wait { to { visibility: visible; } }
     @media (max-width: 767px) { body { font-size: 17px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
@@ -288,10 +288,10 @@
       <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
       <path d="M78 322C82 328 86 332 86 338"/>
       <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
-      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M81 347H91M80 354H92" stroke="#A3AAB1" stroke-width=".9"/>
       <path d="M40 196C38 202 36 206 36 212"/>
       <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
-      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M31 221H41M30 228H42" stroke="#A3AAB1" stroke-width=".9"/>
     </svg>
     <svg class="age__vine age__vine--right" viewBox="0 0 120 460" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M62 452C30 410 92 360 60 310C30 262 30 222 62 182C92 144 84 96 58 58C46 40 50 20 64 8"/>
@@ -306,10 +306,10 @@
       <path d="M64 124L36 124M50 124L42 117M52 127L45 134" stroke-width=".9"/>
       <path d="M78 322C82 328 86 332 86 338"/>
       <path d="M86 338C79 343 78 354 86 363C94 354 93 343 86 338Z" fill="#F7F4EC"/>
-      <path d="M81 347H91M80 354H92" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M81 347H91M80 354H92" stroke="#A3AAB1" stroke-width=".9"/>
       <path d="M40 196C38 202 36 206 36 212"/>
       <path d="M36 212C29 217 28 228 36 237C44 228 43 217 36 212Z" fill="#F7F4EC"/>
-      <path d="M31 221H41M30 228H42" stroke="#B8913A" stroke-width=".9"/>
+      <path d="M31 221H41M30 228H42" stroke="#A3AAB1" stroke-width=".9"/>
     </svg>
     <div class="age__card">
       <img class="age__logo" src="assets/img/logo-192.webp" srcset="assets/img/logo-192.webp 1x, assets/img/logo-384.webp 2x" width="192" height="155" alt="Logo Berghof Hell" />
@@ -436,34 +436,34 @@
             <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M86 21C97 7 122 5 137 16C126 29 101 33 86 21Z" fill="#F7F4EC"/>
             <path d="M86 21C103 18 121 16 137 16M101 19.5l5-7M101 19.5l6 6M116 17.5l5-8M116 17.5l6 7" stroke-width="1"/>
-            <path d="M81 31C72 26 61 28 57 37C53 46 60 54 68 51C75 48 74 40 68 40C64 40 63 45 66 46" stroke="#B8913A" stroke-width="1.1"/>
+            <path d="M81 31C72 26 61 28 57 37C53 46 60 54 68 51C75 48 74 40 68 40C64 40 63 45 66 46" stroke="#A3AAB1" stroke-width="1.1"/>
             <path d="M80 42C80 32 82 23 88 13"/>
             <path d="M71.0 120.0C71.0 132.1 76.8 140.5 80.0 142.0C83.2 140.5 89.0 132.1 89.0 120.0" fill="#F7F4EC"/>
-            <path d="M80 133.2V138.5" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M80 133.2V138.5" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M58.0 106.0C58.0 119.2 65.2 128.3 69.0 130.0C72.8 128.3 80.0 119.2 80.0 106.0" fill="#F7F4EC"/>
             <path d="M80.0 106.0C80.0 119.2 87.2 128.3 91.0 130.0C94.8 128.3 102.0 119.2 102.0 106.0" fill="#F7F4EC"/>
-            <path d="M91 120.4V126.2" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M91 120.4V126.2" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M48.0 92.0C48.0 105.8 55.8 115.2 60.0 117.0C64.2 115.2 72.0 105.8 72.0 92.0" fill="#F7F4EC"/>
-            <path d="M60 107.0V113.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M60 107.0V113.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M68.0 92.0C68.0 105.8 75.8 115.2 80.0 117.0C84.2 115.2 92.0 105.8 92.0 92.0" fill="#F7F4EC"/>
             <path d="M88.0 92.0C88.0 105.8 95.8 115.2 100.0 117.0C104.2 115.2 112.0 105.8 112.0 92.0" fill="#F7F4EC"/>
-            <path d="M100 107.0V113.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M100 107.0V113.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M43.5 78.0C43.5 91.8 51.6 101.2 56.0 103.0C60.4 101.2 68.5 91.8 68.5 78.0" fill="#F7F4EC"/>
             <path d="M59.5 78.0C59.5 91.8 67.6 101.2 72.0 103.0C76.4 101.2 84.5 91.8 84.5 78.0" fill="#F7F4EC"/>
-            <path d="M72 93.0V99.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M72 93.0V99.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M75.5 78.0C75.5 91.8 83.6 101.2 88.0 103.0C92.4 101.2 100.5 91.8 100.5 78.0" fill="#F7F4EC"/>
             <path d="M91.5 78.0C91.5 91.8 99.6 101.2 104.0 103.0C108.4 101.2 116.5 91.8 116.5 78.0" fill="#F7F4EC"/>
-            <path d="M104 93.0V99.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M104 93.0V99.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M47.5 64.0C47.5 77.8 55.6 87.2 60.0 89.0C64.4 87.2 72.5 77.8 72.5 64.0" fill="#F7F4EC"/>
-            <path d="M60 79.0V85.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M60 79.0V85.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M67.5 64.0C67.5 77.8 75.6 87.2 80.0 89.0C84.4 87.2 92.5 77.8 92.5 64.0" fill="#F7F4EC"/>
             <path d="M87.5 64.0C87.5 77.8 95.6 87.2 100.0 89.0C104.4 87.2 112.5 77.8 112.5 64.0" fill="#F7F4EC"/>
-            <path d="M100 79.0V85.0" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M100 79.0V85.0" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M56.5 51.0C56.5 63.6 64.0 72.4 68.0 74.0C72.0 72.4 79.5 63.6 79.5 51.0" fill="#F7F4EC"/>
             <path d="M80.5 51.0C80.5 63.6 88.0 72.4 92.0 74.0C96.0 72.4 103.5 63.6 103.5 51.0" fill="#F7F4EC"/>
-            <path d="M92 64.8V70.3" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M92 64.8V70.3" stroke="#A3AAB1" stroke-width="0.9"/>
             <path d="M70.0 40.0C70.0 51.5 76.5 59.5 80.0 61.0C83.5 59.5 90.0 51.5 90.0 40.0" fill="#F7F4EC"/>
-            <path d="M80 52.6V57.6" stroke="#B8913A" stroke-width="0.9"/>
+            <path d="M80 52.6V57.6" stroke="#A3AAB1" stroke-width="0.9"/>
             </svg>
             <h3>Hopfen</h3>
             <p>Hopfen schenkt dem Hellen seine feine, milde Würze und ein frisches Aroma.</p>
@@ -472,19 +472,19 @@
             <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M80 134C71 121 58 110 40 104C56 101 71 108 80 121" fill="#F7F4EC"/>
             <path d="M80 162C80 130 80 96 80.5 40"/>
-            <path d="M68.7 53.6L53.7 25.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 62.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 62.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 47.6L106.3 19.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 56.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 56.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M68.7 66.1L53.7 37.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 74.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 74.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 60.1L106.3 31.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 68.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 68.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M68.7 78.6L53.7 50.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 87.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 87.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 72.6L106.3 44.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 81.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 81.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M68.7 91.1L53.7 62.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 99.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 99.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 85.1L106.3 56.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 93.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 93.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M68.7 103.6L53.7 75.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 112.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 112.0) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 97.6L106.3 69.4" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 106.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 106.0) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M68.7 116.1L53.7 87.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 124.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 124.5) rotate(-28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M91.3 110.1L106.3 81.9" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 118.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 118.5) rotate(28)" stroke="#B8913A" stroke-width="0.7"/>
-            <path d="M80.5 34.5L80.5 -1.5" stroke="#B8913A" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(80.5 44) rotate(0)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(80.5 44) rotate(0)" stroke="#B8913A" stroke-width="0.7"/>
+            <path d="M68.7 53.6L53.7 25.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 62.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 62.0) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 47.6L106.3 19.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 56.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 56.0) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M68.7 66.1L53.7 37.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 74.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 74.5) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 60.1L106.3 31.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 68.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 68.5) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M68.7 78.6L53.7 50.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 87.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 87.0) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 72.6L106.3 44.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 81.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 81.0) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M68.7 91.1L53.7 62.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 99.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 99.5) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 85.1L106.3 56.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 93.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 93.5) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M68.7 103.6L53.7 75.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 112.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 112.0) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 97.6L106.3 69.4" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 106.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 106.0) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M68.7 116.1L53.7 87.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 124.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(73.2 124.5) rotate(-28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M91.3 110.1L106.3 81.9" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 118.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(86.8 118.5) rotate(28)" stroke="#A3AAB1" stroke-width="0.7"/>
+            <path d="M80.5 34.5L80.5 -1.5" stroke="#A3AAB1" stroke-width="0.9"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(80.5 44) rotate(0)" fill="#F7F4EC"/><path d="M0 -5.23V5.23" transform="translate(80.5 44) rotate(0)" stroke="#A3AAB1" stroke-width="0.7"/>
             </svg>
             <h3>Malz</h3>
             <p>Helles Gerstenmalz gibt dem Bier die goldene Farbe und seinen runden Körper.</p>
@@ -493,10 +493,10 @@
             <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
             <ellipse cx="80" cy="148" rx="54" ry="9" stroke-opacity=".35"/>
             <ellipse cx="80" cy="148" rx="36" ry="6"/>
-            <ellipse cx="80" cy="148" rx="19" ry="3.2" stroke="#B8913A"/>
+            <ellipse cx="80" cy="148" rx="19" ry="3.2" stroke="#A3AAB1"/>
             <path d="M80 16C80 16 49 57 49 84C49 102 63 116 80 116C97 116 111 102 111 84C111 57 80 16 80 16Z" fill="#F7F4EC"/>
-            <path d="M63 87C63 98 70 106 80 107" stroke="#B8913A" stroke-width="1.3"/>
-            <circle cx="67" cy="73" r="2" fill="#B8913A" stroke="none"/>
+            <path d="M63 87C63 98 70 106 80 107" stroke="#A3AAB1" stroke-width="1.3"/>
+            <circle cx="67" cy="73" r="2" fill="#A3AAB1" stroke="none"/>
             </svg>
             <h3>Wasser</h3>
             <p>Weiches, klares Wasser: die Grundlage für ein süffiges bayerisches Helles.</p>
