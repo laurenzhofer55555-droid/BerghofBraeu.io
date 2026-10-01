@@ -38,7 +38,7 @@ if (list && 'IntersectionObserver' in window) {
 
 // Tablet und Desktop: die Timeline steht optisch mittig unter der Überschrift. Die letzte Spalte füllt ihre Breite meist nicht ganz (Zeilenumbruch),
 // dadurch läge der sichtbare Block (1556 … Heute) einige Pixel zu weit links. Hier wird die tatsächliche Schriftbreite gemessen und die Timeline
-// per transform um die halbe Lücke verschoben (höchstens 24 px, nur ab 769 px, ändert kein Layout und keine Seitenhöhe).
+// per transform um die halbe Lücke verschoben (höchstens 40 px, nur ab 769 px, ändert kein Layout und keine Seitenhöhe).
 if (list) {
   const mitte = () => {
     list.style.setProperty('--tl-shift', '0px');
@@ -52,7 +52,7 @@ if (list) {
     }
     if (!isFinite(links)) return;
     const shift = (box.left + box.width / 2) - (links + rechts) / 2;
-    list.style.setProperty('--tl-shift', Math.max(-24, Math.min(24, Math.round(shift))) + 'px');
+    list.style.setProperty('--tl-shift', Math.max(-40, Math.min(40, Math.round(shift))) + 'px');
   };
   mitte();
   window.addEventListener('resize', mitte, { passive: true });
