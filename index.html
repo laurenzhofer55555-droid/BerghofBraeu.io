@@ -123,6 +123,9 @@
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     #sequenz, .poster { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100lvh; }
     #sequenz { display: block; z-index: 0; opacity: 0; }
+    /* Farbstreifen für die Browserleisten (iOS Safari 26, js/sequenz.js erzeugt sie während der Sequenz): sichtbar, deckend und über allem (auch über dem Papierkorn, z-index 50) */
+    .edge { position: fixed; left: 0; right: 0; height: 6px; z-index: 60; }
+    .edge--top { top: 0; } .edge--bottom { bottom: 0; }
     /* Start (A) und Bier (B): Seite gesperrt, ab dem ersten Pixel und ohne JavaScript-Wartezeit; .seq setzt das Head-Skript, .frei hebt die Sperre auf (Zustand C) */
     .seq:not(.frei), .seq:not(.frei) body { overflow: hidden; overscroll-behavior: none; }
     .seq:not(.frei) body { touch-action: none; }
@@ -199,7 +202,7 @@
     @media (prefers-reduced-motion: reduce) { .scroll-cue svg, .wartet .scroll-cue svg { animation: none; } }
     .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
     /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss */
-    .age { display: none; position: fixed; inset: 0; z-index: 40; background: var(--cream); align-items: center; justify-content: center;
+    .age { display: none; position: fixed; inset: 0; z-index: 70; background: var(--cream); align-items: center; justify-content: center;
       padding: 24px; text-align: center; transition: opacity .6s ease; }
     .age-gate, .age-gate body { overflow: hidden; }
     .age-gate .age { display: flex; }
@@ -234,8 +237,8 @@
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
     @media (max-aspect-ratio: 4/5) { .poster picture { top: 14%; height: 72.54%; aspect-ratio: 738 / 2010; } }
     main { position: relative; z-index: 2; }
-    .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
-    .site-header__brand { position: relative; width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
+    .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
+    .site-header__brand { position: relative; z-index: 61; width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
       font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
     .site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
     .frame { position: absolute; inset: var(--frame-inset); border: 1.5px solid var(--green); pointer-events: none; }
@@ -257,12 +260,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=9aaa98d1" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=9aaa98d1" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=9aaa98d1" /></noscript>
+  <link rel="preload" href="css/style.css?v=6cf9368a" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=6cf9368a" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=6cf9368a" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=9aaa98d1"></script>
+  <script type="module" src="js/main.js?v=6cf9368a"></script>
 </head>
 <body>
 

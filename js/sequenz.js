@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=9aaa98d1';
-import { ladeHerde } from './herde.js?v=9aaa98d1';
+import { createBeer } from './bier-leeren.js?v=6cf9368a';
+import { ladeHerde } from './herde.js?v=6cf9368a';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -71,6 +71,7 @@ const el = {
 const beer = createBeer(hero);
 const themeColor = document.querySelector('meta[name="theme-color"]');
 const CREAM = themeColor.content;
+const CREAM_RGB = [247, 244, 236], GOLD_RGB_N = [197, 161, 73];     // #F7F4EC (Papier) und #C5A149 (Bier), exakt wie --cream und --gold-beer
 
 // ── Format (Handy/Desktop) ──────────────────────
 let isPhone = portrait.matches, set, spec, ST, N;
@@ -199,8 +200,33 @@ function put(key, node, prop, value) {                        // schreibt nur, w
   last[key] = value;
   if (prop.startsWith('--')) node.style.setProperty(prop, value); else node.style[prop] = value;
 }
-function setGold(top, page) {
-  if (last.goldTop !== top) { last.goldTop = top; themeColor.content = top ? GOLD : CREAM; }
+// Farben der Browserleisten: Anteil Gold 0 … 1 → Hex (in 1/64-Schritten, schreibt nur bei Änderung).
+// oben = Statusleiste (Safari 26: Streifen .edge--top; Chrome Android und iOS bis 25: theme-color), unten = Leiste unter der Seite (Streifen .edge--bottom).
+const barHex = (gold) => '#' + [0, 1, 2].map((i) => Math.round(CREAM_RGB[i] + (GOLD_RGB_N[i] - CREAM_RGB[i]) * (Math.round(gold * 16) / 16)).toString(16).padStart(2, '0')).join('');
+// iOS Safari 26 ignoriert theme-color und liest die Leistenfarben aus sichtbaren, deckenden, obersten fest positionierten Streifen am oberen bzw. unteren Rand
+// (Körper-Hintergrund wäre für beide Leisten derselbe). Er liest einen Streifen nur beim Erzeugen und merkt sich dessen Farbe: bei jeder neuen Farbe kommt deshalb
+// ein neuer Streifen obenauf, der alte wird danach entfernt. Nur dort (Touch + WebKit), Desktop und Android Chrome (theme-color) bleiben unberührt.
+const stripsOn = window.matchMedia('(hover: none) and (pointer: coarse)').matches && window.CSS?.supports?.('-webkit-touch-callout', 'none');
+const strips = { top: null, bottom: null };
+function paintStrip(side, hex) {
+  if (!stripsOn) return;
+  const e = document.createElement('div');
+  e.className = 'edge edge--' + side;
+  e.setAttribute('aria-hidden', 'true');
+  e.style.backgroundColor = hex;
+  document.body.appendChild(e);
+  const old = strips[side];
+  strips[side] = e;
+  if (old) requestAnimationFrame(() => old.remove());
+}
+function dropStrips() {                                         // in C (normale Seite) fallen die Leisten auf den Seitenhintergrund (beige) zurück
+  for (const side of ['top', 'bottom']) { if (strips[side]) strips[side].remove(); strips[side] = null; }
+  last.barTop = last.barBottom = undefined;
+}
+function setGold(top, bottom, page) {
+  const ct = barHex(top), cb = barHex(bottom);
+  if (last.barTop !== ct) { last.barTop = ct; themeColor.content = ct; paintStrip('top', ct); }
+  if (last.barBottom !== cb) { last.barBottom = cb; paintStrip('bottom', cb); }
   if (last.goldPage !== page) { last.goldPage = page; root.classList.toggle('gold-page', page); }
 }
 // Titel: in C steht er oben (normales Layout), in A und B unten im Bild. textDy ist der Weg dazwischen in px (gemessen);
@@ -266,7 +292,13 @@ function overlays(pv) {
 
   // Seite taucht ins Gold (Hintergrund + Browserfarbe); oben wieder beige, sobald die Schaumkrone ins Bild sinkt, unten erst beim leeren Glas
   const p = levelOf(pv);
-  setGold(g >= 0.7 && p < beer.foamIn(), g >= 0.7 && pv < 1.9);
+  // Statusleiste oben: beige, sobald die Schaumkrone ins Bild kommt (ab da liegt unter ihr nie mehr Gold); Leiste unten: bierfarben, solange unten noch Bier zu sehen ist,
+  // und erst dann weich zu beige, wenn die Oberfläche (mit Wellen) unter dem unteren Bildrand ist. Beides folgt direkt dem Pegel, kein Zeitgeber.
+  const surf = beer.surfaceY(p), L = Math.max(64, innerHeight * 0.075);   // Übergangslänge in px Oberflächenweg (wächst mit dem Bildschirm)
+  const fade = pv <= 1 ? ramp(g, 0.6, 0.8) : null;              // Geste 1: mit der Bierfläche (gleiche Rampe wie .beer) nach Gold
+  const goldTop = fade ?? 1 - ramp(surf, -30, -30 + L);
+  const goldBottom = fade ?? 1 - ramp(surf - 12, innerHeight, innerHeight + L);
+  setGold(goldTop, goldBottom, g >= 0.7 && pv < 1.9);          // Seitenhintergrund (Gummiband, Desktop-Safari-Leisten) wie bisher
 
   const shown = g >= 0.8;                                      // ab hier deckt die Bierfläche alles (Canvas aus)
   beer.level(p, shown);
@@ -367,6 +399,7 @@ function teardown() {
   ready = false; loadStarted = false; loadedCount = 0; shown = null; stale = true; pending = null;
   canvas.style.display = 'none'; canvas.width = 0; canvas.height = 0;
   el.poster.style.visibility = 'hidden';
+  dropStrips();
 }
 const scrollToTop = () => new Promise((ok) => {
   if (window.scrollY < 2) return ok();

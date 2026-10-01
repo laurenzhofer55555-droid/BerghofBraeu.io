@@ -150,5 +150,6 @@ export function createBeer(hero) {
     },
     velocity(v) { scrollV = v; },
     foamIn() { return H ? 70 / (H + foamH + 140) : 0.06; },     // Pegel, ab dem die Schaumkrone oben ins Bild sinkt (Spiegel bei −70 px im Zustand B)
+    surfaceY(p) { return H ? -70 + (H + foamH + 140) * p : -70 + 1000 * p; },   // Lage der mittleren Bieroberfläche (px von oben) beim Pegel p, gleiche Rechnung wie setLevel
   };
 }

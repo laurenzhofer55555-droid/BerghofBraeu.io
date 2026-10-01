@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern
+// Szenarien: gesten, flick, sperre, hinundher, laden, kalt, uebergang, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -738,8 +738,78 @@ async function extern() {
   } finally { b.close(); }
 }
 
+// 15. Browserleisten (Safari 26 am Handy/Tablet: Statusleiste oben, Leiste unten; theme-color für Chrome Android und ältere iOS): folgen dem Bierstand
+//     oben beige, sobald die Schaumkrone kommt; unten bierfarben, solange unten Bier zu sehen ist, danach weich beige. Desktop unverändert.
+const WEBKIT_FAKE = `(() => { const o = CSS.supports.bind(CSS); CSS.supports = (...a) => (a[0] === '-webkit-touch-callout' ? true : o(...a)); })();`;   // Chrome gibt sich als Touch-WebKit aus
+async function leisten() {
+  const gold = (c) => (c ? Math.max(0, Math.min(1, (247 - Number(c.match(/\d+/g)[0])) / 50)) : null);        // 0 beige … 1 Bierfarbe (rot: 247 → 197)
+  const messen = (b) => async (p) => {
+    await b.js(`window.__sequenz.zeige(${p})`); await sleep(380);
+    return JSON.parse(await b.js(`JSON.stringify((() => { const c = (e) => (e ? getComputedStyle(e).backgroundColor : null), t = document.querySelectorAll('.edge--top'), u = document.querySelectorAll('.edge--bottom');
+      const beer = document.querySelector('.beer'), H = beer.clientHeight, foamH = Math.min(100, Math.max(56, H * 0.09));
+      return { top: c(t[0]), bottom: c(u[0]), n: [t.length, u.length], meta: document.querySelector('meta[name=theme-color]').content, page: document.documentElement.classList.contains('gold-page'),
+        surf: -70 + (H + foamH + 140) * Math.max(0, ${p} - 1), vh: innerHeight, root: getComputedStyle(document.documentElement).backgroundColor }; })())`));
+  };
+  for (const [name, view] of Object.entries(GERAETE)) {
+    const touch = !!view.mobile;
+    const b = await browser({ view });
+    try {
+      await b.send('Page.addScriptToEvaluateOnNewDocument', { source: WEBKIT_FAKE });
+      await start(b, view);
+      const M = messen(b);
+      const a = await M(0), B = await M(1), m = await M(1.5), e = await M(1.99);
+      if (touch) {
+        check(`leisten ${name}: A beide Streifen beige, B beide bierfarben (${gold(a.top).toFixed(2)}/${gold(a.bottom).toFixed(2)} → ${gold(B.top).toFixed(2)}/${gold(B.bottom).toFixed(2)}), je ein Streifen oben und unten`,
+          gold(a.top) < 0.05 && gold(a.bottom) < 0.05 && gold(B.top) > 0.95 && gold(B.bottom) > 0.95 && a.n.join() === '1,1' && B.n.join() === '1,1', JSON.stringify({ a, B }));
+        check(`leisten ${name}: bei 50 % Geste 2 oben beige (${gold(m.top).toFixed(2)}), unten bierfarben (${gold(m.bottom).toFixed(2)}); am Ende beide beige`,
+          gold(m.top) < 0.07 && gold(m.bottom) > 0.95 && gold(e.top) < 0.07 && gold(e.bottom) < 0.07, JSON.stringify({ m, e }));
+        // lückenlos: oben nie Gold unter Schaum, unten nie beige, solange unten Bier zu sehen ist, kein Sprung
+        let ok = true, fehler = '', prevT = 1, prevB = 1, maxStep = 0;
+        for (let p = 1; p <= 2.0001; p += 0.02) {
+          const x = await M(+p.toFixed(3)), gt = gold(x.top), gb = gold(x.bottom);
+          if (x.surf >= -30 + Math.max(64, x.vh * 0.075) + 2 && gt > 0.07) { ok = false; fehler += ` oben ${gt.toFixed(2)} bei P ${p.toFixed(2)};`; }
+          if (x.surf - 12 < x.vh - 4 && gb < 0.95) { ok = false; fehler += ` unten ${gb.toFixed(2)} bei P ${p.toFixed(2)};`; }
+          if (gt > prevT + 0.001 || gb > prevB + 0.001) { ok = false; fehler += ` steigt bei P ${p.toFixed(2)};`; }
+          maxStep = Math.max(maxStep, prevT - gt, prevB - gb); prevT = gt; prevB = gb;
+        }
+        check(`leisten ${name}: oben nie Gold unter dem Schaum, unten nie beige bei sichtbarem Bier, nur fallend, größter Schritt ${maxStep.toFixed(2)} (≤ 0,45)`, ok && maxStep <= 0.45, fehler.slice(0, 200));
+        const geo = JSON.parse(await b.js(`JSON.stringify((() => { const s = document.querySelector('.edge--top'), u = document.querySelector('.edge--bottom'), c = getComputedStyle(s), r = s.getBoundingClientRect(), r2 = u.getBoundingClientRect(), br = getComputedStyle(document.querySelector('.site-header__brand')), h = getComputedStyle(document.querySelector('.site-header'));
+          return { pos: c.position, z: c.zIndex, h: r.height, top: r.top, w: r.width, vw: innerWidth, bottom: Math.round(innerHeight - r2.bottom), brandZ: br.zIndex, headerZ: h.zIndex, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; })())`));
+        check(`leisten ${name}: Streifen 6 px hoch, fest, ganze Breite, über dem Papierkorn (z 60), Beschriftung „Hofer Bräu“ darüber (z ${geo.brandZ}), kein horizontaler Scroll`,
+          geo.pos === 'fixed' && geo.h === 6 && geo.top === 0 && geo.bottom === 0 && geo.w === geo.vw && +geo.z === 60 && +geo.brandZ === 61 && geo.headerZ === 'auto' && geo.sw === geo.cw, JSON.stringify(geo));
+      } else {
+        check(`leisten ${name}: Desktop ohne Streifen, Seitenhintergrund wie bisher (B gold ${B.page}, 50 % gold ${m.page}, Ende ${e.page})`,
+          [a, B, m, e].every((x) => x.n.join() === '0,0') && B.page && m.page && e.page === false, JSON.stringify({ a: a.page, B: B.page, m: m.page, e: e.page }));
+      }
+      check(`leisten ${name}: theme-color (Chrome Android, iOS bis 25): B gold ${B.meta}, 50 % beige ${m.meta}, A/Ende beige ${a.meta}/${e.meta}`,
+        B.meta === '#c5a149' && m.meta === '#f7f4ec' && a.meta === '#f7f4ec' && e.meta === '#f7f4ec');
+    } finally { try { b.close(); } catch (x) { /* schon zu */ } }
+  }
+  // Ohne Touch-WebKit (Chrome Android, Desktop-Chrome): keine Streifen, nur theme-color
+  { const view = GERAETE.iphone15, b = await browser({ view });
+    try {
+      await start(b, view);
+      const M = messen(b); const B = await M(1), m = await M(1.5);
+      check('leisten Chrome Android: keine Streifen, theme-color folgt (B gold, 50 % beige)', B.n.join() === '0,0' && m.n.join() === '0,0' && B.meta === '#c5a149' && m.meta === '#f7f4ec', JSON.stringify({ B: B.meta, m: m.meta, n: m.n }));
+    } finally { b.close(); } }
+  // Echter Ablauf mit Streifen: in C sind sie weg, Seitenhintergrund und theme-color beige
+  { const view = GERAETE.iphone15, b = await browser({ view });
+    try {
+      await b.send('Page.addScriptToEvaluateOnNewDocument', { source: WEBKIT_FAKE });
+      await start(b, view);
+      const vorher = await b.js(`document.querySelectorAll('.edge').length`);
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b);
+      const inB = await b.js(`JSON.stringify([document.querySelectorAll('.edge').length, getComputedStyle(document.querySelector('.edge--top')).backgroundColor])`);
+      await gesture(b, 1); await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(600);
+      const c = JSON.parse(await b.js(`JSON.stringify({ n: document.querySelectorAll('.edge').length, meta: document.querySelector('meta[name=theme-color]').content, root: getComputedStyle(document.documentElement).backgroundColor, body: getComputedStyle(document.body).backgroundColor })`));
+      check(`leisten echter Ablauf (iPhone 15): in A ${vorher} Streifen (beige), in B ${inB}, in C ${c.n}, Seite und theme-color beige`,
+        vorher === 2 && JSON.parse(inB)[0] === 2 && gold(JSON.parse(inB)[1]) > 0.95 && c.n === 0 && c.meta === '#f7f4ec' && c.root === 'rgb(247, 244, 236)' && c.body === 'rgb(247, 244, 236)', JSON.stringify(c));
+      check('leisten echter Ablauf: keine Fehler, CLS 0', b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || '');
+    } finally { b.close(); } }
+}
+
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['hinundher', hinundher], ['laden', laden], ['kalt', kalt], ['uebergang', uebergang],
-  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern]];
+  ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen], ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

@@ -53,6 +53,14 @@ Dann http://localhost:5173 öffnen.
   In A und B sitzt der Titelblock unten im Bild (`--dy`). Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern
   und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern der Fenstergröße kommt der Rest nach).
   Ohne Sequenz (Bewegung reduzieren, ohne JavaScript) zeigt der erste Bildschirm nur das Standbild.
+- Farben der Browserleisten (Statusleiste oben, Leiste unten am iPhone): A beige, B bierfarben (#C5A149); in Geste 2 wird **oben** beige, sobald die Schaumkrone
+  ins Bild kommt, **unten** bleibt es bierfarben, solange unten Bier zu sehen ist, und blendet erst danach weich auf beige (`setGold` in `js/sequenz.js`, berechnet aus der
+  Lage der Bieroberfläche, `beer.surfaceY`, kein Zeitgeber); in C beide beige. Safari 26 ignoriert `theme-color` und nimmt beide Leisten sonst vom Seitenhintergrund (dann
+  wäre nur eine Farbe für oben und unten möglich). Darum erzeugt `js/sequenz.js` am Touch-WebKit (iPhone/iPad, `-webkit-touch-callout` + `(hover: none)`) während der Sequenz
+  zwei 6 px hohe, deckende, feste Streifen (`.edge--top`, `.edge--bottom`, z-index 60, über dem Papierkorn z-index 50): Safari liest einen Streifen nur beim Erzeugen und nur, wenn
+  er sichtbar und oberstes Element am Rand ist (durchsichtig, `opacity: 0`, `clip-path` oder unter dem Korn/Canvas/Standbild zählt nicht). Bei jeder neuen Farbstufe (1/16)
+  kommt deshalb ein neuer Streifen obenauf, der alte wird entfernt; in C werden beide entfernt (Seitenhintergrund beige). Die Beschriftung „Hofer Bräu“ (z-index 61) und die
+  Altersabfrage (z-index 70) liegen darüber. `theme-color` folgt der oberen Farbe stufenlos (Chrome Android, iOS bis 25). Desktop und Android Chrome bekommen keine Streifen.
 - Geschichte: `.timeline` ist auf Tablet und Desktop eine waagerechte Timeline über die ganze Inhaltsbreite (goldene Linie, Punkte, Jahreszahl
   darüber, Text darunter); am Handy seitlich wischbar mit Peek der nächsten Karte, Punkten, Hinweis „Wischen“ und einmaligem Anstupsen (`js/timeline.js`)
 - `assets/img/flasche-berghof-hell*.webp` – Standbild der Flasche, sofort sichtbar und pixelgenau unter dem ersten Sequenzbild

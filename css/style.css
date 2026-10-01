@@ -71,6 +71,13 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* Altersabfrage liegt über dem Papierkorn der Seite (z-index 70 statt 40, damit die Beschriftung „Hofer Bräu“ darunter bleibt): eigenes Korn, gleiches Aussehen */
+.age::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  opacity: .5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* Sequenz-Canvas liegt fix hinter dem Inhalt. Standbild und Canvas teilen sich exakt denselben Rahmen,
    damit die Flasche beim Übergang deckungsgleich liegt. Höhe = große Fensterhöhe (lvh): das Ein- und Ausblenden
    der Adressleiste am Handy ändert die Größe nicht (kein Neuanlegen des Canvas, kein Flackern). */
@@ -93,9 +100,9 @@ body::after {
 main { position: relative; z-index: 2; }
 
 /* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie ── */
-.site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; z-index: 3; pointer-events: none; }
+.site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
 .site-header__brand {
-  position: relative;                 /* scrollt mit der Seite (nicht kleben: sonst läuft der Titel in C beim Scrollen darunter durch) */
+  position: relative; z-index: 61;    /* scrollt mit der Seite (nicht kleben: sonst läuft der Titel in C beim Scrollen darunter durch) */
   width: max-content; margin: var(--frame-inset) auto 0;
   transform: translateY(-50%);
   padding: 0 18px;
