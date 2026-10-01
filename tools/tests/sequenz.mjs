@@ -145,10 +145,11 @@ async function puffer() {
     try {                                                       // zweite Geste in der kurzen Sperre nach Geste 1: wird nach der Sperre ausgeführt
       await start(b, view);
       await wisch(b); await waitZustand(b, 'B', 8000); await sleep(40);
-      await wisch(b); await sleep(100);
-      const n = await starts(b);
-      check(`puffer ${view}: Geste in der Sperre nach Geste 1 wird gemerkt, startet nicht sofort (${n} Übergang nach 100 ms)`, n === 1);
-      check(`puffer ${view}: ... und läuft nach der Sperre nach C`, await waitZustand(b, 'C', 15000) && (await starts(b)) === 2);
+      await wisch(b);
+      check(`puffer ${view}: Geste in der Sperre nach Geste 1 wird gemerkt und läuft nach der Sperre nach C`, await waitZustand(b, 'C', 15000), '');
+      const L = await log(b), e1 = L.find((e) => e.art === 'ende'), s2 = L.filter((e) => e.art === 'start')[1], g = L.find((e) => e.art === 'gemerkt');
+      const dt = e1 && s2 ? s2.t - e1.t : null;
+      check(`puffer ${view}: gemerkt (${g ? 'ja' : 'nein'}), Geste 2 startet erst nach der Sperre (${dt} ms nach dem Ende von Geste 1, Soll 380 bis 800)`, !!g && dt != null && dt >= 380 && dt <= 800, JSON.stringify({ dt }));
     } finally { b.close(); }
     if (view === 'desktop') {
       b = await browser({ view });
