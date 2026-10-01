@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=b5aca795';
-import { ladeHerde } from './herde.js?v=b5aca795';
+import { createBeer } from './bier-leeren.js?v=9aaa98d1';
+import { ladeHerde } from './herde.js?v=9aaa98d1';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -248,12 +248,12 @@ function overlays(pv) {
   const end = ramp(g, 0.85, 1);
   const late = g >= 0.5;
   put('text', el.text, 'opacity', String(late ? end : start));
-  put('flock', el.flock, 'opacity', String(late ? end : 0));   // Schafe neben dem Titel (Tablet/Desktop): ab B sichtbar, gleiten mit dem Titel nach oben
   put('textY', el.text, 'transform', `translate3d(0, ${((late ? 16 * (1 - end) : -24 * (1 - start)) + textDy * (1 - h)).toFixed(2)}px, 0)`);
 
   // Der Titel gleitet durch den Bereich der Einleitung nach oben; sie blendet erst ein, wenn er darüber angekommen ist (letzte 7 % des Wegs)
   const more = ramp(h, 0.93, 1);
   put('more', el.more, 'opacity', String(more));
+  put('flock', el.flock, 'opacity', String(more));            // Schafe neben dem Titel (Tablet/Desktop): erscheinen mit dem Einleitungstext, ohne eigene Animation (die Herde am Handy liegt in .hero__more)
   put('moreV', el.more, 'visibility', more > 0 ? 'visible' : 'hidden');
 
   // Rahmen mit Eckverzierung blendet auf allen Geräten aus; „Hofer Bräu“ oben bleibt frei (Hintergrund folgt über --frame-o)
@@ -336,7 +336,7 @@ async function begin(to) {                                     // 'A' | 'B' | 'C
   if (!done) return;
   state = to;
   release();
-  if (to === 'C') { unlock(); measureDy(); root.classList.add('herde-an'); teardown(); }
+  if (to === 'C') { unlock(); measureDy(); teardown(); }
   else setCue(true);
 }
 function lock(on) { el.content.forEach((n) => { n.inert = on; }); }
@@ -380,7 +380,7 @@ async function replay() {                                      // „Intro nochm
   replaying = true;
   await scrollToTop();
   window.scrollTo(0, 0);
-  root.classList.remove('frei', 'herde-an', 'wartet');
+  root.classList.remove('frei', 'wartet');
   lock(true);
   state = 'A'; P = 0; busy = false; pending = null; lockUntil = performance.now() + LOCK_AFTER;
   canvas.style.display = ''; resizeCanvas(); useSet();

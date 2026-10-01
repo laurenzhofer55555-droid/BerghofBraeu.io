@@ -160,7 +160,6 @@
     @media (min-width: 768px) and (max-width: 1000px) { .hero__lead { font-size: 17px; } }
     /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-    .seq:not(.frei) .herd { display: none; }     /* in A und B nicht darstellen: die Bilder laden erst, wenn js/sequenz.js sie nach den Sequenzbildern vorwärmt */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
     .flock { display: none; }
     @media (min-width: 768px) { .herd { display: none; } .flock { display: block; position: absolute; inset: 0; pointer-events: none; } }
@@ -258,12 +257,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=b5aca795" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=b5aca795" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=b5aca795" /></noscript>
+  <link rel="preload" href="css/style.css?v=9aaa98d1" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=9aaa98d1" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=9aaa98d1" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=b5aca795"></script>
+  <script type="module" src="js/main.js?v=9aaa98d1"></script>
 </head>
 <body>
 
@@ -400,11 +399,11 @@
 
         <!-- Handy: kleine Herde aus dem Etikettenbild, einzeln freigestellt, unten auf dem Hintergrund (Anordnung per CSS, css/style.css) -->
         <div class="herd" role="img" aria-label="Eine kleine Herde aus dem Etikettenbild: weiße und braune Schafe und Lämmer auf der Weide">
-          <img class="sheep sheep--kalb-braun" style="--i:0" data-nur="schmal" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" decoding="async" alt="" />
-          <img class="sheep sheep--rotbraun" style="--i:1" data-nur="schmal" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" decoding="async" alt="" />
-          <img class="sheep sheep--lamm-stehend" style="--i:2" data-nur="schmal" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" decoding="async" alt="" />
-          <img class="sheep sheep--gefleckt" style="--i:3" data-nur="schmal" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" decoding="async" alt="" />
-          <img class="sheep sheep--ruhend-hell" style="--i:4" data-nur="schmal" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" decoding="async" alt="" />
+          <img class="sheep sheep--kalb-braun" data-nur="schmal" data-src="assets/img/herde-kalb-braun-2x.webp" data-srcset="assets/img/herde-kalb-braun-1x.webp 94w, assets/img/herde-kalb-braun-2x.webp 189w" sizes="(max-width: 767px) 120px, 190px" width="189" height="149" decoding="async" alt="" />
+          <img class="sheep sheep--rotbraun" data-nur="schmal" data-src="assets/img/herde-rotbraun-2x.webp" data-srcset="assets/img/herde-rotbraun-1x.webp 85w, assets/img/herde-rotbraun-2x.webp 170w" sizes="(max-width: 767px) 120px, 190px" width="170" height="145" decoding="async" alt="" />
+          <img class="sheep sheep--lamm-stehend" data-nur="schmal" data-src="assets/img/herde-lamm-stehend-2x.webp" data-srcset="assets/img/herde-lamm-stehend-1x.webp 85w, assets/img/herde-lamm-stehend-2x.webp 171w" sizes="(max-width: 767px) 120px, 190px" width="171" height="165" decoding="async" alt="" />
+          <img class="sheep sheep--gefleckt" data-nur="schmal" data-src="assets/img/herde-gefleckt-2x.webp" data-srcset="assets/img/herde-gefleckt-1x.webp 90w, assets/img/herde-gefleckt-2x.webp 180w" sizes="(max-width: 767px) 120px, 190px" width="180" height="160" decoding="async" alt="" />
+          <img class="sheep sheep--ruhend-hell" data-nur="schmal" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" decoding="async" alt="" />
         </div>
       </div>
 

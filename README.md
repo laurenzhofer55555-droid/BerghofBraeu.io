@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Einstieg als Bildsequenz mit genau zwei Gesten (Canvas, ohne Bibliothek):
 Geste 1: Kamera fährt von der Flasche auf Augenhöhe in die Vogelperspektive und in den Kronkorken, der Kronkorken wird zu Bier.
-Geste 2: das Bier leert sich (2,7 s, ruhig), der Titel rutscht (am Tablet und Desktop samt vier kleinen Schafen) nach oben, darunter erscheinen Einleitung und (Tablet/Desktop) Gemälde bzw. (Handy) die Herde.
+Geste 2: das Bier leert sich (2,7 s, ruhig), der Titel rutscht nach oben, darunter erscheinen Einleitung, Schafe und (Tablet/Desktop) Gemälde gemeinsam.
 Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Intro nochmal ansehen“ im Fuß).
 
 Live: https://berghof-hell.de
@@ -46,10 +46,10 @@ Dann http://localhost:5173 öffnen.
 - Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel mit Zierlinie und Untertitel, darunter die
   Einleitung (`.hero__lead`). Die Schafe sind einzeln aus dem Etikettenbild freigestellt (`assets/img/herde-*.webp`) und je nach Gerät verschieden angeordnet:
   - **Handy (unter 768 px):** fünf Schafe (`.herd`) stehen unten auf dem Hintergrund, in dem Bereich unter der Einleitung (`--zone`, von `js/sequenz.js` gemessen,
-    damit keines den Text überdeckt) und erscheinen nacheinander (`html.herde-an`, zusammen 0,8 s). Das Gemälde gibt es am Handy nicht (nicht angezeigt, nicht geladen).
+    damit keines den Text überdeckt); sie liegen in `.hero__more` und erscheinen zusammen mit dem Einleitungstext, ohne eigene Animation. Das Gemälde gibt es am Handy nicht (nicht angezeigt, nicht geladen).
   - **Tablet und Desktop (ab 768 px):** vier kleine Schafe (`.flock`) stehen links und rechts neben dem Titel, außerhalb seiner Breite. Sie gehören zum Titelblock
-    (`.hero__text`), gleiten mit ihm von unten nach oben und haben keine eigene Animation (in A unsichtbar, ab B sichtbar). Neben der Einleitung steht das Gemälde
-    (`.painting`, zwei Spalten); beide blenden am Ende ein.
+    (`.hero__text`) und stehen dadurch immer an seiner Seite, `js/sequenz.js` blendet sie mit demselben Verlauf ein wie den Einleitungstext (keine eigene Animation).
+    Neben der Einleitung steht das Gemälde (`.painting`, zwei Spalten); es blendet mit dem Text ein.
   In A und B sitzt der Titelblock unten im Bild (`--dy`). Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern
   und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern der Fenstergröße kommt der Rest nach).
   Ohne Sequenz (Bewegung reduzieren, ohne JavaScript) zeigt der erste Bildschirm nur das Standbild.

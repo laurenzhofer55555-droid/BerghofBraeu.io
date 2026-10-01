@@ -361,8 +361,9 @@ async function titel() {
   }
 }
 
-// Schafe: Handy = fünf einzeln freigestellte Schafe unten auf dem Hintergrund (nacheinander eingeblendet, ohne Gemälde);
-// Tablet und Desktop = vier kleine Schafe links und rechts neben dem Titel (gleiten mit ihm, kein eigenes Einblenden), dazu das Gemälde neben dem Text
+// Schafe: Handy = fünf einzeln freigestellte Schafe unten auf dem Hintergrund (ohne Gemälde);
+// Tablet und Desktop = vier kleine Schafe links und rechts neben dem Titel, dazu das Gemälde neben dem Text.
+// Auf allen Geräten erscheinen die Schafe zusammen mit dem Einleitungstext („Hoch oben über dem bayerischen …“), ohne eigene Animation
 async function herde() {
   for (const [name, view] of Object.entries(GERAETE)) {
     const b = await browser({ view });
@@ -400,11 +401,29 @@ async function herde() {
       check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
       if (breit) {
         check(`herde ${name}: zwei links und zwei rechts neben dem Titel (${info.links} / ${info.rechts}), ${Math.round(info.hMin)}–${Math.round(info.hMax)} px hoch`, info.links === 2 && info.rechts === 2 && info.hMax <= 100);
-        check(`herde ${name}: nicht in A sichtbar (Deckkraft ${A.op}), in B sichtbar (${Bz.op}), gleiten mit dem Titel (Abstand zum Titel in B ${Bz.d} px, in C ${Cz.d} px), kein eigenes Einblenden`, A.op === 0 && Bz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1 && info.name === 'none', JSON.stringify({ name: info.name }));
-      } else {
-        check(`herde ${name}: Einblenden nacheinander, insgesamt höchstens 0,8 s (${info.dauer.toFixed(2)} s)`, info.dauer <= 0.801 && info.dauer > 0 && info.name === 'schaf-ein', `${info.name}`);
+        check(`herde ${name}: in A und B unsichtbar (Deckkraft ${A.op} / ${Bz.op}), in C sichtbar (${Cz.op}), stehen am Titel (Abstand in B ${Bz.d} px, in C ${Cz.d} px)`, A.op === 0 && Bz.op === 0 && Cz.op === 1 && Math.abs(Bz.d - Cz.d) <= 1);
       }
+      check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
       check(`herde ${name}: keine externen Anfragen, keine Fehler, CLS 0`, b.external.length === 0 && b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.external[0] || b.errors[0] || '');
+    } finally { b.close(); }
+  }
+  // Während Geste 2 blenden die Schafe mit demselben Verlauf ein wie der Einleitungstext und springen am Ende nicht
+  for (const [name, view] of Object.entries(GERAETE)) {
+    const breit = view.w >= 768;
+    const b = await browser({ view });
+    try {
+      await start(b, view);
+      await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(600);
+      const Q = (p) => b.js(`(async () => { window.__sequenz.zeige(${p}); await new Promise((r) => setTimeout(r, 500));
+        const m = document.querySelector('.hero__more'), sh = [...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')];
+        return JSON.stringify({ more: +getComputedStyle(m).opacity, grp: ${breit} ? +getComputedStyle(document.querySelector('.flock')).opacity : +getComputedStyle(m).opacity, vis: getComputedStyle(sh[0]).visibility,
+          anim: sh.some((e) => getComputedStyle(e).animationName !== 'none'), pos: sh.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.hero__title').getBoundingClientRect().top + scrollY : 0))]; }) }); })()`).then(JSON.parse);
+      const q0 = await Q(1.9), q1 = await Q(1.96), q2 = await Q(1.99);
+      await b.js('window.__sequenz.skip()'); await sleep(900);
+      const qc = await b.js(`JSON.stringify([...document.querySelectorAll('${breit ? '.flock' : '.herd'} .sheep')].map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top + scrollY - (${breit} ? document.querySelector('.hero__title').getBoundingClientRect().top + scrollY : 0))]; }))`).then(JSON.parse);
+      check(`herde ${name}: vor dem Einleitungstext unsichtbar (Deckkraft ${q0.grp}), dann gleicher Verlauf wie der Text (${q1.grp.toFixed(2)} gegen ${q1.more.toFixed(2)}, ${q2.grp.toFixed(2)} gegen ${q2.more.toFixed(2)})`,
+        q0.more === 0 && q0.grp === 0 && q1.more > 0.05 && q1.more < 0.95 && Math.abs(q1.grp - q1.more) < 0.01 && Math.abs(q2.grp - q2.more) < 0.01 && q2.grp > q1.grp && !q1.anim && !q2.anim && (breit || q1.vis === 'visible'), JSON.stringify({ q0, q1, q2 }));
+      check(`herde ${name}: die Schafe springen am Ende nicht (Lage bei P 1,99 gegen Zustand C, am Titel gemessen, höchstens 3 px)`, q2.pos.length === qc.length && q2.pos.every(([x, y], i) => Math.abs(x - qc[i][0]) <= 3 && Math.abs(y - qc[i][1]) <= 3), JSON.stringify({ q2: q2.pos.slice(0, 2), qc: qc.slice(0, 2) }));
     } finally { b.close(); }
   }
   // „Bewegung reduzieren“ und Neuladen in C: Schafe (und am Tablet/Desktop das Gemälde) sofort da, ohne Einblenden
@@ -546,7 +565,7 @@ async function replay() {
       check(`replay ${name}: Geste 2 → C`, await waitZustand(b, 'C', 12000) && await idle(b, 12000));
       await sleep(800);
       const r = JSON.parse(await b.js(`JSON.stringify({ aktiv: window.__sequenz.aktiv, sp: window.__sequenz.speicher, ov: getComputedStyle(document.documentElement).overflow, herde: document.documentElement.classList.contains('herde-an') })`));
-      check(`replay ${name}: danach wieder einmalig (Listener weg, Speicher frei, Seite frei, Herde erscheint erneut)`, r.aktiv === false && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.ov !== 'hidden' && r.herde);
+      check(`replay ${name}: danach wieder einmalig (Listener weg, Speicher frei, Seite frei)`, r.aktiv === false && r.sp.bitmaps === 0 && r.sp.dateien === 0 && r.ov !== 'hidden');
       check(`replay ${name}: nie ein leeres Canvas, keine Fehler`, (await b.js('window.__blank')) === 0 && b.errors.length === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
