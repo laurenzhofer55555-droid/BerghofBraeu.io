@@ -308,12 +308,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=191970dc" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=191970dc" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=191970dc" /></noscript>
+  <link rel="preload" href="css/style.css?v=b2823633" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=b2823633" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=b2823633" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=191970dc"></script>
+  <script type="module" src="js/main.js?v=b2823633"></script>
 </head>
 <body>
 
@@ -426,9 +426,9 @@
               <img class="sheep" style="--x:120;--y:-4;--k:9.5;--f:-1" data-nur="breit" data-src="assets/img/herde-schaf-grast-2x.webp" data-srcset="assets/img/herde-schaf-grast-1x.webp 112w, assets/img/herde-schaf-grast-2x.webp 224w" sizes="130px" width="224" height="160" decoding="async" alt="" />
               <img class="sheep" style="--x:130;--y:-14;--k:12.5" data-nur="breit" data-src="assets/img/herde-lamm-links-2x.webp" data-srcset="assets/img/herde-lamm-links-1x.webp 62w, assets/img/herde-lamm-links-2x.webp 124w" sizes="130px" width="124" height="153" decoding="async" alt="" />
               </div>
-              <!-- Etikett trifft Gemälde (Desktop ab 1240 px): die Flasche steht klein rechts unterhalb, eine feine goldene Linie führt vom Bauchetikett zum Gemälde (zeichnet sich beim ersten Erscheinen, js/etikett.js) -->
+              <!-- Etikett trifft Gemälde (Desktop ab 1300 px): die Flasche steht klein rechts unterhalb, eine feine goldene Linie führt vom Bauchetikett zum Gemälde (zeichnet sich beim ersten Erscheinen, js/etikett.js) -->
               <div class="etikett etikett--seite" data-etikett>
-                <svg class="etikett__linie" viewBox="0 0 160 80" aria-hidden="true" focusable="false"><path class="etikett__pfad" pathLength="1" d="M145.6 63H143Q141.5 63 141.5 61.5V47Q141.5 45.5 140 45.5H100.4"/></svg>
+                <svg class="etikett__linie" viewBox="100 0 62 80" aria-hidden="true" focusable="false"><path class="etikett__pfad" pathLength="1" d="M145.6 63H143Q141.5 63 141.5 61.5V47Q141.5 45.5 140 45.5H100.4"/></svg>
                 <i class="etikett__raute" aria-hidden="true"></i>
                 <span class="etikett__text" aria-hidden="true">Das Motiv unseres Etiketts</span>
                 <img class="etikett__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="150px" width="426" height="159" loading="lazy" decoding="async" alt="" />

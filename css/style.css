@@ -208,7 +208,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
    Eine kleine Flasche steht beim Gemälde, eine feine goldene Linie (#B8913A, 1 px) führt vom Bauchetikett zum Gemälde und endet in einer kleinen Raute (wie im Trennornament),
    daran der Satz „Das Motiv unseres Etiketts“. Die Linie zeichnet sich beim ersten Erscheinen (js/etikett.js, 0,8 s), bei „Bewegung reduzieren“ ist alles sofort da.
    Maße in cqw (1 cqw = 1 % der Bildbreite des Gemälde-Containers): so wächst alles mit dem Gemälde, nichts überdeckt Schafe oder Bild.
-   Desktop ab 1240 px (--seite): rechts unterhalb, neben und unter den Schafen; sonst (--unten): klein und mittig unter der Bildunterschrift. */
+   Desktop ab 1300 px (--seite): rechts unterhalb, neben und unter den Schafen; sonst (--unten): klein und mittig unter der Bildunterschrift. */
 .painting { container-type: inline-size; }
 .etikett { pointer-events: none; }
 .etikett__linie { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
@@ -224,15 +224,16 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett--unten .etikett__schatten { left: 30.5cqw; top: 44.3cqw; width: 39cqw; }
 .etikett--unten .etikett__raute { left: 28cqw; top: 0.6cqw; }
 .etikett--unten .etikett__text { left: 1cqw; top: 38.6cqw; width: 27cqw; font-size: clamp(12px, 3.4cqw, 14px); text-align: right; }
-/* seite: Desktop ab 1240 px, neben dem Gemälde (Koordinaten wie die Linie: 0 bis 160 breit, 0 bis 80 hoch, vom Gemälde aus) */
+/* seite: Desktop ab 1300 px, neben dem Gemälde. Der Ursprung liegt an der rechten Kante des Gemäldes (Koordinaten wie die Linie: 100 bis 162 breit, 0 bis 80 hoch, vom Gemälde aus gezählt),
+   die Einheit --e ist 1 cqw, höchstens 5,4 px: auf sehr großen Bildschirmen wächst die Flasche nicht mit und ragt nie aus dem Fenster */
 .etikett--seite { display: none; }
-@media (min-width: 1240px) {
+@media (min-width: 1300px) {
   .etikett--unten { display: none; }
-  .etikett--seite { display: block; position: absolute; left: 0; top: 0; width: 160cqw; height: 80cqw; }
-  .etikett--seite .etikett__flasche { left: 146cqw; top: 33.7cqw; width: 13cqw; }
-  .etikett--seite .etikett__schatten { left: 135cqw; top: 70.2cqw; width: 35cqw; }
-  .etikett--seite .etikett__raute { left: 100cqw; top: 45.5cqw; }
-  .etikett--seite .etikett__text { left: 101.5cqw; top: 41cqw; width: 38cqw; font-size: clamp(11px, 2.15cqw, 13px); text-align: center; }
+  .etikett--seite { --e: min(1cqw, 5.4px); display: block; position: absolute; left: 100cqw; top: 0; width: calc(62 * var(--e)); height: calc(80 * var(--e)); }
+  .etikett--seite .etikett__flasche { left: calc(46 * var(--e)); top: calc(33.7 * var(--e)); width: calc(13 * var(--e)); }
+  .etikett--seite .etikett__schatten { left: calc(38 * var(--e)); top: calc(70.2 * var(--e)); width: calc(30 * var(--e)); }
+  .etikett--seite .etikett__raute { left: 0; top: calc(45.5 * var(--e)); }
+  .etikett--seite .etikett__text { left: calc(1.5 * var(--e)); top: calc(41 * var(--e)); width: calc(38 * var(--e)); font-size: clamp(11px, calc(2.15 * var(--e)), 13px); text-align: center; }
 }
 /* Zeichnen beim ersten Erscheinen: nur mit JavaScript und ohne „Bewegung reduzieren“ (js/etikett.js setzt html.etikett-an, danach .ist-da je Gruppe) */
 .etikett-an .etikett__pfad { stroke-dasharray: 1; stroke-dashoffset: 1; }
