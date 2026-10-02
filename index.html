@@ -200,8 +200,8 @@
     }
     @supports (width: 1cqw) { @media (min-width: 768px) { .painting__herde .sheep { height: calc(var(--k) * 1cqw); } } }
     @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 17px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
-    @media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: 66ch; text-wrap: balance; } }
-    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
+    @media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
+    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; max-width: 1240px; } }
     /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
@@ -324,12 +324,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=43e5bca9" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=43e5bca9" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=43e5bca9" /></noscript>
+  <link rel="preload" href="css/style.css?v=c40206fe" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=c40206fe" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=c40206fe" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=43e5bca9"></script>
+  <script type="module" src="js/main.js?v=c40206fe"></script>
 </head>
 <body>
 

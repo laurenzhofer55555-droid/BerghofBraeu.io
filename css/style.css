@@ -218,8 +218,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 
 @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 17px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
 /* Desktop: ruhiger, breiterer Leadtext (66 Zeichen, 1,2 rem) */
-@media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: 66ch; text-wrap: balance; } }
-@media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
+@media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
+@media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; max-width: 1240px; } }
 
 /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
    Nur in Start (A) und Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
