@@ -181,7 +181,7 @@
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
     .painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
-    .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); outline: 1px solid var(--gold); outline-offset: -8px; }
+    .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); }
     .painting__herde { display: none; }
     @media (max-width: 767px) {
       .hero { --g2: 28px; }
@@ -189,7 +189,7 @@
       .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
       .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
         box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
-      .painting__bild > img { border: 1px solid var(--green); outline: 0; box-shadow: 0 0 0 1px rgba(184, 145, 58, .5); }
+      .painting__bild > img { border: 1px solid var(--green); }
     }
     @media (min-width: 768px) {
       .hero { --g2: 28px; }
@@ -323,12 +323,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=5eb006e6" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=5eb006e6" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=5eb006e6" /></noscript>
+  <link rel="preload" href="css/style.css?v=1b2534ec" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=1b2534ec" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=1b2534ec" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=5eb006e6"></script>
+  <script type="module" src="js/main.js?v=1b2534ec"></script>
 </head>
 <body>
 
