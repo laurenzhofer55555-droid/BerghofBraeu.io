@@ -10,3 +10,10 @@ if (f && f.includes('navy')) {
     img.src = 'assets/img/flasche-navy-360.webp';
   }
 }
+// Navy-Varianten: Standbild der Flasche (Poster) mit Navy-Etikett, passend zu assets/sequenz-navy/
+if (f && f.includes('navy')) {
+  const src = document.querySelector('.poster source'), img = document.querySelector('.poster img');
+  const set = (base, ws) => ws.map(([n, w]) => `assets/img/${base}${n}-navy.webp ${w}w`).join(', ');
+  if (src) src.srcset = set('flasche-berghof-hell-hoch', [['-285', 285], ['', 419], ['-586', 586]]);
+  if (img) { img.srcset = set('flasche-berghof-hell', [['-322', 322], ['', 474], ['-701', 701]]); img.src = 'assets/img/flasche-berghof-hell-navy.webp'; }
+}

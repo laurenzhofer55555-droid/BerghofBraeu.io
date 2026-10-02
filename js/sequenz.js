@@ -23,10 +23,10 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=248e1737';
-import { ladeHerde } from './herde.js?v=248e1737';
+import { createBeer } from './bier-leeren.js?v=8dedc23e';
+import { ladeHerde } from './herde.js?v=8dedc23e';
 
-const BASE = 'assets/sequenz/';
+const BASE = (document.documentElement.dataset.farbe || '').includes('navy') ? 'assets/sequenz-navy/' : 'assets/sequenz/';   // Vorschau Farbvarianten: Navy-Etikett (js/farbe.js), vor dem Release entfernen
 const root = document.documentElement;
 const canvas = document.getElementById('sequenz');
 const ctx = canvas.getContext('2d', { alpha: false });

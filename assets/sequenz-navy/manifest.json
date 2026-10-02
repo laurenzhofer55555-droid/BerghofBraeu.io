@@ -1,0 +1,38 @@
+{
+  "sets": {
+    "desktop": {
+      "motion": [
+        1600,
+        800
+      ],
+      "still": [
+        2880,
+        1440
+      ],
+      "frames": 110,
+      "stations": [
+        0,
+        50,
+        109
+      ],
+      "titleClear": 0.3
+    },
+    "mobil": {
+      "motion": [
+        700,
+        1129
+      ],
+      "still": [
+        1200,
+        1935
+      ],
+      "frames": 110,
+      "stations": [
+        0,
+        50,
+        109
+      ]
+    }
+  },
+  "v": "18fc35d4"
+}

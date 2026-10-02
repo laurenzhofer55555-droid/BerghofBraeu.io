@@ -3,11 +3,11 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './farbe.js?v=248e1737';                                         // Vorschau Farbvarianten (?farbe=…)
-import './altersabfrage.js?v=248e1737';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=248e1737';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=248e1737';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=248e1737';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import './farbe.js?v=8dedc23e';                                         // Vorschau Farbvarianten (?farbe=…)
+import './altersabfrage.js?v=8dedc23e';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=8dedc23e';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=8dedc23e';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=8dedc23e';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -34,7 +34,7 @@ const unlock = () => { root.classList.remove('seq'); root.classList.add('frei');
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=248e1737').catch((e) => {
+  import('./sequenz.js?v=8dedc23e').catch((e) => {
     console.warn('Startsequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
     unlock();
   });
