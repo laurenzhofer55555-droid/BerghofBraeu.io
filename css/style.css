@@ -198,7 +198,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 }
 @media (min-width: 768px) {
   .hero { --g2: 28px; }
-  .hero__lead { font-size: 18px; line-height: 1.58; max-width: 52ch; }
+  .hero__lead { font-size: 17px; line-height: 1.6; max-width: 58ch; }
   .painting { width: min(80%, max(520px, calc((100svh - 520px) * 1.5))); }
   .painting__herde { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 2; pointer-events: none; }
   .painting__herde .sheep { left: calc(50% + (var(--x) - 50) * var(--sp, 1) * 1%); bottom: calc(var(--y) * 1px); height: calc(var(--k) * 8px); transform: scaleX(var(--f, 1)); transform-origin: 50% 100%; }
@@ -217,6 +217,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett-an .ist-da .etikett__raute { opacity: 1; transition: opacity .35s ease .65s; }
 
 @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 17px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
+/* Desktop: ruhiger, breiterer Leadtext (66 Zeichen, 1,2 rem) */
+@media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: 66ch; text-wrap: balance; } }
 @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; } }
 
 /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
@@ -264,11 +266,11 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .sheep--lamm-stehend { --l: 36%; --b: 0; --h: .22; --z: 7; }
 .sheep--gefleckt { --l: 6%; --b: .34; --h: .17; --z: 3; }
 .sheep--ruhend-hell { --r: 14%; --b: .36; --h: .11; --z: 2; }
-}
 
-.painting figcaption { margin-top: 10px; font-size: 14px; font-style: italic; color: var(--green-soft); text-align: center; }
-@media (min-width: 768px) { .painting figcaption { margin-top: 26px; } }
-@media (max-width: 767px) { .painting figcaption { margin-top: 14px; font-size: 15px; } }
+/* Bildunterschrift: klein und leise, Tannengrün mit 78 % Deckkraft (4,9:1 auf Creme; 70 % erreichen nur 4,05:1) */
+.painting figcaption { margin-top: 11px; font-size: 13.5px; line-height: 1.45; letter-spacing: .02em; font-style: italic; color: color-mix(in srgb, var(--green) 78%, transparent); text-align: center; text-wrap: balance; }
+@media (min-width: 768px) { .painting figcaption { margin-top: 26px; } }      /* Tablet/Desktop: die Herde steht vor der Unterkante des Gemäldes und braucht den Platz */
+@media (max-width: 767px) { .painting figcaption { font-size: 12.5px; } }
 
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
