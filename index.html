@@ -117,11 +117,22 @@
     @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
     @font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
     @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
-    :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #46644B; --gold: #B8913A; --ink: #22301f;
+    :root { --cream: #F7F4EC; --gold-beer: #C5A149;
+  --akzent-linie: #B8913A;       /* feine Linien (Rahmenlinie innen, Trennlinien, Timeline, Hinweislinien) – nie für Schrift */
+  --akzent-ornament: #B8913A;    /* Rauten, Ecken, Trennornament */
+  --akzent-text: #7A5C1C;        /* kleine Schrift im Akzent (Überschriftchen, Jahreszahl-Etiketten) */
+  --fokus-farbe: #7A5C1C;        /* Fokusrahmen: mindestens 3:1 auf Creme */
+  --rahmen-dunkel: #1F4D2B;      /* Außenrahmen, Bilderrahmen, Icons */
+  --text-hauptfarbe: #1F4D2B;    /* Titel, Überschriften, Links */
+  --titel-akzent: #1F4D2B;       /* „Hell“ im Titel */
+  --button-farbe: #1F4D2B;       /* Knöpfe */
+  --text-fliess: #22301f;        /* Fließtext */
+  --text-neben: #46644B;         /* Nebentext */
+  --ornament-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23000'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23000' stroke='none'/%3E%3C/svg%3E");
       --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--cream); color: var(--ink); }
+    html, body { margin: 0; background: var(--cream); color: var(--text-fliess); }
     body { font-family: var(--font-text); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -135,12 +146,12 @@
     .bereit .lade { opacity: 0; }
     @keyframes lade-weg { to { visibility: hidden; } }
     .lade__mitte { position: absolute; left: 50%; top: 50%; width: 176px; height: 176px; margin: -88px 0 0 -88px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-      background: rgba(247, 244, 236, .94); border: 1px solid var(--gold); box-shadow: 0 0 0 7px rgba(247, 244, 236, .55), 0 10px 34px rgba(31, 77, 43, .16); opacity: 0; animation: lade-ein .35s ease .25s forwards; }      /* erst nach 0,25 s sichtbar: bei schnellem Laden blitzt nichts auf */
+      background: rgba(247, 244, 236, .94); border: 1px solid var(--akzent-linie); box-shadow: 0 0 0 7px rgba(247, 244, 236, .55), 0 10px 34px color-mix(in srgb, var(--rahmen-dunkel) 16%, transparent); opacity: 0; animation: lade-ein .35s ease .25s forwards; }      /* erst nach 0,25 s sichtbar: bei schnellem Laden blitzt nichts auf */
     .lade__klein { width: 92px; perspective: 600px; }
     .lade__muenze { position: relative; width: 100%; aspect-ratio: 128 / 104; transform-style: preserve-3d; animation: lade-dreh 1.8s linear infinite; }      /* dreht sich, solange geladen wird (unbegrenzt) */
     .lade__muenze i { position: absolute; inset: 0; background: var(--hb) center / contain no-repeat; backface-visibility: hidden; -webkit-backface-visibility: hidden; }      /* Logo als Hintergrundbild im CSS: keine eigene Anfrage vor dem Standbild */
     .lade__muenze i + i { transform: rotateY(180deg); }
-    .lade__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
+    .lade__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: var(--text-hauptfarbe); }
     @keyframes lade-dreh { to { transform: rotateY(360deg); } }
     @keyframes lade-ein { to { opacity: 1; } }
     .seq:not(.bereit):not(.frei) .scroll-cue { opacity: 0; }                 /* der Weiter-Pfeil erscheint erst, wenn die Sequenz spielbereit ist */
@@ -151,9 +162,9 @@
     .seq:not(.frei), .seq:not(.frei) body { overflow: hidden; overscroll-behavior: none; }
     .seq:not(.frei) body { touch-action: none; }
     /* Überspringen: nur mit Tastatur sichtbar (Fokus), springt direkt zum Inhalt */
-    .skip { position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px; background: var(--green); color: var(--cream);
+    .skip { position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px; background: var(--button-farbe); color: var(--cream);
       font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transform: translateY(-300%); }
-    .skip:focus-visible { transform: none; outline: 2px solid #7A5C1C; outline-offset: 3px; }
+    .skip:focus-visible { transform: none; outline: 2px solid var(--fokus-farbe); outline-offset: 3px; }
     html:not(.seq) .skip, .frei .skip { display: none; }
     /* Start: Zustand C (Inhalt) ist das Grundlayout: Titel oben, darunter Einleitung und Bild. In A und B (.seq ohne .frei) ist die Seite genau
        einen Bildschirm hoch und gesperrt; der Titel sitzt dort unten im Bild (um --dy verschoben) und rutscht beim Leeren des Biers nach oben
@@ -176,20 +187,20 @@
     .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
-    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
+    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--text-fliess); text-wrap: pretty; }
     /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
     .painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
-    .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); }
+    .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--rahmen-dunkel); }
     .painting__herde { display: none; }
     @media (max-width: 767px) {
       .hero { --g2: 28px; }
       .hero__lead { font-size: clamp(17px, calc(17px + (100svh - 667px) * .0108), 19px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
-      .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
-        box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
-      .painting__bild > img { border: 1px solid var(--green); }
+      .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--text-hauptfarbe); padding-right: .04em; }
+      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--akzent-linie); border-radius: 3px;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px color-mix(in srgb, var(--rahmen-dunkel) 35%, transparent), 0 3px 10px color-mix(in srgb, var(--rahmen-dunkel) 10%, transparent); }
+      .painting__bild > img { border: 1px solid var(--rahmen-dunkel); }
     }
     @media (min-width: 768px) {
       .hero { --g2: 28px; }
@@ -216,16 +227,16 @@
       display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
       position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
       min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
-      color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
+      color: var(--text-hauptfarbe); opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
     }
     .seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
     .seq.frei .scroll-cue { display: none; }
-    .scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
+    .scroll-cue:focus-visible { outline: 2px solid var(--rahmen-dunkel); outline-offset: 2px; border-radius: 8px; }
     .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-    .scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+    .scroll-cue .cue-arrow path { fill: none; stroke: var(--text-hauptfarbe); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
     @keyframes cue { 50% { transform: translateY(8px); } }
     /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
-    .scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
+    .scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: var(--text-hauptfarbe); }
     .scroll-cue__mouse { display: none; }
     @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
     @media (max-aspect-ratio: 4/5) {
@@ -252,31 +263,31 @@
     .age-leaving .age { opacity: 0; pointer-events: none; }
     .age:focus { outline: none; }
     /* Rahmen wie auf der Seite (.frame): außen tannengrün (1,5 px), innen eine feine goldene Linie, vier goldene Rauten in den Ecken */
-    .age__card { position: relative; width: min(100%, 544px); padding: 48px 48px 40px; border-radius: 6px; background: var(--cream); border: 1.5px solid var(--green);
+    .age__card { position: relative; width: min(100%, 544px); padding: 48px 48px 40px; border-radius: 6px; background: var(--cream); border: 1.5px solid var(--rahmen-dunkel);
       box-shadow: 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
-    .age__card::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--gold); border-radius: 3px; opacity: .8; pointer-events: none; }
-    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); pointer-events: none; }
+    .age__card::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--akzent-linie); border-radius: 3px; opacity: .8; pointer-events: none; }
+    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--akzent-ornament); transform: rotate(45deg); pointer-events: none; }
     .age__corner:nth-of-type(1) { top: 1px; left: 1px; } .age__corner:nth-of-type(2) { top: 1px; right: 1px; }
     .age__corner:nth-of-type(3) { bottom: 1px; left: 1px; } .age__corner:nth-of-type(4) { bottom: 1px; right: 1px; }
-    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; color: var(--green); }
+    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; color: var(--text-hauptfarbe); }
     .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 24px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+      background: var(--akzent-ornament); -webkit-mask: var(--ornament-mask) center / contain no-repeat; mask: var(--ornament-mask) center / contain no-repeat; }
     /* Beide Antworten gleichwertig (Jugendschutz): derselbe Stil, dieselbe Größe, kein Knopf wird hervorgehoben. „Ja, ich bin 16“ links, „Nein“ rechts. */
     .age__actions { display: flex; gap: 16px; justify-content: center; margin: 32px 0 0; }
-    .age__btn { flex: 1 1 0; min-width: 0; min-height: 56px; padding: 16px 24px; border-radius: 10px; border: 1.5px solid #1F4D2B; background: #F0EBDC; color: #1F4D2B;
+    .age__btn { flex: 1 1 0; min-width: 0; min-height: 56px; padding: 16px 24px; border-radius: 10px; border: 1.5px solid var(--button-farbe); background: #F0EBDC; color: var(--button-farbe);
       font: 600 17px/1.15 var(--font-text); letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
     .age__btn:hover, .age__btn:focus-visible { background: #E6DFCB; }
-    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #B8913A; outline-offset: 5px; box-shadow: 0 0 0 3px #F7F4EC, 0 0 0 5px #1F4D2B; border-radius: 10px; }      /* dünner goldener Rahmen, innen ein dunkelgrüner Ring: auch auf Beige mit gutem Kontrast sichtbar */
-    .age a:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px #F7F4EC, 0 0 0 4px #1F4D2B; outline-offset: 4px; }
-    .age__note { margin: 32px 0 0; font-size: 16px; line-height: 1.55; color: var(--green-soft); }
-    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: rgba(31, 77, 43, .82); }
-    .age__links { margin: 24px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
-    .age__links a { color: var(--green); }
+    .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid var(--fokus-farbe); outline-offset: 5px; box-shadow: 0 0 0 3px #F7F4EC, 0 0 0 5px var(--rahmen-dunkel); border-radius: 10px; }      /* dünner goldener Rahmen, innen ein dunkelgrüner Ring: auch auf Beige mit gutem Kontrast sichtbar */
+    .age a:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px #F7F4EC, 0 0 0 4px var(--rahmen-dunkel); outline-offset: 4px; }
+    .age__note { margin: 32px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-neben); }
+    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: color-mix(in srgb, var(--text-hauptfarbe) 82%, transparent); }
+    .age__links { margin: 24px 0 0; font-size: 15px; line-height: 1.5; color: var(--text-neben); }
+    .age__links a { color: var(--text-hauptfarbe); }
     .age__no { display: none; }
     .age-denied .age__ask { display: none; }
     .age-denied .age__hint, .age-denied .age__privacy { display: none; }
     .age-denied .age__no { display: block; }
-    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.55; color: var(--ink); }
+    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.55; color: var(--text-fliess); }
     @keyframes age-ein { from { opacity: 0; } }
     @keyframes age-hoch { from { opacity: 0; transform: translateY(18px); } }
     @keyframes age-sheet { from { opacity: 0; transform: translateY(44px); } }
@@ -302,33 +313,33 @@
     main { position: relative; z-index: 2; }
     .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
     .site-header__brand { position: relative; z-index: 61; width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
-      font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
+      font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--text-hauptfarbe); white-space: nowrap; }
     .site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
-    .frame { position: absolute; inset: var(--frame-inset); border: 1.5px solid var(--green); pointer-events: none; }
-    .frame::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--gold); opacity: .8; }
-    .frame__corner { position: absolute; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
+    .frame { position: absolute; inset: var(--frame-inset); border: 1.5px solid var(--rahmen-dunkel); pointer-events: none; }
+    .frame::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--akzent-linie); opacity: .8; }
+    .frame__corner { position: absolute; width: 9px; height: 9px; background: var(--akzent-ornament); transform: rotate(45deg); }
     .frame__corner--tl { top: 1px; left: 1px; } .frame__corner--tr { top: 1px; right: 1px; }
     .frame__corner--bl { bottom: 1px; left: 1px; } .frame__corner--br { bottom: 1px; right: 1px; }
     .hero__text { position: relative; }
     .hero__heading { margin: 0; font-weight: 400; }
     .hero__title { display: block; font-family: var(--font-display); font-weight: 500; font-size: var(--title-f);
-      line-height: 1; letter-spacing: -.005em; color: var(--green); white-space: nowrap; }
-    .hero__title em { font-style: italic; font-weight: 400; line-height: 0; }
-    .hero__claim { display: block; font-size: 14px; line-height: 1.4; letter-spacing: .26em; text-transform: uppercase; color: var(--green-soft); }
+      line-height: 1; letter-spacing: -.005em; color: var(--text-hauptfarbe); white-space: nowrap; }
+    .hero__title em { font-style: italic; font-weight: 400; line-height: 0; color: var(--titel-akzent); }
+    .hero__claim { display: block; font-size: 14px; line-height: 1.4; letter-spacing: .26em; text-transform: uppercase; color: var(--text-neben); }
     .hero__claim::before { content: ''; display: block; width: clamp(160px, 18vw, 240px); height: 14px; margin: clamp(14px, 2.2vh, 22px) auto;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+      background: var(--akzent-ornament); -webkit-mask: var(--ornament-mask) center / contain no-repeat; mask: var(--ornament-mask) center / contain no-repeat; }
     .section { position: relative; z-index: 2; background: var(--cream); }
     .css-wait main { visibility: hidden; animation: css-wait 0s 3s forwards; } @keyframes css-wait { to { visibility: visible; } }
     @media (max-width: 767px) { body { font-size: 17px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=1b2534ec" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=1b2534ec" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=1b2534ec" /></noscript>
+  <link rel="preload" href="css/style.css?v=d5d8d47e" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=d5d8d47e" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=d5d8d47e" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=1b2534ec"></script>
+  <script type="module" src="js/main.js?v=d5d8d47e"></script>
 </head>
 <body>
 
@@ -496,7 +507,7 @@
           </figure>
           <ul class="ingredients">
             <li class="ingredient">
-              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M86 21C97 7 122 5 137 16C126 29 101 33 86 21Z" fill="#F7F4EC"/>
               <path d="M86 21C103 18 121 16 137 16M101 19.5l5-7M101 19.5l6 6M116 17.5l5-8M116 17.5l6 7" stroke-width="1"/>
               <path d="M80 42C80 32 82 23 88 13"/>
@@ -521,7 +532,7 @@
               <p>Hopfen schenkt dem Hellen seine feine, milde Würze und ein frisches Aroma.</p>
             </li>
             <li class="ingredient">
-              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M80 134C71 121 58 110 40 104C56 101 71 108 80 121" fill="#F7F4EC"/>
               <path d="M80 162C80 130 80 96 80.5 40"/>
 <path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 62.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 56.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 74.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 68.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 87.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 81.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 99.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 93.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 112.0) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 106.0) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(73.2 124.5) rotate(-28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(86.8 118.5) rotate(28)" fill="#F7F4EC"/><path d="M0 -9.5C4.3 -4.28 4.3 4.28 0 9.5C-4.3 4.28 -4.3 -4.28 0 -9.5Z" transform="translate(80.5 44) rotate(0)" fill="#F7F4EC"/>              </svg>
@@ -529,7 +540,7 @@
               <p>Helles Gerstenmalz gibt dem Bier die goldene Farbe und seinen runden Körper.</p>
             </li>
             <li class="ingredient">
-              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="#1F4D2B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="ingredient__art" viewBox="0 0 160 170" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
               <ellipse cx="80" cy="148" rx="54" ry="9" stroke-opacity=".35"/>
               <ellipse cx="80" cy="148" rx="36" ry="6"/>
               <path d="M80 16C80 16 49 57 49 84C49 102 63 116 80 116C97 116 111 102 111 84C111 57 80 16 80 16Z" fill="#F7F4EC"/>
