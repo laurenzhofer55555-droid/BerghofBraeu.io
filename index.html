@@ -122,7 +122,7 @@
       --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; background: var(--cream); color: var(--ink); }
-    body { font-family: var(--font-text); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { font-family: var(--font-text); font-size: 16.5px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     #sequenz, .poster { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100lvh; }
@@ -176,7 +176,7 @@
     .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
-    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 17px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
+    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
     /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
@@ -185,7 +185,7 @@
     .painting__herde { display: none; }
     @media (max-width: 767px) {
       .hero { --g2: 28px; }
-      .hero__lead { font-size: clamp(17px, calc(17px + (100svh - 667px) * .0108), 19px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
+      .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
       .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
       .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
         box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
@@ -193,15 +193,15 @@
     }
     @media (min-width: 768px) {
       .hero { --g2: 28px; }
-      .hero__lead { font-size: 17px; line-height: 1.6; max-width: 58ch; }
+      .hero__lead { font-size: 16px; line-height: 1.6; max-width: 58ch; }
       .painting { width: min(80%, max(520px, calc((100svh - 520px) * 1.5))); }
       .painting__herde { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 2; pointer-events: none; }
       .painting__herde .sheep { left: calc(50% + (var(--x) - 50) * var(--sp, 1) * 1%); bottom: calc(var(--y) * 1px); height: calc(var(--k) * 8px); transform: scaleX(var(--f, 1)); transform-origin: 50% 100%; }
     }
     @supports (width: 1cqw) { @media (min-width: 768px) { .painting__herde .sheep { height: calc(var(--k) * 1cqw); } } }
-    @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 17px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
-    @media (min-width: 1024px) { .hero__lead { font-size: 1.2rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
-    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 24px; max-width: 1240px; } }
+    @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
+    @media (min-width: 1024px) { .hero__lead { font-size: 1.1rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
+    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 22px; max-width: 1240px; } }
     /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
@@ -320,16 +320,16 @@
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .section { position: relative; z-index: 2; background: var(--cream); }
     .css-wait main { visibility: hidden; animation: css-wait 0s 3s forwards; } @keyframes css-wait { to { visibility: visible; } }
-    @media (max-width: 767px) { body { font-size: 17px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
+    @media (max-width: 767px) { body { font-size: 15.5px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=52e96b5b" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=52e96b5b" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=52e96b5b" /></noscript>
+  <link rel="preload" href="css/style.css?v=55148685" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=55148685" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=55148685" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=52e96b5b"></script>
+  <script type="module" src="js/main.js?v=55148685"></script>
 </head>
 <body>
 
