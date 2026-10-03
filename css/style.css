@@ -472,6 +472,8 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between;
   font-size: 15px; color: var(--green-soft);
 }
+/* Startseite: der Seitenrahmen schließt die Seite ab, eine zweite goldene Linie darunter entfällt (Impressum/Datenschutz haben keinen Rahmen und behalten sie) */
+main:has(> .frame--page) + .site-footer { border-top: 0; }
 .site-footer p { margin: 0; }
 .site-footer strong { color: var(--green); font-weight: 600; }
 .site-footer__nav { display: flex; gap: 28px; }

@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=c40206fe';
-import { ladeHerde } from './herde.js?v=c40206fe';
+import { createBeer } from './bier-leeren.js?v=52e96b5b';
+import { ladeHerde } from './herde.js?v=52e96b5b';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
