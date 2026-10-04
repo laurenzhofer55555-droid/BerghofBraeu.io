@@ -324,12 +324,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=cabd7a4a" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=cabd7a4a" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=cabd7a4a" /></noscript>
+  <link rel="preload" href="css/style.css?v=94aba8b1" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=94aba8b1" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=94aba8b1" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=cabd7a4a"></script>
+  <script type="module" src="js/main.js?v=94aba8b1"></script>
 </head>
 <body>
 
@@ -484,14 +484,14 @@
         <!-- Zutaten um die Flasche: Hopfen und Wasser links, Malz rechts, goldene Linien führen zur Flasche (Desktop ab 1100 px, js/etikett.js zeichnet sie beim ersten Erscheinen); schmal: Flasche mittig, darunter die drei Zutaten -->
         <div class="zutaten-buehne" data-etikett>
           <svg class="etikett__linie zutaten__linien" viewBox="0 0 100 58" aria-hidden="true" focusable="false">
-            <path class="etikett__pfad" pathLength="1" d="M32.5 9H38Q42 9 44.4 9.6T46.9 10.3"/>
-            <path class="etikett__pfad" pathLength="1" d="M67.5 24H63Q60.5 24 59 23T57.3 22.1"/>
-            <path class="etikett__pfad" pathLength="1" d="M32.5 40H36Q40 40 41.2 44.6T42.7 48.5"/>
+            <path class="etikett__pfad" pathLength="1" d="M32.5 9H38Q42 9 44.4 9.6T46.7 10.2"/>
+            <path class="etikett__pfad" pathLength="1" d="M67.5 24H63Q60.5 24 59 23T57.2 22"/>
+            <path class="etikett__pfad" pathLength="1" d="M32.5 40H36Q40 40 41.2 44.6T42.6 48.3"/>
           </svg>
           <i class="etikett__raute zr1" aria-hidden="true"></i><i class="etikett__raute zr2" aria-hidden="true"></i><i class="etikett__raute zr3" aria-hidden="true"></i>
           <figure class="zutaten__flasche">
             <img class="zf__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="400px" width="426" height="159" loading="lazy" decoding="async" alt="" />
-            <img class="zf__bild" src="assets/img/flasche-360.webp?v=3" srcset="assets/img/flasche-180.webp?v=3 180w, assets/img/flasche-360.webp?v=3 294w" sizes="(min-width: 1100px) 170px, 130px" width="294" height="969" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell" />
+            <img class="zf__bild" src="assets/img/flasche-360.webp?v=4" srcset="assets/img/flasche-180.webp?v=4 180w, assets/img/flasche-360.webp?v=4 312w" sizes="(min-width: 1100px) 170px, 130px" width="312" height="1029" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell" />
           </figure>
           <ul class="ingredients">
             <li class="ingredient">
