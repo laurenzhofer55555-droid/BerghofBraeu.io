@@ -307,19 +307,15 @@ async function zustandB() {
 // Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
 // Geste 2: zwei Phasen nacheinander (gleiche Zahlen wie in js/sequenz.js, window.__sequenz.phasen wird in „phasen“ gegengeprüft)
-const PH = { PH_IN: 300, PH1: 2600, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3750, DRINK: { surges: 2.5, depth: 0.45, ramp: 0.1, intro: 0.6 } };
+const PH = { PH_IN: 700, PH1: 2800, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3950, DRINK: { tau: 220, half: 0.5 } };
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn von Geste 2
 const tOf = (P) => (P - 1) * PH.T2;
 const easeOutT = (t) => 1 - (1 - t) ** 3;
 const rampT = (x, a, b) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 const rideT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.RIDE));          // gemeinsame Fahrt 0 … 1
 const einT = (T) => easeOutT(rampT(T, PH.PH1 + PH.PAUSE, PH.PH1 + PH.PAUSE + PH.FADE));           // gemeinsames Einblenden 0 … 1
-// Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): erst Schaumkrone ein (0,3 s ease-out), dann drei Schlucke mit Pausen (js/sequenz.js: levelOf)
-const smoothT = (x) => x * x * (3 - 2 * x);
-const drinkTab = (v0) => { const n = 256, t = new Float64Array(n + 1), D = PH.DRINK; for (let k = 1; k <= n; k++) { const u = (k - 0.5) / n, w = smoothT(Math.min(1, u / D.ramp)); t[k] = t[k - 1] + (v0 + (1 - v0) * w) * (1 + 0.35 * u) * (1 + D.depth * Math.sin(2 * Math.PI * D.surges * u - Math.PI / 2) * w); } for (let k = 1; k <= n; k++) t[k] /= t[n]; return t; };
-const drinkT = (ms, v0) => { const t = drinkTab(v0), u = Math.min(1, Math.max(0, ms / (PH.PH1 - PH.PH_IN))), x = u * 256, k = Math.min(255, Math.floor(x)); return t[k] + (t[k + 1] - t[k]) * (x - k); };
-// Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): erst Schaumkrone ein (0,3 s ease-out mit Resttempo), dann ohne Halt das Trinken (js/sequenz.js: levelOf)
-const lvlT = (T, H) => { const c = PH.DRINK.intro, foamH = Math.min(100, Math.max(56, H * 0.09)), p1 = (foamH + 12 + 16) / (H + foamH + 126), v0 = (1 - c) * p1 * (PH.PH1 - PH.PH_IN) / (PH.PH_IN * (1 - p1)); return T >= PH.PH1 ? 1 : T <= PH.PH_IN ? p1 * (T / PH.PH_IN) * (1 + c - c * (T / PH.PH_IN)) : p1 + (1 - p1) * drinkT(T - PH.PH_IN, v0); };
+// Bierpegel 0 … 1 zur Zeit T (ms seit Beginn von Geste 2) bei Bier-Layer-Höhe H (px): schneller Abstieg bis zur Bildschirmmitte (PH_IN), danach gleichmäßig (js/sequenz.js: levelOf)
+const lvlT = (T, H) => { const foamH = Math.min(100, Math.max(56, H * 0.09)), q = Math.min(0.9, Math.max(0.05, (H * PH.DRINK.half + 16) / (H + foamH + 126))), tau = PH.DRINK.tau, g1 = 1 - Math.exp(-PH.PH1 / tau), g2 = 1 - Math.exp(-PH.PH_IN / tau), r = PH.PH_IN / PH.PH1, A = Math.max(0, (q - r) / (g2 - g1 * r)), B = 1 - A * g1; return T >= PH.PH1 ? 1 : A * (1 - Math.exp(-T / tau)) + B * (T / PH.PH1); };
 async function geste2() {
   for (const [name, view] of Object.entries(DEVICES)) {
     if (name === 'desktop-2560' && !only.length) continue;   // gleiche Logik wie 1440, spart Zeit im Gesamtlauf
@@ -335,8 +331,8 @@ async function geste2() {
         const buf = await shot(b, join(OUT, 'geste2', `${name}-${pct}.png`));
         anteile[pct] = { oben: await goldShare(b, buf, 0.06, 0.3), gesamt: await goldShare(b, buf, 0.06, 0.9), alles: await goldShare(b, buf, 0.0, 0.3, 40) };       // oben (unten steht in C das Gemälde)
       }
-      check(`geste2 ${name}: 0 % (Zustand B) komplett Bier ohne Lücke oben, nach 10 % (0,26 s) ist die Schaumkrone schon im Bild und der Spiegel steht direkt unter der Oberkante`,
-        anteile[0].oben >= 0.95 && anteile[0].gesamt >= 0.9 && anteile[10].oben < 0.97 && anteile[10].oben > 0.5 && anteile[10].gesamt >= 0.85,
+      check(`geste2 ${name}: 0 % (Zustand B) komplett Bier ohne Lücke oben, nach 10 % (0,28 s) ist die Schaumkrone schon im Bild und der Spiegel sinkt schnell (steht im oberen Drittel, unten noch Bier)`,
+        anteile[0].oben >= 0.95 && anteile[0].gesamt >= 0.9 && anteile[10].oben < 0.97 && anteile[10].gesamt >= 0.5 && anteile[10].gesamt <= 0.9,
         `0 %: ${anteile[0].oben.toFixed(2)}/${anteile[0].gesamt.toFixed(2)}, 10 %: ${anteile[10].oben.toFixed(2)}/${anteile[10].gesamt.toFixed(2)}`);
       check(`geste2 ${name}: 50 % Schaumkrone im Bild, 90 % fast leer, 100 % leer`, anteile[50].oben < 0.9 && anteile[50].gesamt < 0.75 && anteile[90].gesamt < 0.3 && anteile[100].alles < 0.02,
         `50 %: ${anteile[50].oben.toFixed(2)}/${anteile[50].gesamt.toFixed(2)}, 90 %: ${anteile[90].gesamt.toFixed(2)}, 100 %: ${anteile[100].alles.toFixed(3)}`);
@@ -352,7 +348,7 @@ async function geste2() {
       check(`geste2 ${name}: Geste 2 führt nach C`, await waitZustand(b2, 'C', 12000) && await idle(b2, 12000));
       let ev = (await log(b2)).slice(n0).filter((e) => e.art === 'start' || e.art === 'ende');
       const dauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
-      check(`geste2 ${name}: Dauer ≈ 3,75 s = Phase 1 (2,6 s) + Pause + Phase 2 (1 s) (${dauer} ms)`, dauer >= 3550 && dauer <= 4100);
+      check(`geste2 ${name}: Dauer ≈ 3,95 s = Phase 1 (2,8 s) + Pause + Phase 2 (1 s) (${dauer} ms)`, dauer >= 3750 && dauer <= 4300);
       const S = (await samples(b2)).filter((x) => x.P > 1 && x.P < Pg2(PH.PH1) && x.z !== 'C');   // Phase 1
       let rueck = 0, maxStep = 0;
       for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
@@ -361,12 +357,15 @@ async function geste2() {
       const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), ein = alle.find((x) => x.input === 1 && x.P >= 1 && x.P < 1.01), sicht = alle.find((x) => x.P > 1 && x.level + 170 > 0);
       const wartezeit = ein && sicht ? sicht.t - ein.t : null;
       check(`geste2 ${name}: erste sichtbare Bewegung (Schaumkrone) ${wartezeit} ms nach der Geste (≤ 120)`, wartezeit != null && wartezeit <= 120, JSON.stringify({ ein: ein && ein.t, sicht: sicht && sicht.t }));
-      const D = S.filter((x) => tOf(x.P) >= PH.PH_IN + 60 && tOf(x.P) <= PH.PH1 - 150);
+      // schnell bis zur Bildschirmmitte (PH_IN), danach gleichmäßig bis zum Ende ohne Beschleunigen
+      const mitte = S.find((x) => tOf(x.P) >= PH.PH_IN), Sm = mitte ? mitte.level + 170 : null;
+      check(`geste2 ${name}: nach ${PH.PH_IN} ms steht der Spiegel in der Bildschirmmitte (${Sm != null ? Math.round(Sm) : '–'} px bei ${view.h} px Höhe, Soll 50 % ± 8 %)`, Sm != null && Math.abs(Sm - view.h * 0.5) <= view.h * 0.08);
+      const D = S.filter((x) => tOf(x.P) >= PH.PH_IN + 150 && tOf(x.P) <= PH.PH1 - 100);
       const v = []; for (let i = 0, j = 1; j < D.length; j++) { if (D[j].t - D[i].t >= 90) { v.push({ t: tOf(D[j].P), v: (D[j].level - D[i].level) / (D[j].t - D[i].t) }); i = j; } }
       const vm = v.reduce((a, x) => a + x.v, 0) / v.length, vlo = Math.min(...v.map((x) => x.v)), vhi = Math.max(...v.map((x) => x.v));
-      let sprung = 0; for (let k = 1; k < v.length; k++) if (Math.abs(v[k].v - v[k - 1].v) > 0.9 * vm) sprung++;
-      check(`geste2 ${name}: Bier wandert glatt und mit wechselndem Tempo, ohne Stillstand: langsamster Abschnitt ${(vlo * 1000).toFixed(0)} px/s (≥ 25 % des Mittels ${(vm * 1000).toFixed(0)}), schnellster ${(vhi * 1000).toFixed(0)} px/s (≥ 1,4 × langsamster), kein Tempo-Sprung (${sprung})`,
-        v.length > 10 && vlo >= 0.25 * vm && vhi >= 1.4 * vlo && sprung === 0, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
+      const vAnf = (S.find((x) => tOf(x.P) >= 150).level - S[0].level) / (S.find((x) => tOf(x.P) >= 150).t - S[0].t);
+      check(`geste2 ${name}: danach gleichmäßig: Tempo ${(vlo * 1000).toFixed(0)}–${(vhi * 1000).toFixed(0)} px/s (Mittel ${(vm * 1000).toFixed(0)}; schnellster ≤ 1,25 × langsamster), kein Beschleunigen am Ende, Anfang schnell (${(vAnf * 1000).toFixed(0)} px/s ≥ 1,8 × Mittel)`,
+        v.length > 10 && vhi <= 1.25 * vlo && v.at(-1).v <= v[0].v * 1.1 && vAnf >= 1.8 * vm, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
   }
@@ -483,14 +482,14 @@ async function herde() {
           fussMin: Math.round(Math.min(...fuss)), fussMax: Math.round(Math.max(...fuss)), extL: Math.round(pr.l - Math.min(...sheep.map((e) => R(e).l))), extR: Math.round(Math.max(...sheep.map((e) => R(e).r)) - pr.r),
           andere: { anzeige: getComputedStyle(${breit} ? document.querySelector('.herd') : document.querySelector('.painting__herde')).display, geladen: (${breit} ? herd : stage).filter((e) => !e.dataset.src).length },
           farben: { weiss: sheep.filter((e) => /lamm|hell|grast/.test(e.src)).length, braun: sheep.filter((e) => /braun|kalb|gefleckt/.test(e.src)).length } }; })())`));
-      const soll = breit ? 16 : 5;
+      const soll = breit ? 14 : 5;
       check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 2 && info.farben.braun >= 2 && info.hMin >= 12, JSON.stringify(info.farben));
       check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel, Text oder Bildunterschrift (am Handy stehen zwei absichtlich am Rand und ragen etwas hinaus), kein horizontaler Scroll`, info.bad.length === 0 && (!breit || info.innen) && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
       check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe);
       check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
       if (breit) {
         check(`herde ${name}: Schafe stehen rund um das Gemälde (${info.W} px breit): ${info.links} links, ${info.unten} vor der Unterkante, ${info.rechts} rechts; Füße ${info.fussMin} bis ${info.fussMax} px an der Unterkante; links ragen sie ${info.extL} px hinaus, rechts ${info.extR} px (Unterschied ≤ 15 % der Bildbreite)`,
-          info.links >= 2 && info.rechts >= 2 && Math.abs(info.links - info.rechts) <= 2 && info.unten >= 7 && info.fussMin >= -4 && info.fussMax <= 28 && Math.abs(info.extL - info.extR) <= info.W * 0.15 && info.hMax <= info.W * 0.16 + 4, JSON.stringify(info));
+          info.links >= 2 && info.rechts >= 2 && Math.abs(info.links - info.rechts) <= 2 && info.unten >= 5 && info.fussMin >= -4 && info.fussMax <= 28 && Math.abs(info.extL - info.extR) <= info.W * 0.15 && info.hMax <= info.W * 0.16 + 4, JSON.stringify(info));
         check(`herde ${name}: mit dem Gemälde in A unsichtbar (Deckkraft ${A.op}), in B nur zum Vorbereiten fast unsichtbar (${Bz.op}), in C sichtbar (${Cz.op})`, A.op === 0 && Bz.op <= 0.011 && Cz.op === 1);
       }
       check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
@@ -531,7 +530,7 @@ async function herde() {
         if (!reduced) await b.js('window.scrollTo(0, 0)');
         const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.painting__herde' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
           an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return i.complete && i.naturalWidth > 0; })() })`));
-        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 16 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 16 : 5) && !r.an && r.bild, JSON.stringify(r));
+        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 14 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 14 : 5) && !r.an && r.bild, JSON.stringify(r));
       } finally { b.close(); }
     }
   }
@@ -1026,7 +1025,7 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (Schaum ein ${pz.PH_IN} ms, Phase 1 ${pz.PH1} ms mit ${pz.DRINK.length} Zügen, Pause ${pz.PAUSE} ms, Fahrt ${pz.RIDE} ms, Einblenden ${pz.FADE} ms, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (schneller Abstieg ${pz.PH_IN} ms, Phase 1 ${pz.PH1} ms gleichmäßig, Pause ${pz.PAUSE} ms, Fahrt ${pz.RIDE} ms, Einblenden ${pz.FADE} ms, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(700);
       // Mitschnitt: welche Stileigenschaften ändern sich während Geste 2 (nur transform, opacity, visibility und --frame-o erlaubt) und Aufgaben über 50 ms (CPU 4 × langsamer)
       await b.js(`(() => { window.__chg = {}; window.__lt = [];

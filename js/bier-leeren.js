@@ -2,7 +2,7 @@
 // flache Goldfläche (--gold-beer, Farbe des Kronkorkens), flache cremeweiße Schaumkrone, wenige aufsteigende Bläschen.
 // Die Oberfläche ist eine Welle aus drei überlagerten Sinuswellen (SVG-Pfad, per requestAnimationFrame),
 // die sich dauerhaft sanft bewegt. Beim Scrollen schwappt das Bier: die Scrollgeschwindigkeit kippt die
-// Oberfläche, eine gedämpfte Feder lässt sie danach ruhig ausschwingen. Der Schaum folgt leicht verzögert.
+// Oberfläche leicht, eine stark gedämpfte Feder beruhigt sie sofort wieder (kaum Schwappen). Der Schaum folgt leicht verzögert.
 // Der Pegel selbst wird nur per transform verschoben (level() aus js/sequenz.js, allein aus dem Scrollfortschritt).
 // Das Bier füllt auf allen Geräten den ganzen Bildschirm von Rand zu Rand (Höhe 100lvh, siehe .beer in css/style.css).
 // Zustand B: Pegel 0 = der Spiegel steht knapp (16 px) über dem Bildrand, das Bild ist ganz Bier, die Schaumkrone liegt darüber außerhalb. Beim Leeren sinkt er ins Bild, dabei gleitet die Schaumkrone ein.
@@ -93,7 +93,7 @@ export function createBeer(hero) {
 
   function draw() {
     if (!W) return;
-    const amp = still ? 0 : 10 + Math.min(46, Math.abs(tilt) * 0.5 + Math.abs(tiltV) * 0.04);
+    const amp = still ? 0 : 9 + Math.min(10, Math.abs(tilt) * 0.3 + Math.abs(tiltV) * 0.01);    // Wellenhöhe: ruhig, das Schwappen hebt sie nur wenig
     foamAmp += (amp - foamAmp) * 0.12;
     const surf = [], top = [];
     for (let x = 0; x <= W + STEP; x += STEP) {
@@ -119,8 +119,8 @@ export function createBeer(hero) {
     scrollV *= Math.exp(-dt * 10);                               // ohne Scrollen klingt die Anregung ab
     smoothV += (scrollV - smoothV) * Math.min(1, dt * 6);
     // gedämpfte Feder: Ruhelage kippt mit der Scrollgeschwindigkeit, danach ruhiges Ausschwingen
-    const target = Math.max(-90, Math.min(90, smoothV * 0.032));
-    const omega = TAU * 0.8, zeta = 0.16;
+    const target = Math.max(-22, Math.min(22, smoothV * 0.008));      // kleine Neigung (vorher bis 90 px)
+    const omega = TAU * 0.8, zeta = 0.85;                              // stark gedämpft: kein Nachschwingen (vorher 0,16)
     tiltV += (omega * omega * (target - tilt) - 2 * zeta * omega * tiltV) * dt;
     tilt += tiltV * dt;
     foamTilt += (tilt - foamTilt) * Math.min(1, dt / 0.12);

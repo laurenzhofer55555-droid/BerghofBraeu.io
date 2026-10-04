@@ -23,8 +23,8 @@
 //     startet von selbst, sobald alles da ist.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=145531d7';
-import { ladeHerde } from './herde.js?v=145531d7';
+import { createBeer } from './bier-leeren.js?v=f8a8d7c6';
+import { ladeHerde } from './herde.js?v=f8a8d7c6';
 
 const BASE = 'assets/sequenz/';
 const root = document.documentElement;
@@ -39,18 +39,18 @@ const manifest = await (await fetch(BASE + 'manifest.json' + V)).json();
 const AV = manifest.v ? '?v=' + manifest.v : '';              // Version der Bilder
 
 // ── Einstellungen ───────────────────────────────
-const DUR1 = 2800;            // ms, Geste 1 (Kamerafahrt bis zum Bier)
+const DUR1 = 1900;            // ms, Geste 1 (Kamerafahrt bis zum Bier; vorher 2800)
 // Geste 2 in zwei klar getrennten Phasen nacheinander (eine Zeitleiste, P läuft linear von 1 nach 2): erst nur das Bier (PH1), kurze Pause, dann fährt der ganze Block gleichzeitig
 // nach oben (RIDE): Titel „Berghof Hell“, Schafe, Einleitung und Gemälde gleiten gemeinsam an ihren Platz (alle um denselben Weg, der Block bleibt starr) und blenden dabei gemeinsam
 // ein (FADE), dazu der Seitenrahmen.
-// Phase 1 (Bier): sofort mit der Geste gleitet die Schaumkrone in 0,3 s von oben ins Bild (PH_IN, ease-out, der Spiegel steht danach direkt unter der Oberkante), danach, ohne Halt, trinkt „jemand“
-// das Glas leer: der Spiegel wandert glatt nach unten, mal etwas schneller (Schluck), mal etwas langsamer, aber nie stockend und ohne Stillstand (DRINK: Tempo ändert sich nur sanft).
-const PH_IN = 300, PH1 = 2600, PAUSE = 150, RIDE = 1000, FADE = 550;
-const T2 = PH1 + PAUSE + RIDE;                               // 3750 ms insgesamt (Phase 2 = 1 s)
+// Phase 1 (Bier): eine einzige glatte Kurve ohne Knick. Das Bier sinkt sofort mit der Geste schnell bis zur Mitte des Bildschirms (PH_IN, die Schaumkrone gleitet dabei von oben ein) und läuft
+// ab dort gleichmäßig und ruhig weiter aus (konstantes Tempo bis zum Ende, kein Beschleunigen, kein Auf und Ab). Das Schwappen (js/bier-leeren.js) ist stark gedämpft.
+const PH_IN = 700, PH1 = 2800, PAUSE = 150, RIDE = 1000, FADE = 550;
+const T2 = PH1 + PAUSE + RIDE;                               // 3950 ms insgesamt (Phase 2 = 1 s)
 const FOAM_GAP = 12;                                         // px: nach dem Einblenden steht die Schaumkrone ganz im Bild, der Spiegel (mittlere Oberfläche) FOAM_GAP px darunter
-// Trinken: Tempo des Spiegels = sanfte Welle (surges Wellen über das ganze Trinken, depth = wie stark das Tempo schwankt, 0,45 = zwischen 55 % und 145 %), beginnt mit einem weichen Anlauf (ramp = Anteil)
-// und wird zum Ende hin etwas schneller (langer letzter Zug). Das Tempo wird nie null (außer ganz am Anfang), deshalb stockt nichts. Die Strecke ist das Integral des Tempos, auf 1 normiert.
-const DRINK = { surges: 2.5, depth: 0.45, ramp: 0.1, intro: 0.6 };      // intro: das Einblenden der Schaumkrone endet mit 40 % seines Anfangstempos, das Trinken setzt mit genau diesem Tempo fort (kein Halt dazwischen)
+// Auslaufen: p(T) = A·(1 − e^(−T/τ)) + B·T/PH1. Der Term mit A ist der schnelle Abstieg (klingt mit der Zeitkonstante τ ab), der Term mit B das gleichmäßige Auslaufen. A und B ergeben sich so,
+// dass der Spiegel nach PH_IN ms genau in der Bildschirmmitte (half = 0,5 der Höhe) steht und nach PH1 ms ganz leer ist; das Tempo fällt stetig vom schnellen Anfang auf das gleichmäßige Tempo.
+const DRINK = { tau: 220, half: 0.5 };
 const B_LEVEL = 0;            // Pegel im Zustand B (0 = Bierfläche über den ganzen Bildschirm, Spiegel über dem Bildrand, keine Schaumkrone; 1 = leer)
 const LOCK_AFTER = 400;       // ms Sperre nach jeder Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
@@ -295,32 +295,15 @@ function measureDy() {
     hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
   }
 }
-const drinkTabellen = new Map();                              // je Starttempo v0 (hängt nur von der Bildschirmhöhe ab) einmal berechnet
-function drinkTabelle(v0) {                                   // kumulierte Strecke 0 … 1 in 256 Schritten; v0 = Tempo am Anfang im Verhältnis zum mittleren Tempo des Trinkens
-  const key = Math.round(v0 * 100);
-  let tab = drinkTabellen.get(key);
-  if (tab) return tab;
-  const n = 256; tab = new Float64Array(n + 1);
-  const tempo = (u) => { const w = smooth(clamp01(u / DRINK.ramp)); return (v0 + (1 - v0) * w) * (1 + 0.35 * u) * (1 + DRINK.depth * Math.sin(2 * Math.PI * DRINK.surges * u - Math.PI / 2) * w); };
-  for (let i = 1; i <= n; i++) tab[i] = tab[i - 1] + tempo((i - 0.5) / n);
-  for (let i = 1; i <= n; i++) tab[i] /= tab[n];
-  drinkTabellen.set(key, tab);
-  return tab;
-}
-function drink(ms, v0) {                                      // Anteil 0 … 1 des Weges nach dem Einblenden, ms ab Beginn des Trinkens
-  const tab = drinkTabelle(v0), u = clamp01(ms / (PH1 - PH_IN)), x = u * 256, i = Math.min(255, Math.floor(x));
-  return tab[i] + (tab[i + 1] - tab[i]) * (x - i);
-}
-// Bierpegel 0 … 1 (Phase 1 von Geste 2: erst Schaumkrone ein, dann die Schlucke; danach leer). Start und Ende des Weges kommen aus der echten Höhe des Bier-Layers (beer.levelAt, 100lvh).
+// Bierpegel 0 … 1 (Phase 1 von Geste 2: schnell bis zur Bildschirmmitte, dann gleichmäßig leer; danach 1). Start und Ende des Weges kommen aus der echten Höhe des Bier-Layers (beer.levelAt, 100lvh).
 function levelOf(p) {
   if (p <= 1) return B_LEVEL * smooth(ramp(p, 0.78, 1));
   const T = (p - 1) * T2;                                      // ms seit Beginn von Geste 2
   if (T >= PH1) return 1;
-  const p1 = beer.levelAt(beer.foamHeight() + FOAM_GAP);       // Pegel mit der Schaumkrone ganz im Bild
-  const c = DRINK.intro;
-  if (T <= PH_IN) { const tau = T / PH_IN; return B_LEVEL + (p1 - B_LEVEL) * tau * (1 + c - c * tau); }      // Einblenden: ease-out, endet noch mit Tempo (1 − c)
-  const v0 = (1 - c) * (p1 - B_LEVEL) * (PH1 - PH_IN) / (PH_IN * (1 - p1));                                   // Tempo des Einblendens am Ende, im Verhältnis zum mittleren Tempo des Trinkens
-  return p1 + (1 - p1) * drink(T - PH_IN, v0);
+  const q = Math.min(0.9, Math.max(0.05, beer.levelAt(innerHeight * DRINK.half)));    // Pegel, bei dem die Oberfläche in der Bildschirmmitte steht
+  const g1 = 1 - Math.exp(-PH1 / DRINK.tau), g2 = 1 - Math.exp(-PH_IN / DRINK.tau), r = PH_IN / PH1;
+  const A = Math.max(0, (q - r) / (g2 - g1 * r)), B = 1 - A * g1;       // p(PH_IN) = q und p(PH1) = 1
+  return B_LEVEL + (1 - B_LEVEL) * (A * (1 - Math.exp(-T / DRINK.tau)) + B * (T / PH1));
 }
 const frameOf = (p) => Math.round(ramp(Math.min(1, p), 0, 0.85) * (N - 1));   // Kamerafahrt über die ersten 85 % von Geste 1
 
