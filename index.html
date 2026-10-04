@@ -117,7 +117,7 @@
     @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
     @font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
     @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
-    :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #46644B; --gold: #B8913A; --ink: #22301f;
+    :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #1F4D2B; --gold: #B8913A; --ink: #22301f;
       --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif; --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
@@ -270,7 +270,7 @@
     .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #B8913A; outline-offset: 5px; box-shadow: 0 0 0 3px #F7F4EC, 0 0 0 5px #1F4D2B; border-radius: 10px; }      /* dünner goldener Rahmen, innen ein dunkelgrüner Ring: auch auf Beige mit gutem Kontrast sichtbar */
     .age a:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px #F7F4EC, 0 0 0 4px #1F4D2B; outline-offset: 4px; }
     .age__note { margin: 32px 0 0; font-size: 16px; line-height: 1.55; color: var(--green-soft); }
-    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: rgba(31, 77, 43, .82); }
+    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: var(--green); }
     .age__links { margin: 24px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
     .age__links a { color: var(--green); }
     .age__no { display: none; }
@@ -324,12 +324,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=55148685" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=55148685" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=55148685" /></noscript>
+  <link rel="preload" href="css/style.css?v=d15eb76a" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=d15eb76a" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=d15eb76a" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=55148685"></script>
+  <script type="module" src="js/main.js?v=d15eb76a"></script>
 </head>
 <body>
 

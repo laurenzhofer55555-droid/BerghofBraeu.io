@@ -34,7 +34,7 @@
   --cream: #F7F4EC;
   --cream-deep: #EFEADD;
   --green: #1F4D2B;
-  --green-soft: #46644B;   /* Nebentext – Kontrast ≥ 4,5:1 auf Creme */
+  --green-soft: #1F4D2B;   /* Nebentext: dasselbe Tannengrün wie --green (eine Grünfarbe über die ganze Seite) */
   --gold: #B8913A;         /* nur für Linien und Ornamente */
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
@@ -267,8 +267,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .sheep--gefleckt { --l: 6%; --b: .34; --h: .17; --z: 3; }
 .sheep--ruhend-hell { --r: 14%; --b: .36; --h: .11; --z: 2; }
 
-/* Bildunterschrift: klein und leise, Tannengrün mit 78 % Deckkraft (4,9:1 auf Creme; 70 % erreichen nur 4,05:1) */
-.painting figcaption { margin-top: 11px; font-size: 13.5px; line-height: 1.45; letter-spacing: .02em; font-style: italic; color: color-mix(in srgb, var(--green) 78%, transparent); text-align: center; text-wrap: balance; }
+/* Bildunterschrift: klein, kursiv, dasselbe Tannengrün wie überall */
+.painting figcaption { margin-top: 11px; font-size: 13.5px; line-height: 1.45; letter-spacing: .02em; font-style: italic; color: var(--green); text-align: center; text-wrap: balance; }
 @media (min-width: 768px) { .painting figcaption { margin-top: 26px; } }      /* Tablet/Desktop: die Herde steht vor der Unterkante des Gemäldes und braucht den Platz */
 @media (max-width: 767px) { .painting figcaption { font-size: 12.5px; } }
 
