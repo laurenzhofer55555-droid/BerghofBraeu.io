@@ -307,7 +307,7 @@ async function zustandB() {
 // Dauer 2,5 bis 3 s, gleichmäßig ohne Sprung. Bilder bei 0, 10, 50, 90 und 100 % der Zeit (sine.inOut).
 const easeSine = (t) => (1 - Math.cos(Math.PI * t)) / 2;
 // Geste 2: zwei Phasen nacheinander (gleiche Zahlen wie in js/sequenz.js, window.__sequenz.phasen wird in „phasen“ gegengeprüft)
-const PH = { PH_IN: 700, PH1: 2800, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3950, DRINK: { tau: 220, half: 0.5 } };
+const PH = { PH_IN: 450, PH1: 2800, PAUSE: 150, RIDE: 1000, FADE: 550, T2: 3950, DRINK: { tau: 150, half: 0.25 } };
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn von Geste 2
 const tOf = (P) => (P - 1) * PH.T2;
 const easeOutT = (t) => 1 - (1 - t) ** 3;
@@ -357,15 +357,15 @@ async function geste2() {
       const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), ein = alle.find((x) => x.input === 1 && x.P >= 1 && x.P < 1.01), sicht = alle.find((x) => x.P > 1 && x.level + 170 > 0);
       const wartezeit = ein && sicht ? sicht.t - ein.t : null;
       check(`geste2 ${name}: erste sichtbare Bewegung (Schaumkrone) ${wartezeit} ms nach der Geste (≤ 120)`, wartezeit != null && wartezeit <= 120, JSON.stringify({ ein: ein && ein.t, sicht: sicht && sicht.t }));
-      // schnell bis zur Bildschirmmitte (PH_IN), danach gleichmäßig bis zum Ende ohne Beschleunigen
+      // zügig bis ins obere Viertel (PH_IN), danach gleichmäßig bis zum Ende ohne Beschleunigen
       const mitte = S.find((x) => tOf(x.P) >= PH.PH_IN), Sm = mitte ? mitte.level + 170 : null;
-      check(`geste2 ${name}: nach ${PH.PH_IN} ms steht der Spiegel in der Bildschirmmitte (${Sm != null ? Math.round(Sm) : '–'} px bei ${view.h} px Höhe, Soll 50 % ± 8 %)`, Sm != null && Math.abs(Sm - view.h * 0.5) <= view.h * 0.08);
+      check(`geste2 ${name}: nach ${PH.PH_IN} ms steht der Spiegel bei 25 % der Höhe (${Sm != null ? Math.round(Sm) : '–'} px bei ${view.h} px Höhe, Soll 25 % ± 8 %)`, Sm != null && Math.abs(Sm - view.h * PH.DRINK.half) <= view.h * 0.08);
       const D = S.filter((x) => tOf(x.P) >= PH.PH_IN + 150 && tOf(x.P) <= PH.PH1 - 100);
       const v = []; for (let i = 0, j = 1; j < D.length; j++) { if (D[j].t - D[i].t >= 90) { v.push({ t: tOf(D[j].P), v: (D[j].level - D[i].level) / (D[j].t - D[i].t) }); i = j; } }
       const vm = v.reduce((a, x) => a + x.v, 0) / v.length, vlo = Math.min(...v.map((x) => x.v)), vhi = Math.max(...v.map((x) => x.v));
       const vAnf = (S.find((x) => tOf(x.P) >= 150).level - S[0].level) / (S.find((x) => tOf(x.P) >= 150).t - S[0].t);
-      check(`geste2 ${name}: danach gleichmäßig: Tempo ${(vlo * 1000).toFixed(0)}–${(vhi * 1000).toFixed(0)} px/s (Mittel ${(vm * 1000).toFixed(0)}; schnellster ≤ 1,25 × langsamster), kein Beschleunigen am Ende, Anfang schnell (${(vAnf * 1000).toFixed(0)} px/s ≥ 1,8 × Mittel)`,
-        v.length > 10 && vhi <= 1.25 * vlo && v.at(-1).v <= v[0].v * 1.1 && vAnf >= 1.8 * vm, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
+      check(`geste2 ${name}: danach gleichmäßig: Tempo ${(vlo * 1000).toFixed(0)}–${(vhi * 1000).toFixed(0)} px/s (Mittel ${(vm * 1000).toFixed(0)}; schnellster ≤ 1,25 × langsamster), kein Beschleunigen am Ende, Anfang zügiger (${(vAnf * 1000).toFixed(0)} px/s ≥ 1,6 × Mittel)`,
+        v.length > 10 && vhi <= 1.25 * vlo && v.at(-1).v <= v[0].v * 1.1 && vAnf >= 1.6 * vm, JSON.stringify(v.map((x) => [Math.round(x.t), +(x.v * 1000).toFixed(0)])));
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
   }
@@ -1025,7 +1025,7 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (schneller Abstieg ${pz.PH_IN} ms, Phase 1 ${pz.PH1} ms gleichmäßig, Pause ${pz.PAUSE} ms, Fahrt ${pz.RIDE} ms, Einblenden ${pz.FADE} ms, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (zügiger Abstieg ${pz.PH_IN} ms, Phase 1 ${pz.PH1} ms gleichmäßig, Pause ${pz.PAUSE} ms, Fahrt ${pz.RIDE} ms, Einblenden ${pz.FADE} ms, gesamt ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
       await gesture(b, 1); await waitZustand(b, 'B'); await idle(b); await sleep(700);
       // Mitschnitt: welche Stileigenschaften ändern sich während Geste 2 (nur transform, opacity, visibility und --frame-o erlaubt) und Aufgaben über 50 ms (CPU 4 × langsamer)
       await b.js(`(() => { window.__chg = {}; window.__lt = [];
