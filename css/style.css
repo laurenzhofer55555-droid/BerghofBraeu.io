@@ -523,7 +523,7 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 /* ── Handy (bis 768 px): kürzer, Geschichte als seitlich wischbare Timeline ── */
 @media (max-width: 768px) {
   .ingredient p { display: none; }                 /* Texte bleiben im HTML (Google, Desktop) */
-  #standort { display: none; }                     /* Adresse und Kontakt stehen im Fußbereich und im Impressum */
+  #standort .location__list { display: none; }     /* nur die Karte (tippen öffnet Google Maps); Adresse und Kontakt stehen im Fußbereich und im Impressum */
 
   /* Timeline: seitlich wischbar; die nächste Station ragt ca. 18 % herein (Peek), der Hinweis darunter zeigt Punkte und „Wischen“ */
   .timeline {
