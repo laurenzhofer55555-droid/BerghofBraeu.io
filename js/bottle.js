@@ -35,9 +35,9 @@ export const SHADOW_LAYER = 1; // nur diese Objekte werfen den Kontaktschatten
 
 // Etiketten: Höhe von/bis (mm über dem Boden), Breite als Bogenlänge (mm)
 const LABELS = {
-  front: { url: 'assets/textures/label-front.webp', y0: 20, y1: 120, width: 90, phi: 0 },            // 9 × 10 cm
+  front: { url: 'assets/textures/label-front.webp', y0: 17.8, y1: 122.2, width: 94.4, phi: 0 },       // 9 × 10 cm Bild + ca. 2,2 mm cremefarbener Rand ringsum
   back:  { url: 'assets/textures/label-back.webp',  y0: 27.5, y1: 112.5, width: 69.9, phi: Math.PI },
-  neck:  { url: 'assets/textures/label-neck.webp',  y0: 152, y1: 184, width: 66, phi: 0, cutout: true },
+  neck:  { url: 'assets/textures/label-neck.webp',  y0: 150.55, y1: 185.45, width: 69.4, phi: 0, cutout: true },   // inkl. cremefarbenem Rand um die grüne Linie (Linie wie bisher 66 × 32 mm)
 };
 
 export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false } = {}) {
