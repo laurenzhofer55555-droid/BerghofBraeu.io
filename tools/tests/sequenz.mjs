@@ -482,14 +482,14 @@ async function herde() {
           fussMin: Math.round(Math.min(...fuss)), fussMax: Math.round(Math.max(...fuss)), extL: Math.round(pr.l - Math.min(...sheep.map((e) => R(e).l))), extR: Math.round(Math.max(...sheep.map((e) => R(e).r)) - pr.r),
           andere: { anzeige: getComputedStyle(${breit} ? document.querySelector('.herd') : document.querySelector('.painting__herde')).display, geladen: (${breit} ? herd : stage).filter((e) => !e.dataset.src).length },
           farben: { weiss: sheep.filter((e) => /lamm|hell|grast/.test(e.src)).length, braun: sheep.filter((e) => /braun|kalb|gefleckt/.test(e.src)).length } }; })())`));
-      const soll = breit ? 14 : 5;
+      const soll = breit ? 9 : 5;
       check(`herde ${name}: ${info.n} Schafe sichtbar (Soll ${soll}), weiße und braune gemischt (${info.farben.weiss} hell, ${info.farben.braun} braun)`, info.n === soll && info.farben.weiss >= 2 && info.farben.braun >= 2 && info.hMin >= 12, JSON.stringify(info.farben));
       check(`herde ${name}: kein Schaf überdeckt Titel, Untertitel, Text oder Bildunterschrift (am Handy stehen zwei absichtlich am Rand und ragen etwas hinaus), kein horizontaler Scroll`, info.bad.length === 0 && (!breit || info.innen) && info.sw === info.cw, `${info.bad.join(', ') || 'ok'}, Breite ${info.sw}/${info.cw}`);
       check(`herde ${name}: WebP mit srcset, feste Maße, alt="" je Schaf, Gruppen-Beschreibung`, info.geladen && info.attr && info.gruppe);
       check(`herde ${name}: die Schafe der anderen Größe sind weder sichtbar noch geladen (${info.andere.geladen} geladen, Anzeige ${info.andere.anzeige})`, info.andere.anzeige === 'none' && info.andere.geladen === 0);
       if (breit) {
         check(`herde ${name}: Schafe stehen rund um das Gemälde (${info.W} px breit): ${info.links} links, ${info.unten} vor der Unterkante, ${info.rechts} rechts; Füße ${info.fussMin} bis ${info.fussMax} px an der Unterkante; links ragen sie ${info.extL} px hinaus, rechts ${info.extR} px (Unterschied ≤ 15 % der Bildbreite)`,
-          info.links >= 2 && info.rechts >= 2 && Math.abs(info.links - info.rechts) <= 2 && info.unten >= 5 && info.fussMin >= -4 && info.fussMax <= 28 && Math.abs(info.extL - info.extR) <= info.W * 0.15 && info.hMax <= info.W * 0.16 + 4, JSON.stringify(info));
+          info.links >= 2 && info.rechts >= 2 && Math.abs(info.links - info.rechts) <= 2 && info.unten >= 1 && info.fussMin >= -4 && info.fussMax <= 28 && Math.abs(info.extL - info.extR) <= info.W * 0.15 && info.hMax <= info.W * 0.16 + 4, JSON.stringify(info));
         check(`herde ${name}: mit dem Gemälde in A unsichtbar (Deckkraft ${A.op}), in B nur zum Vorbereiten fast unsichtbar (${Bz.op}), in C sichtbar (${Cz.op})`, A.op === 0 && Bz.op <= 0.011 && Cz.op === 1);
       }
       check(`herde ${name}: keine eigene Animation (${info.name}, ${info.dauer} s)`, info.name === 'none' && info.dauer === 0);
@@ -530,7 +530,7 @@ async function herde() {
         if (!reduced) await b.js('window.scrollTo(0, 0)');
         const r = JSON.parse(await b.js(`JSON.stringify({ n: [...document.querySelectorAll('${breit ? '.painting__herde' : '.herd'} .sheep')].filter((e) => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility === 'visible' && +c.opacity === 1 && e.complete && e.naturalWidth > 0; }).length,
           an: [...document.querySelectorAll('.sheep')].some((e) => getComputedStyle(e).animationName !== 'none'), bild: (() => { const i = document.querySelector('.painting img'); return i.complete && i.naturalWidth > 0; })() })`));
-        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 14 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 14 : 5) && !r.an && r.bild, JSON.stringify(r));
+        check(`herde ${reduced ? 'Bewegung reduzieren' : 'Neuladen in C'} (${vn}): ${breit ? 'alle 9 Schafe' : 'alle 5 Schafe'} und das Gemälde sofort sichtbar, ohne Einblenden`, r.n === (breit ? 9 : 5) && !r.an && r.bild, JSON.stringify(r));
       } finally { b.close(); }
     }
   }

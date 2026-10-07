@@ -50,7 +50,7 @@ Dann http://localhost:5173 öffnen.
     steht in voller Inhaltsbreite unter dem ersten Bildschirm (`--fold`) mit Passepartout (heller Innenrand), feinem goldenem Rahmen, weichem Schatten und kursiver Bildunterschrift. Im ersten
     Bildschirm steht unten die Herde (`.herd`, fünf Schafe im Bereich unter der Einleitung, `--zone`, innerhalb des Seitenrahmens); sie fährt in Geste 2 gemeinsam mit dem Block hoch.
   - **Tablet und Desktop (ab 768 px), Variante „Bühne“:** Text kompakt (18 px, max. 52 Zeichen), das Gemälde breit und so hoch, dass der Block samt Schafen in den ersten Bildschirm passt
-    (`min(80 %, max(520 px, (100svh − 520 px) · 1,5))`), ringsum steht eine Herde aus 14 freigestellten Schafen (`.painting__herde`): vier links, vier rechts und sechs vor der Unterkante, Füße auf
+    (`min(80 %, max(520 px, (100svh − 520 px) · 1,5))`), ringsum steht eine Herde aus 9 freigestellten Schafen (`.painting__herde`): vier links, vier rechts und ein braunes rechts an der Unterkante (sonst steht nichts vor dem Bild, das Gemälde bleibt ruhig), Füße auf
     der Kante (Anordnung über `--x`/`--y`/`--k` je Schaf, Größe in `cqw` der Bildbreite, gespiegelt über `--f`; am Tablet enger gestellt, damit nichts den Seitenrahmen berührt). Die Schafe liegen im
     Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
   Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen nach den Sequenzbildern und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
