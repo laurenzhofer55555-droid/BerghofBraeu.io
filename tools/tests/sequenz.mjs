@@ -644,7 +644,7 @@ async function replay() {
       await nachC(b, view);
       await b.js('window.scrollTo(0, document.documentElement.scrollHeight)'); await sleep(600);
       const link = JSON.parse(await b.js(`JSON.stringify((() => { const a = document.querySelector('[data-intro]'), r = a.getBoundingClientRect(), c = getComputedStyle(a); return { text: a.textContent.trim(), up: c.textTransform, fs: parseFloat(c.fontSize), color: c.color, h: r.height, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, sichtbar: r.top >= 0 && r.bottom <= innerHeight }; })())`));
-      check(`replay ${name}: Link „${link.text}“ im Fuß: kleine Versalien (${link.fs} px), blau, Tippfläche ≥ 44 px`, /Bier Animation erneut anzeigen/i.test(link.text) && link.up === 'uppercase' && link.fs <= 13 && link.color === 'rgb(76, 146, 177)' && link.h >= 44 && link.sichtbar, JSON.stringify(link));
+      check(`replay ${name}: Link „${link.text}“ im Fuß: kleine Versalien (${link.fs} px), blau, Tippfläche ≥ 44 px`, /Bier Animation erneut anzeigen/i.test(link.text) && link.up === 'uppercase' && link.fs <= 13 && link.color === 'rgb(31, 77, 43)' && link.h >= 44 && link.sichtbar, JSON.stringify(link));
       await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: link.x, y: link.y, button: 'left', clickCount: 1 });
       await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: link.x, y: link.y, button: 'left', clickCount: 1 });
       check(`replay ${name}: Klick scrollt nach oben und startet das Intro in Zustand A (gesperrt)`, await waitZustand(b, 'A', 15000) && (await state(b)).y === 0 && (await state(b)).overflow === 'hidden');
@@ -685,7 +685,7 @@ async function pfeil() {
       await sleep(400);                                            // Einblenden (200 ms) abwarten
       const a = await info();
       const breit = view.w / view.h > 0.8, soll = breit ? Math.min(46, Math.max(34, view.h * 0.05)) : 40;
-      const gruen = 'rgb(76, 146, 177)';
+      const gruen = 'rgb(31, 77, 43)';
       check(`pfeil ${name}: Knopf „Weiter“ mit einem einzelnen Pfeil, ${Math.round(soll)} px breit, Tippfläche ≥ 44 px`, a.tag === 'BUTTON' && a.label === 'Weiter' && a.type === 'button' && a.shapes === 2 && a.rects === 0 && Math.abs(a.svgW - soll) <= 1 && a.w >= 44 && a.h >= 44 && Math.abs(a.svgH / a.svgW - 1) < 0.05, JSON.stringify({ w: a.w, h: a.h, svgW: a.svgW, shapes: a.shapes }));
       check(`pfeil ${name}: Linienpfeil wie „→“ nach unten: Schaft mit offener V-Spitze (kein Dreieck), blau, kräftig (${a.sw.toFixed(1)} px), runde Enden`, a.fill === 'none' && a.stroke === gruen && a.sw >= 3.5 && a.sw <= 6 && a.cap === 'round' && a.join === 'round', JSON.stringify({ fill: a.fill, stroke: a.stroke, sw: a.sw, cap: a.cap }));
       check(`pfeil ${name}: „${a.text}“ rechts neben dem Pfeil, Versalien, weite Laufweite, blau, ${a.fs} px, vertikal mittig`, /^(wischen|scrollen)$/i.test(a.text) && a.rechts && a.tup === 'uppercase' && a.fs >= 13 && a.ls >= 3 && a.tcolor === gruen && a.vz <= 2, JSON.stringify({ fs: a.fs, ls: a.ls, color: a.tcolor, vz: a.vz, rechts: a.rechts }));
@@ -1096,7 +1096,7 @@ async function alter() {
         check(`alter ${name}: Handy: Bottom Sheet unten (Breite ${g.w}/${view.w}, Abstand unten ${g.bottom} px), ${Math.round(g.anteil * 100)} % der Höhe (44–68 %), obere Ecken rund (${g.radius}), untere eckig`, g.w === view.w && Math.abs(g.bottom) <= 1 && g.anteil >= 0.44 && g.anteil <= 0.68 && parseFloat(g.radius) >= 16 && parseFloat(g.radiusU) === 0, JSON.stringify(g));
       } else {
         check(`alter ${name}: Karte mittig (Abweichung ${g.cx}/${g.cy} px), ${g.w} px breit (520–560), ${g.h} px hoch, Rahmen wie die Seite: tannengrün (${g.rw} ${g.rand}), innen feine goldene Linie, beiger Hintergrund (${g.bg})`,
-          Math.abs(g.cx) <= 1 && Math.abs(g.cy) <= 2 && g.w <= 560 && g.w >= 520 && parseFloat(g.radius) >= 4 && g.rand === 'rgb(76, 146, 177)' && parseFloat(g.rw) >= 1 && g.bg === 'rgb(247, 244, 236)', JSON.stringify(g));
+          Math.abs(g.cx) <= 1 && Math.abs(g.cy) <= 2 && g.w <= 560 && g.w >= 520 && parseFloat(g.radius) >= 4 && g.rand === 'rgb(31, 77, 43)' && parseFloat(g.rw) >= 1 && g.bg === 'rgb(247, 244, 236)', JSON.stringify(g));
       }
       check(`alter ${name}: Seite dahinter sichtbar (Standbild ${g.poster}, Bildfolge ${g.cv}), abgedunkelt (Deckkraft ${alpha}) und weichgezeichnet („${g.blur}“), keine Ranken mehr, kein horizontaler Scroll`, (g.poster === 'visible' || g.cv === 'visible') && alpha > 0.2 && alpha < 0.7 && /blur/.test(g.blur || '') && !g.vine && g.sw === g.cw, JSON.stringify({ alpha, blur: g.blur }));
       check(`alter ${name}: Schrift mindestens 14 px (kleinste ${g.min} px), Schaltflächen mindestens 44 px hoch (${g.btn.join('/')} px), „${g.ja}“ und „${g.nein}“`, g.min >= 14 && g.btn.every((h) => h >= 44) && g.ja === 'Ja, ich bin 16' && g.nein === 'Nein', JSON.stringify({ min: g.min, btn: g.btn }));
@@ -1109,7 +1109,7 @@ async function alter() {
       const kontrast = (fg, bg) => { const a = lum(fg), b3 = lum(bg); return (Math.max(a, b3) + 0.05) / (Math.min(a, b3) + 0.05); };
       const gleich = gl.ja.w === gl.nein.w && gl.ja.h === gl.nein.h && gl.ja.bg === gl.nein.bg && gl.ja.bd === gl.nein.bd && gl.ja.bw === gl.nein.bw && gl.ja.fg === gl.nein.fg && gl.ja.fs === gl.nein.fs && gl.ja.fw === gl.nein.fw;
       check(`alter ${name}: beide Antworten gleichwertig (${gl.ja.w}×${gl.ja.h} und ${gl.nein.w}×${gl.nein.h} px, Hintergrund ${gl.ja.bg}, Rahmen ${gl.ja.bw} ${gl.ja.bd}, Schrift ${gl.ja.fg}), nichts grün gefüllt`,
-        gleich && gl.ja.bd === 'rgb(76, 146, 177)' && parseFloat(gl.ja.bw) >= 1 && gl.ja.fg === 'rgb(76, 146, 177)' && gl.ja.bg !== 'rgb(76, 146, 177)', JSON.stringify(gl));
+        gleich && gl.ja.bd === 'rgb(31, 77, 43)' && parseFloat(gl.ja.bw) >= 1 && gl.ja.fg === 'rgb(31, 77, 43)' && gl.ja.bg !== 'rgb(31, 77, 43)', JSON.stringify(gl));
       check(`alter ${name}: „Ja, ich bin 16“ links, „Nein“ rechts (${gl.reihenfolge}, x ${Math.round(gl.ja.x)} / ${Math.round(gl.nein.x)}), gleiche Zeile`, gl.reihenfolge === 'ja,nein' && gl.ja.x < gl.nein.x && Math.abs(gl.ja.y - gl.nein.y) <= 1, JSON.stringify(gl));
       const kJa = kontrast(gl.ja.fg, gl.ja.bg), kPriv = kontrast(over(gl.privFarbe, gl.card), gl.card), kHint = kontrast(gl.hintFarbe, gl.card), kTitel = kontrast(gl.titel, gl.card), kLink = Math.min(...gl.linkFarbe.map((f) => kontrast(f, gl.card)));
       check(`alter ${name}: Kontrast WCAG AA: Knöpfe ${kJa.toFixed(1)}, Hinweis ${kHint.toFixed(1)}, Cookie-Absatz (14 px) ${kPriv.toFixed(1)}, Links ${kLink.toFixed(1)}, Überschrift ${kTitel.toFixed(1)} (alle ≥ 4,5)`, [kJa, kPriv, kHint, kLink].every((k) => k >= 4.5) && kTitel >= 3, JSON.stringify({ kJa, kPriv, kHint, kLink, kTitel }));
@@ -1121,7 +1121,7 @@ async function alter() {
       for (let i = 0; i < 4; i++) { await keyPress(b, 'Tab'); reihe.push(await fokusStil()); }
       const stiel = (x) => `${x.ow} ${x.os} ${x.oc} | ${x.sh}`;
       check(`alter ${name}: Tab wechselt „${reihe.map((x) => x.id).join('“ → „')}“, Fokus sichtbar (Gold-Rahmen ${reihe[0].ow} ${reihe[0].oc} plus blauer Ring), beide Knöpfe gleich`,
-        reihe.map((x) => x.id).join() === 'ja,nein,Impressum,Datenschutz' && reihe.every((x) => x.inAge && parseFloat(x.ow) >= 2 && x.os === 'solid' && x.oc === 'rgb(184, 145, 58)' && /rgb\(76, 146, 177\)/.test(x.sh)) && stiel(reihe[0]) === stiel(reihe[1]) && reihe[0].bg === reihe[1].bg, JSON.stringify(reihe));
+        reihe.map((x) => x.id).join() === 'ja,nein,Impressum,Datenschutz' && reihe.every((x) => x.inAge && parseFloat(x.ow) >= 2 && x.os === 'solid' && x.oc === 'rgb(184, 145, 58)' && /rgb\(31, 77, 43\)/.test(x.sh)) && stiel(reihe[0]) === stiel(reihe[1]) && reihe[0].bg === reihe[1].bg, JSON.stringify(reihe));
       // Funktion: Seite gesperrt, Fokus in der Abfrage, Tab bleibt drin, Escape schließt nicht, Gesten ignoriert
       const innen = async () => b.js(`!!document.activeElement.closest('#altersabfrage')`);
       let bleibt = await innen();

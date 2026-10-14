@@ -33,7 +33,8 @@
 :root {
   --cream: #F7F4EC;
   --cream-deep: #EFEADD;
-  --blau: #4C92B1;     /* eine Blaufarbe über die ganze Seite (Etikett): Rahmen, Linien, Symbole, Überschriften, Schrift, Knöpfe */
+  --green: #1F4D2B;
+  --blau: #4C92B1;   /* Akzent: Rahmen außenherum, Zutaten (Überschrift, Namen, Symbole) – wie das Etikett */
   --gold: #B8913A;         /* nur für Linien und Ornamente */
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
@@ -109,7 +110,7 @@ main { position: relative; z-index: 2; }
   padding: 0 18px;
   font-size: 13px; font-weight: 500;
   letter-spacing: .32em; text-transform: uppercase;
-  color: var(--blau);
+  color: var(--green);
   white-space: nowrap;
 }
 /* Creme-Fläche hinter dem Namen: unterbricht die Rahmenlinie und blendet mit dem Rahmen aus (js/sequenz.js setzt --frame-o) */
@@ -117,7 +118,7 @@ main { position: relative; z-index: 2; }
 .site-header__brand span { margin-right: -.32em; }
 
 /* ── Start ───────────────────────────── */
-/* Doppelrahmen: kräftige grüne Linie außen, feine goldene innen – wie beim Etikett */
+/* Doppelrahmen: kräftige blaue Linie außen, feine goldene innen – wie beim Etikett */
 .frame {
   position: absolute; inset: var(--frame-inset);
   border: 1.5px solid var(--blau);
@@ -153,7 +154,7 @@ html.gold-page, html.gold-page body { background: var(--gold-beer); }
 /* Überspringen: nur mit Tastatur sichtbar (Fokus), springt direkt zum Inhalt */
 .skip {
   position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px;
-  background: var(--blau); color: var(--cream); font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase;
+  background: var(--green); color: var(--cream); font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase;
   cursor: pointer; transform: translateY(-300%);
 }
 .skip:focus-visible { transform: none; outline: 2px solid var(--gold-text); outline-offset: 3px; }
@@ -185,15 +186,15 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
    größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
 .painting { position: relative; margin: 0; width: 100%; }
 .painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
-.painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--blau); }
+.painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); }
 .painting__herde { display: none; }
 @media (max-width: 767px) {
   .hero { --g2: 28px; }
   .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
-  .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--blau); padding-right: .04em; }
+  .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
   .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(76, 146, 177, .35), 0 3px 10px rgba(76, 146, 177, .10); }
-  .painting__bild > img { border: 1px solid var(--blau); }
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
+  .painting__bild > img { border: 1px solid var(--green); }
 }
 @media (min-width: 768px) {
   .hero { --g2: 28px; }
@@ -229,16 +230,16 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
   position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
-  color: #4C92B1; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
+  color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
 }
 .seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
 .seq.frei .scroll-cue { display: none; }
-.scroll-cue:focus-visible { outline: 2px solid #4C92B1; outline-offset: 2px; border-radius: 8px; }
+.scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
 .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-.scroll-cue .cue-arrow path { fill: none; stroke: #4C92B1; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes cue { 50% { transform: translateY(8px); } }
 /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
-.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #4C92B1; }
+.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
 .scroll-cue__mouse { display: none; }
 @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
 @media (max-aspect-ratio: 4/5) {
@@ -267,7 +268,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .sheep--ruhend-hell { --r: 14%; --b: .36; --h: .11; --z: 2; }
 
 /* Bildunterschrift: klein, kursiv, dasselbe Tannengrün wie überall */
-.painting figcaption { margin-top: 11px; font-size: 13.5px; line-height: 1.45; letter-spacing: .02em; font-style: italic; color: var(--blau); text-align: center; text-wrap: balance; }
+.painting figcaption { margin-top: 11px; font-size: 13.5px; line-height: 1.45; letter-spacing: .02em; font-style: italic; color: var(--green); text-align: center; text-wrap: balance; }
 @media (min-width: 768px) { .painting figcaption { margin-top: 26px; } }      /* Tablet/Desktop: die Herde steht vor der Unterkante des Gemäldes und braucht den Platz */
 @media (max-width: 767px) { .painting figcaption { font-size: 12.5px; } }
 
@@ -301,7 +302,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   font-size: var(--title-f);
   line-height: 1;
   letter-spacing: -.005em;
-  color: var(--blau);
+  color: var(--green);
   white-space: nowrap;
 }
 .hero__title em { font-style: italic; font-weight: 400; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
@@ -311,7 +312,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   font-size: 14px;
   line-height: 1.4;
   letter-spacing: .26em; text-transform: uppercase;
-  color: var(--blau);
+  color: var(--green);
 }
 /* Rauten-Ornament zwischen Titel und Unterzeile */
 .hero__claim::before {
@@ -343,7 +344,7 @@ h2 {
   margin: 0;
   font-family: var(--font-display); font-weight: 500;
   font-size: clamp(36px, 4.6vw, 58px); line-height: 1.1;
-  color: var(--blau);
+  color: var(--green);
 }
 h2::after {
   content: '';
@@ -356,7 +357,7 @@ h3 {
   margin: 0 0 8px;
   font-family: var(--font-display); font-weight: 500;
   font-size: 26px; line-height: 1.2;
-  color: var(--blau);
+  color: var(--green);
 }
 .lead { margin: 24px 0 0; font-size: clamp(16.5px, 1.35vw, 18px); color: var(--ink); }
 
@@ -366,6 +367,7 @@ h3 {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px);
   text-align: center;
 }
+#zutaten-title, .ingredient h3 { color: var(--blau); }   /* Überschrift „Hopfen, Malz, Wasser“ und die drei Zutaten in Blau (große Schrift, Kontrast ≥ 3:1) */
 .ingredient__art { display: block; width: 132px; height: 140px; margin: 0 auto 18px; }
 .ingredient p { margin: 0 auto; max-width: 26ch; color: var(--ink); }
 
@@ -402,9 +404,9 @@ h3 {
   font-size: 12px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase;
   color: var(--gold-text); margin-bottom: 4px;
 }
-.facts dd { margin: 0; font-size: 16px; color: var(--blau); }
+.facts dd { margin: 0; font-size: 16px; color: var(--green); }
 
-.brewer { max-width: 620px; margin: 28px auto 0; text-align: center; font-size: 14px; font-style: italic; color: var(--blau); }
+.brewer { max-width: 620px; margin: 28px auto 0; text-align: center; font-size: 14px; font-style: italic; color: var(--green); }
 
 /* Geschichte */
 .berghof { display: block; }
@@ -416,9 +418,9 @@ h3 {
 .timeline li:last-child::before { width: 7px; }
 .timeline li::after {
   content: ''; grid-row: 2; grid-column: 1; justify-self: start; box-sizing: border-box; width: 13px; height: 13px; border-radius: 50%;
-  background: var(--cream); border: 1.5px solid var(--blau);
+  background: var(--cream); border: 1.5px solid var(--green);
 }
-.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--blau); }
+.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
 .timeline li p { grid-row: 3; grid-column: 1; margin: 0; padding-right: clamp(14px, 2.4vw, 32px); }
 .timeline__hint { display: none; }
 @media (min-width: 769px) { .timeline { width: calc(100% - 80px); margin-inline: auto; transform: translateX(var(--tl-shift, 0px)); } }      /* js/timeline.js: der sichtbare Block (1556 … Heute) steht optisch genau mittig unter der Überschrift */
@@ -431,20 +433,20 @@ h3 {
 .location__item {
   position: relative;
   padding: 32px 30px;
-  border: 1.5px solid var(--blau);
+  border: 1.5px solid var(--green);
 }
 .location__item h3 { margin-bottom: 12px; }
 .location__item p, .location__item address { margin: 0 0 10px; font-style: normal; }
 .location__link {
   display: inline-block; margin-top: 8px; padding: 6px 0;
-  color: var(--blau); font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--green); font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
   text-decoration-color: var(--gold); text-underline-offset: 5px;
 }
 
 .map {
   display: block; align-self: center; line-height: 0;
   background: var(--cream-deep);
-  border: 1.5px solid var(--blau);
+  border: 1.5px solid var(--green);
   transition: opacity .3s ease;
 }
 .map img { display: block; width: 100%; height: auto; }
@@ -454,7 +456,7 @@ h3 {
 .button {
   display: inline-block;
   padding: 13px 26px;
-  background: var(--blau); color: var(--cream);
+  background: var(--green); color: var(--cream);
   border: 0; border-radius: 0;
   font: 600 13px/1 var(--font-text); letter-spacing: .22em; text-transform: uppercase;
   cursor: pointer;
@@ -469,22 +471,22 @@ a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); ou
   padding: 36px max(24px, 6vw) calc(36px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--gold);
   display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between;
-  font-size: 14px; color: var(--blau);
+  font-size: 14px; color: var(--green);
 }
 /* Startseite: der Seitenrahmen schließt die Seite ab, eine zweite goldene Linie darunter entfällt (Impressum/Datenschutz haben keinen Rahmen und behalten sie) */
 main:has(> .frame--page) + .site-footer { border-top: 0; }
 .site-footer p { margin: 0; }
-.site-footer strong { color: var(--blau); font-weight: 600; }
+.site-footer strong { color: var(--green); font-weight: 600; }
 .site-footer__nav { display: flex; gap: 28px; }
 .site-footer__nav a {
   display: inline-block; padding: 8px 0;
-  color: var(--blau); text-decoration: none;
+  color: var(--green); text-decoration: none;
   letter-spacing: .2em; text-transform: uppercase; font-size: 13px;
 }
 .site-footer__nav a:hover { color: var(--gold-text); }
 /* „Bier Animation erneut anzeigen“: dezent, kleine Versalien, dunkelgrün (js/sequenz.js spielt das Intro ab A erneut ab) */
 .site-footer__intro { flex: 1 0 100%; text-align: center; }
-.site-footer__intro a { display: inline-block; padding: 14px 10px; font-size: 12px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--blau); text-decoration: none; }
+.site-footer__intro a { display: inline-block; padding: 14px 10px; font-size: 12px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--green); text-decoration: none; }
 .site-footer__intro a:hover { color: var(--gold-text); }
 
 /* ── Rechtstexte (Impressum/Datenschutz) ── */
@@ -492,13 +494,13 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 .legal h1 {
   font-family: var(--font-display); font-weight: 500;
   font-size: clamp(38px, 5.5vw, 60px); line-height: 1.1;
-  color: var(--blau); margin: 1.2rem 0 2rem;
+  color: var(--green); margin: 1.2rem 0 2rem;
 }
 .legal h2 { font-size: clamp(21px, 2.2vw, 26px); margin: 2.4rem 0 .6rem; }
 .legal h2::after { display: none; }
-.legal a { color: var(--blau); }
-.legal .back { color: var(--blau); text-decoration: none; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; }
-.small { font-size: 13px; color: var(--blau); }
+.legal a { color: var(--green); }
+.legal .back { color: var(--green); text-decoration: none; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; }
+.small { font-size: 13px; color: var(--green); }
 
 /* Platzhalter, die noch ausgefüllt werden müssen */
 .todo { color: #a33a1f; border-bottom: 1px dashed currentColor; }
@@ -536,20 +538,20 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
   /* aktive Station hervorheben (nur wenn das Skript läuft, sonst alles voll sichtbar) */
   .timeline--live li { opacity: .5; transition: opacity .3s ease; }
   .timeline--live li.is-active { opacity: 1; }
-  .timeline li.is-active::after { background: var(--blau); }
+  .timeline li.is-active::after { background: var(--green); }
   /* einmalige Anstupsbewegung, sobald die Timeline ins Bild kommt (js/timeline.js); bei „Bewegung reduzieren“ aus (siehe unten) */
   .timeline--nudge li { animation: tl-nudge 1.3s ease-in-out 1; }
   @keyframes tl-nudge { 30% { transform: translateX(-30px); } 65% { transform: none; } }
 
   .timeline__hint { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 0; }
   .timeline__dots { display: inline-flex; align-items: center; gap: 8px; }
-  .timeline__dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--blau); }
-  .timeline__dots i.is-active { background: var(--blau); }
+  .timeline__dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--green); }
+  .timeline__dots i.is-active { background: var(--green); }
   /* „Wischen“ mit Linienpfeil nach rechts, gleiche Gestalt wie der Weiter-Knopf; weg nach dem ersten Wischen */
-  .timeline__swipe { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--blau); transition: opacity .4s ease; }
+  .timeline__swipe { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--green); transition: opacity .4s ease; }
   .timeline__swipe span { margin-right: -.3em; }
   .timeline__swipe svg { width: 24px; height: 24px; flex: none; overflow: visible; }
-  .timeline__swipe path { fill: none; stroke: var(--blau); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .timeline__swipe path { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
   .timeline__swipe.is-gone { opacity: 0; }
 }
 /* iPad hoch: vier Spalten bleiben lesbar, nur die Schrift etwas kleiner */
