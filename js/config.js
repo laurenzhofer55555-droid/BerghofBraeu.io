@@ -35,7 +35,7 @@ export const CONFIG = {
     envMapIntensity: 1.0,
     filled: {
       thickness: 0.36,               // Lichtweg durch Glas + Bier (höher = stärkere Lichtbrechung)
-      attenuationColor: '#CA6A02',   // Bernstein-Tönung (satter, wie auf dem Produktfoto)
+      attenuationColor: '#D07406',   // Bernstein-Tönung (satter, wie auf dem Produktfoto)
       attenuationDistance: 0.36,     // kleiner = dunkler
     },
     empty: {
@@ -44,11 +44,11 @@ export const CONFIG = {
       attenuationDistance: 0.09,
     },
     tint: {                  // Glas oben (Hals) und unten (Boden) dunkler, wie auf dem Produktfoto: Höhen in mm, k = Helligkeit am Ende
-      base: { from: 30, to: 6, k: 0.45 },
-      neck: { from: 150, to: 196, k: 0.6 },
+      base: { from: 30, to: 6, k: 0.55 },
+      neck: { from: 150, to: 196, k: 0.74 },
     },
-    edgeDarken: 0.04,        // Helligkeit am Rand (längerer Lichtweg → dunkler)
-    edgePower: 3.5,          // Breite des dunklen Randes (höher = schmalerer heller Kern)
+    edgeDarken: 0.09,        // Helligkeit am Rand (längerer Lichtweg → dunkler)
+    edgePower: 4.2,          // Breite des dunklen Randes (höher = schmalerer heller Kern)
     fillLevelMm: 192,        // Füllhöhe in mm über dem Boden (Bier bis in den Hals)
   },
 
