@@ -40,7 +40,7 @@ const LABELS = {
   neck:  { url: 'assets/textures/label-neck.webp',  y0: 149.6, y1: 186.4, width: 68.6, phi: 0, cutout: true },   // blaue Randlinie 66 mm breit, dazu der cremefarbene Rand
 };
 
-export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false } = {}) {
+export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false, dew = false } = {}) {
   // pivot = Drehpunkt in Flaschenmitte (für Schritt 2: auf den Kopf drehen)
   const pivot = new THREE.Group();
   pivot.name = 'BottlePivot';
@@ -111,6 +111,9 @@ export function createBottle(renderer, manager, { radialSegments = 128, plainCap
   // alle Teile werfen den Kontaktschatten
   pivot.traverse((o) => { if (o.isMesh) o.layers.enable(SHADOW_LAYER); });
 
+  // Kondenswasser (nur fürs Rendern der Standbilder und der Sequenz, kein Kontaktschatten): Tropfen auf Glas und Etiketten wie auf dem Produktfoto
+  if (dew) body.add(createDew(outer, radiusAt));
+
   return { pivot, body, glass: [glassFilled, glassEmpty], cap, labels, materials: { filledMat, emptyMat } };
 }
 
@@ -152,15 +155,20 @@ function createGlassMaterial(v) {
     specularIntensity: 1,
     envMapIntensity: g.envMapIntensity,
   });
-  mat.userData.edge = { uEdgeDarken: { value: g.edgeDarken }, uEdgePower: { value: g.edgePower } };
+  const T = g.tint;
+  mat.userData.edge = { uEdgeDarken: { value: g.edgeDarken }, uEdgePower: { value: g.edgePower },
+    uBase: { value: new THREE.Vector3(T.base.from, T.base.to, T.base.k) }, uNeck: { value: new THREE.Vector3(T.neck.from, T.neck.to, T.neck.k) } };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, mat.userData.edge);   // live anpassbar über material.userData.edge
-    shader.fragmentShader = 'uniform float uEdgeDarken; uniform float uEdgePower;\n' +
+    shader.vertexShader = 'varying float vGlassY;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n         vGlassY = position.y * 100.0;');   // Höhe in mm
+    shader.fragmentShader = 'uniform float uEdgeDarken; uniform float uEdgePower; uniform vec3 uBase; uniform vec3 uNeck; varying float vGlassY;\n' +
       shader.fragmentShader.replace(
         '#include <transmission_fragment>',
         `#include <transmission_fragment>
          float gFacing = abs(dot(normal, normalize(vViewPosition)));
-         totalDiffuse *= mix(uEdgeDarken, 1.0, pow(gFacing, uEdgePower));`
+         totalDiffuse *= mix(uEdgeDarken, 1.0, pow(gFacing, uEdgePower));
+         float gBase = smoothstep(uBase.x, uBase.y, vGlassY), gNeck = smoothstep(uNeck.x, uNeck.y, vGlassY);
+         totalDiffuse *= mix(1.0, uBase.z, gBase) * mix(1.0, uNeck.z, gNeck);`
       );
   };
   return mat;
@@ -309,6 +317,49 @@ function makeRadiusLookup(points) {
     }
     return pts.at(-1).x;
   };
+}
+
+
+// ── Kondenswasser ──────────────────────────────────────
+// Dünne Hülle knapp über Glas und Etiketten (Lathe mit demselben Profil, +0,5 mm) mit einer Tropfentextur (Canvas, feste Zufallsfolge: jedes Rendern gleich).
+// u = Winkel (nahtlos, Tropfen an der Naht doppelt gezeichnet), v = Höhe in mm: Tropfen sind überall gleich groß (Textur 4096², 0,054 mm je Pixel).
+function createDew(outer, radiusAt) {
+  const D = CONFIG.dew, N = 4096, mmPerPx = (2 * Math.PI * 35.25) / N;
+  const c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d');
+  let seed = 20261014;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const yTop = D.topMm / mmPerPx, yBot = D.bottomMm / mmPerPx;           // Texturzeilen: v = Höhe / (N · mmPerPx)
+  const drop = (x, y, r) => {
+    const body = g.createRadialGradient(x + r * 0.18, y + r * 0.2, r * 0.1, x, y, r);
+    body.addColorStop(0, 'rgba(255,232,190,0.10)'); body.addColorStop(0.62, 'rgba(160,100,40,0.08)');
+    body.addColorStop(0.84, 'rgba(30,14,0,0.42)'); body.addColorStop(1, 'rgba(30,14,0,0)');
+    g.fillStyle = body; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+    const spec = g.createRadialGradient(x - r * 0.36, y - r * 0.4, 0, x - r * 0.36, y - r * 0.4, r * 0.3);
+    spec.addColorStop(0, 'rgba(255,255,255,0.72)'); spec.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = spec; g.beginPath(); g.arc(x - r * 0.36, y - r * 0.4, r * 0.3, 0, 6.2832); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.32)'; g.lineWidth = Math.max(1, r * 0.1);
+    g.beginPath(); g.arc(x, y, r * 0.86, Math.PI * 0.95, Math.PI * 1.55); g.stroke();
+  };
+  for (const [count, r0, r1, dens] of D.sizes) {
+    for (let i = 0; i < count; i++) {
+      const x = rnd() * N, y = yBot + rnd() * (yTop - yBot), r = (r0 + (r1 - r0) * rnd() * rnd()) / mmPerPx / 2;   // Durchmesser in mm, kleine häufiger
+      if (rnd() > dens) continue;
+      drop(x, y, r);
+      if (x < r * 1.5) drop(x + N, y, r); else if (x > N - r * 1.5) drop(x - N, y, r);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = THREE.RepeatWrapping; tex.anisotropy = 8;
+  const pts = [];
+  for (let y = D.bottomMm; y <= D.topMm; y += 1) pts.push(new THREE.Vector2((radiusAt(y * MM) / MM + D.offsetMm) * MM, y * MM));
+  const geo = new THREE.LatheGeometry(pts, 256);
+  const uv = geo.attributes.uv, pos = geo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (pos.getY(i) / MM) / (N * mmPerPx) * 1);                   // Höhe → v (Canvas-y läuft nach unten)
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: D.opacity });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'Dew'; mesh.renderOrder = 5;
+  return mesh;
 }
 
 // Optional: GLB statt prozeduraler Flasche.

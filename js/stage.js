@@ -24,10 +24,9 @@ export function createStudioEnvironment(renderer) {
     env.add(m);
   };
   softbox(3.2, 10, '#fffaf0', 3.2, [-3.2, 1.5, 6]); // breites Fensterlicht vorne links → weicher Glanz
-  softbox(1.2, 9, '#fffaf0', 7, [-5, 1.5, 4.5]);   // Streifen vorne links → heller Glanzstreifen
-  softbox(1.0, 9, '#fff4e2', 4, [5.5, 1, 3]);      // Streifen vorne rechts
-  softbox(0.6, 9, '#ffffff', 5, [-5, 1, -4]);      // Kantenlicht hinten links
-  softbox(0.6, 9, '#ffffff', 5, [5, 1, -4]);       // Kantenlicht hinten rechts
+  softbox(1.2, 9, '#fffaf0', 3.6, [-5, 1.5, 4.5]);   // Streifen vorne links → Glanzstreifen (weicher als zuvor)
+  softbox(1.0, 9, '#fff4e2', 2.4, [5.5, 1, 3]);      // Streifen vorne rechts
+  // (die schmalen Kantenlichter hinten links/rechts entfallen: sie zeichneten harte weiße Konturlinien an den Rand, das Produktfoto hat keine)
   softbox(7, 5, '#fffdf8', 5, [0, 9, 1]);          // große Decke → Glanzlicht auf der Schulter
   softbox(8, 4, '#fffaf2', 2.2, [0, 5, 9]);        // Aufheller hinter der Kamera (Kronkorken-Oberseite)
   softbox(14, 8, '#f7f4ec', 0.9, [0, -6, 3]);      // cremefarbener Boden/Hintergrund (Aufhellung von unten)

@@ -35,17 +35,30 @@ export const CONFIG = {
     envMapIntensity: 1.0,
     filled: {
       thickness: 0.36,               // Lichtweg durch Glas + Bier (höher = stärkere Lichtbrechung)
-      attenuationColor: '#CC7C2C',   // Bernstein-Tönung
+      attenuationColor: '#CA6A02',   // Bernstein-Tönung (satter, wie auf dem Produktfoto)
       attenuationDistance: 0.36,     // kleiner = dunkler
     },
     empty: {
       thickness: 0.12,               // nur die beiden Glaswände
-      attenuationColor: '#B86E2A',
+      attenuationColor: '#B86208',
       attenuationDistance: 0.09,
+    },
+    tint: {                  // Glas oben (Hals) und unten (Boden) dunkler, wie auf dem Produktfoto: Höhen in mm, k = Helligkeit am Ende
+      base: { from: 30, to: 6, k: 0.45 },
+      neck: { from: 150, to: 196, k: 0.6 },
     },
     edgeDarken: 0.04,        // Helligkeit am Rand (längerer Lichtweg → dunkler)
     edgePower: 3.5,          // Breite des dunklen Randes (höher = schmalerer heller Kern)
     fillLevelMm: 192,        // Füllhöhe in mm über dem Boden (Bier bis in den Hals)
+  },
+
+  dew: {                       // Kondenswasser nur beim Rendern (createBottle … dew: true)
+    topMm: 214, bottomMm: 6,   // Höhenbereich der Tropfen
+    offsetMm: 0.5,             // Abstand der Hülle über Glas/Etikett
+    opacity: 0.92,
+    sizes: [                   // [Anzahl, Durchmesser min mm, max mm, Wahrscheinlichkeit] (kleine Tropfen häufiger)
+      [3800, 0.9, 1.6, 1], [950, 1.5, 2.6, 1], [150, 2.4, 4.0, 1],
+    ],
   },
 
   cap: {
