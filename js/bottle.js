@@ -35,9 +35,9 @@ export const SHADOW_LAYER = 1; // nur diese Objekte werfen den Kontaktschatten
 
 // Etiketten: Höhe von/bis (mm über dem Boden), Breite als Bogenlänge (mm)
 const LABELS = {
-  front: { url: 'assets/textures/label-front.webp', y0: 19.5, y1: 120.5, width: 91.7, phi: 0 },       // 9 × 10 cm Bild + schmaler cremefarbener Zusatzrand (0,85 mm seitlich, 0,5 mm oben/unten)
-  back:  { url: 'assets/textures/label-back.webp',  y0: 27.5, y1: 112.5, width: 69.9, phi: Math.PI },
-  neck:  { url: 'assets/textures/label-neck.webp',  y0: 150.55, y1: 185.45, width: 69.4, phi: 0, cutout: true },   // inkl. cremefarbenem Rand um die grüne Linie (Linie wie bisher 66 × 32 mm)
+  front: { url: 'assets/textures/label-front.webp', y0: 18.1, y1: 121.9, width: 93.4, phi: 0 },       // Etikett 631 × 701 px: blauer Rahmen = 9 × 10 cm, dazu der cremefarbene Rand des Etiketts
+  back:  { url: 'assets/textures/label-back.webp',  y0: 25.75, y1: 114.25, width: 72.8, phi: Math.PI },   // Rahmen 69,9 mm breit, dazu Rand
+  neck:  { url: 'assets/textures/label-neck.webp',  y0: 149.6, y1: 186.4, width: 68.6, phi: 0, cutout: true },   // blaue Randlinie 66 mm breit, dazu der cremefarbene Rand
 };
 
 export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false } = {}) {
