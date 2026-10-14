@@ -34,7 +34,7 @@
   --cream: #F7F4EC;
   --cream-deep: #EFEADD;
   --green: #1F4D2B;
-  --blau: #4C92B1;   /* Akzent: Rahmen außenherum, Zutaten (Überschrift, Namen, Symbole) – wie das Etikett */
+  --blau: #4C92B1;   /* Akzent: Rahmen außenherum, Zutaten (Namen, Symbole) – wie das Etikett */
   --gold: #B8913A;         /* nur für Linien und Ornamente */
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
@@ -367,7 +367,7 @@ h3 {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px);
   text-align: center;
 }
-#zutaten-title, .ingredient h3 { color: var(--blau); }   /* Überschrift „Hopfen, Malz, Wasser“ und die drei Zutaten in Blau (große Schrift, Kontrast ≥ 3:1) */
+.ingredient h3 { color: var(--blau); }   /* nur die drei Zutaten-Namen in Blau (große Schrift, Kontrast ≥ 3:1); die Überschrift „Hopfen, Malz, Wasser“ bleibt Tannengrün */
 .ingredient__art { display: block; width: 132px; height: 140px; margin: 0 auto 18px; }
 .ingredient p { margin: 0 auto; max-width: 26ch; color: var(--ink); }
 
