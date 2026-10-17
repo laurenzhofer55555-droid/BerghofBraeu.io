@@ -40,7 +40,7 @@ const LABELS = {
   neck:  { url: 'assets/textures/label-neck.webp',  y0: 149.6, y1: 186.4, width: 68.6, phi: 0, cutout: true },   // blaue Randlinie 66 mm breit, dazu der cremefarbene Rand
 };
 
-export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false, dew = false } = {}) {
+export function createBottle(renderer, manager, { radialSegments = 128, plainCap = false, dew = false, bubbles = false } = {}) {
   // pivot = Drehpunkt in Flaschenmitte (für Schritt 2: auf den Kopf drehen)
   const pivot = new THREE.Group();
   pivot.name = 'BottlePivot';
@@ -113,6 +113,8 @@ export function createBottle(renderer, manager, { radialSegments = 128, plainCap
 
   // Kondenswasser (nur fürs Rendern der Standbilder und der Sequenz, kein Kontaktschatten): Tropfen auf Glas und Etiketten wie auf dem Produktfoto
   if (dew) body.add(createDew(outer, radiusAt));
+  // Kohlensäurebläschen im Bier (nur fürs Rendern): Ketten aufsteigender Bläschen, nach oben größer, dazu feine Bläschen im Bier und an der Glasinnenwand
+  if (bubbles) body.add(createBubbles(radiusAt));
 
   return { pivot, body, glass: [glassFilled, glassEmpty], cap, labels, materials: { filledMat, emptyMat } };
 }
@@ -360,6 +362,61 @@ function createDew(outer, radiusAt) {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'Dew'; mesh.renderOrder = 5;
   return mesh;
+}
+
+// ── Bläschen im Bier ───────────────────────────────────
+// Echte Kohlensäure steigt in Ketten von Keimstellen am Boden auf: unten klein und dicht, nach oben größer und mit größerem Abstand. Dazu feiner Dunst im Bier und einzelne Bläschen an der Glasinnenwand.
+// Punkte mit eigener Größenberechnung (Weltmaß in mm → Pixel über die Projektion), undurchsichtig, damit sie durchs Glas in der Transmission mit Bernstein getönt erscheinen.
+function createBubbles(radiusAt) {
+  const B = CONFIG.bubbles;
+  let seed = 7261014;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const pos = [], size = [];
+  const inner = (y) => radiusAt(y * MM) / MM - B.wallMm;                          // Innenradius in mm
+  const add = (x, y, z, d) => { pos.push(x * MM, y * MM, z * MM); size.push(d * MM); };
+  for (let c = 0; c < B.chains; c++) {                                              // Ketten
+    const a = rnd() * Math.PI * 2, rho = Math.sqrt(rnd()) * 0.8, x0 = Math.cos(a) * rho * inner(60), z0 = Math.sin(a) * rho * inner(60);
+    let y = B.bottomMm + rnd() * 6, wob = rnd() * 6.28;
+    while (y < B.topMm) {
+      const t = (y - B.bottomMm) / (B.topMm - B.bottomMm), d = B.d0 + (B.d1 - B.d0) * t * (0.8 + 0.4 * rnd());
+      const w = 0.5 + t * 1.4, ox = Math.sin(wob + y * 0.07) * w, oz = Math.cos(wob * 1.3 + y * 0.06) * w;
+      const r = Math.hypot(x0 + ox, z0 + oz), lim = inner(y) - d, k = r > lim ? lim / r : 1;
+      add((x0 + ox) * k, y, (z0 + oz) * k, d);
+      y += d * (2.2 + 2.4 * rnd() + 3.5 * t);                                       // Abstand wächst nach oben
+    }
+  }
+  for (let i = 0; i < B.mist; i++) {                                                // feine Bläschen im Bier
+    const y = B.bottomMm + rnd() * (B.topMm - B.bottomMm), a = rnd() * Math.PI * 2, rho = Math.sqrt(rnd()), d = B.mistMin + (B.mistMax - B.mistMin) * rnd() * rnd();
+    const R = inner(y) - d; add(Math.cos(a) * rho * R, y, Math.sin(a) * rho * R, d);
+  }
+  for (let i = 0; i < B.wall; i++) {                                                // an der Glasinnenwand haftend, unten häufiger
+    const y = B.bottomMm + Math.pow(rnd(), 1.6) * (B.topMm - B.bottomMm), a = rnd() * Math.PI * 2, d = B.wallMin + (B.wallMax - B.wallMin) * rnd() * rnd();
+    const R = inner(y) - d * 0.5; add(Math.cos(a) * R, y, Math.sin(a) * R, d);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('size', new THREE.Float32BufferAttribute(size, 1));
+  // Bläschen-Textur: helle Perle (weiß im Kern, weich auslaufend); Ring und Glanzpunkt der Kondenstropfen gibt es hier bewusst nicht, damit man Gas im Bier und Wasser außen unterscheidet
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const body = g.createRadialGradient(30, 30, 2, 32, 32, 29);
+  body.addColorStop(0, 'rgb(255,255,255)'); body.addColorStop(0.55, 'rgb(255,248,225)'); body.addColorStop(1, 'rgb(235,200,140)');
+  g.fillStyle = body; g.beginPath(); g.arc(32, 32, 29, 0, 6.2832); g.fill();
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace;
+  // Rand weich ausstanzen: Alpha aus der Scheibe
+  const a = document.createElement('canvas'); a.width = a.height = 64; const ag = a.getContext('2d'); ag.clearRect(0, 0, 64, 64);
+  ag.drawImage(c, 0, 0);
+  const img = ag.getImageData(0, 0, 64, 64); for (let i = 0; i < img.data.length; i += 4) { const x = (i / 4) % 64 - 32, y = Math.floor(i / 4 / 64) - 32; img.data[i + 3] = Math.hypot(x, y) < 30 ? 255 : 0; } ag.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(a); tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uMap: { value: tex }, uScale: { value: 1 }, uMin: { value: B.minPx }, uShade: { value: B.brightness } },
+    vertexShader: `attribute float size; uniform float uScale; uniform float uMin; void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = max(uMin, size * uScale / max(gl_Position.w, 0.001)); }`,
+    fragmentShader: `uniform sampler2D uMap;\nuniform float uShade;\nvoid main() {\n  vec4 t = texture2D(uMap, gl_PointCoord);\n  if (t.a < 0.5) discard;\n  gl_FragColor = vec4(t.rgb * uShade, 1.0);\n  #include <tonemapping_fragment>\n  #include <colorspace_fragment>\n}`,
+    transparent: false, depthWrite: true,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.name = 'Bubbles'; pts.frustumCulled = false;
+  pts.onBeforeRender = (renderer, scene, camera) => { const s = renderer.getSize(new THREE.Vector2()); mat.uniforms.uScale.value = camera.projectionMatrix.elements[5] * s.y / 2; };
+  return pts;
 }
 
 // Optional: GLB statt prozeduraler Flasche.

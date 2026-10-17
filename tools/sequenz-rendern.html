@@ -52,7 +52,7 @@
     const manager = new THREE.LoadingManager();
     manager.setURLModifier((url) => (url.startsWith('assets/') ? '../' + url : url));   // Pfade relativ zur Startseite
     const loaded = new Promise((resolve) => { manager.onLoad = resolve; });
-    const bottle = createBottle(renderer, manager, { radialSegments: 256, plainCap: true, dew: true });
+    const bottle = createBottle(renderer, manager, { radialSegments: 256, plainCap: true, dew: true, bubbles: true });
     scene.add(bottle.pivot);
     const shadow = new ContactShadow(renderer, scene, -BOTTLE_HEIGHT / 2);
     const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 2, 0.01, 60);

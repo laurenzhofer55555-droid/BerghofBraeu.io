@@ -61,6 +61,14 @@ export const CONFIG = {
     ],
   },
 
+  bubbles: {                   // Kohlensäure im Bier, nur beim Rendern (createBottle … bubbles: true)
+    bottomMm: 7, topMm: 188, wallMm: 3.4,        // Höhenbereich, Dicke der Glaswand (Innenradius = Außenradius − wallMm)
+    chains: 26, d0: 0.4, d1: 1.1,                 // Ketten: Anzahl, Durchmesser unten/oben in mm
+    mist: 380, mistMin: 0.22, mistMax: 0.5,       // feine Bläschen im Bier
+    wall: 170, wallMin: 0.28, wallMax: 0.7,       // Bläschen an der Glasinnenwand
+    minPx: 1.8, brightness: 2.7,       // brightness: Leuchtkraft (die Bernsteintönung des Glases dämpft sie wieder)
+  },
+
   cap: {
     color: '#C9A24C',        // Gold
     roughness: 0.3,
