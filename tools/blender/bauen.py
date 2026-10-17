@@ -260,6 +260,7 @@ etikett('Etikett_hals', 'label-neck.png', 149.6, 186.4, 68.6, 0.0, alpha=True)
 bpy.ops.mesh.primitive_plane_add(size=600, location=(0, 0, -0.001))
 boden = bpy.context.active_object; boden.name = 'Boden'
 boden.is_shadow_catcher = True
+boden.visible_glossy = False; boden.visible_transmission = False; boden.visible_diffuse = False      # nur der Schatten zählt, keine Spiegelung/Brechung des Bodens
 
 # ── Licht: Softboxen (Flächenlichter) ──
 def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
@@ -276,9 +277,9 @@ def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
 
 ziel = bpy.data.objects.new('Ziel', None); scene.collection.objects.link(ziel); ziel.location = (0, 0, 11.5)
 lights = [
-    flaeche('Licht_Fenster', (-75, -85, 28), (70, 140), 9000),     # breites Fensterlicht vorne links
-    flaeche('Licht_StreifenL', (-62, -48, 12), (9, 150), 2600),    # heller Glanzstreifen vorne links
-    flaeche('Licht_StreifenR', (68, -38, 12), (10, 150), 1500),    # Streifen vorne rechts
+    flaeche('Licht_Fenster', (-75, -85, 28), (70, 140), 14000),     # breites Fensterlicht vorne links
+    flaeche('Licht_StreifenL', (-62, -48, 12), (9, 150), 7000),    # heller Glanzstreifen vorne links
+    flaeche('Licht_StreifenR', (68, -38, 12), (10, 150), 3500),    # Streifen vorne rechts
     flaeche('Licht_Decke', (0, -12, 105), (90, 70), 5200),         # große Decke
     flaeche('Licht_Front', (0, -140, 14), (120, 60), 1400),        # Aufheller hinter der Kamera
 ]
@@ -292,7 +293,7 @@ out = nt.nodes.new('ShaderNodeOutputWorld')
 lp = nt.nodes.new('ShaderNodeLightPath')
 mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'
 cream = nt.nodes.new('ShaderNodeBackground'); cream.name = 'WeltCreme'; cream.inputs['Color'].default_value = (0.9301, 0.9047, 0.8388, 1); cream.inputs['Strength'].default_value = 1.0   # sRGB 247/244/236
-neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.25
+neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.75
 mix = nt.nodes.new('ShaderNodeMixShader')
 nt.links.new(lp.outputs['Is Camera Ray'], mx.inputs[0]); nt.links.new(lp.outputs['Is Transmission Ray'], mx.inputs[1])
 nt.links.new(mx.outputs[0], mix.inputs['Fac']); nt.links.new(neutral.outputs[0], mix.inputs[1]); nt.links.new(cream.outputs[0], mix.inputs[2])
