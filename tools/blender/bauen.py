@@ -173,7 +173,7 @@ def etikett_material(name, png, alpha=False):
     for key in ('Specular IOR Level', 'Specular'):
         if key in p.inputs:
             p.inputs[key].default_value = 0.2
-    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.55)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
+    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.18)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
         if key in p.inputs:
             p.inputs[key].default_value = val
     l.new(t.outputs['Color'], p.inputs['Base Color'])
@@ -186,16 +186,16 @@ def etikett_material(name, png, alpha=False):
     warm = n.new('ShaderNodeMix'); warm.data_type = 'RGBA'; warm.blend_type = 'MULTIPLY'; warm.inputs['Factor'].default_value = 1.0
     warm.inputs['B'].default_value = (1.0, 0.86, 0.62, 1.0)                                    # Papier schimmert warm
     l.new(t.outputs['Color'], warm.inputs['A']); l.new(warm.outputs['Result'], tr.inputs['Color'])
-    mx = n.new('ShaderNodeMixShader'); mx.inputs['Fac'].default_value = DD.get('etikett_durchscheinen', 0.12)
+    mx = n.new('ShaderNodeMixShader'); mx.inputs['Fac'].default_value = DD.get('etikett_durchscheinen', 0.0)
     # warmer Schimmer von hinten (Licht im Bier scheint durchs Papier): schwache Emission in Papier-/Bierfarbe
-    em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = DD.get('etikett_schimmer', 0.22)
+    em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = DD.get('etikett_schimmer', 0.0)
     l.new(warm.outputs['Result'], em.inputs['Color'])
     ad = n.new('ShaderNodeAddShader'); l.new(p.outputs[0], ad.inputs[0]); l.new(em.outputs[0], ad.inputs[1])
     l.new(ad.outputs[0], mx.inputs[1]); l.new(tr.outputs[0], mx.inputs[2])
     # Transparenz: ein Teil des Lichts geht gerade durch (man sieht das Bier, Bläschen und die Rückseite schwach dahinter)
     tp = n.new('ShaderNodeBsdfTransparent')
     mt = n.new('ShaderNodeMixShader')
-    al = n.new('ShaderNodeMath'); al.operation = 'MULTIPLY'; al.inputs[1].default_value = DD.get('etikett_deckkraft', 0.94)
+    al = n.new('ShaderNodeMath'); al.operation = 'MULTIPLY'; al.inputs[1].default_value = DD.get('etikett_deckkraft', 1.0)
     if alpha:
         l.new(t.outputs['Alpha'], al.inputs[0])
     else:
@@ -306,11 +306,11 @@ def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
 
 ziel = bpy.data.objects.new('Ziel', None); scene.collection.objects.link(ziel); ziel.location = (0, 0, 11.5)
 lights = [
-    flaeche('Licht_Fenster', (-75, -85, 28), (70, 140), 14000),     # breites Fensterlicht vorne links
-    flaeche('Licht_StreifenL', (-62, -48, 12), (9, 150), 7000),    # heller Glanzstreifen vorne links
-    flaeche('Licht_StreifenR', (68, -38, 12), (10, 150), 3500),    # Streifen vorne rechts
-    flaeche('Licht_Decke', (0, -12, 105), (90, 70), 5200),         # große Decke
-    flaeche('Licht_Front', (0, -140, 14), (120, 60), 1400),        # Aufheller hinter der Kamera
+    flaeche('Licht_Fenster', (-75, -85, 28), (70, 140), 9800),     # breites Fensterlicht vorne links
+    flaeche('Licht_StreifenL', (-62, -48, 12), (9, 150), 4900),    # heller Glanzstreifen vorne links
+    flaeche('Licht_StreifenR', (68, -38, 12), (10, 150), 2450),    # Streifen vorne rechts
+    flaeche('Licht_Decke', (0, -12, 105), (90, 70), 3640),         # große Decke
+    flaeche('Licht_Front', (0, -140, 14), (120, 60), 980),        # Aufheller hinter der Kamera
 ]
 for o in lights:
     o.constraints['Track To'].target = ziel
@@ -322,7 +322,14 @@ out = nt.nodes.new('ShaderNodeOutputWorld')
 lp = nt.nodes.new('ShaderNodeLightPath')
 mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'
 cream = nt.nodes.new('ShaderNodeBackground'); cream.name = 'WeltCreme'; cream.inputs['Color'].default_value = (0.9301, 0.9047, 0.8388, 1); cream.inputs['Strength'].default_value = 1.0   # sRGB 247/244/236
-neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.75
+# schwarze Blenden links und rechts (wie im Studio): Strahlen, die seitlich wegbrechen, sehen Dunkel → dunkle Flaschenränder
+tcw = nt.nodes.new('ShaderNodeTexCoord'); sepw = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(tcw.outputs['Generated'], sepw.inputs[0])
+absx = nt.nodes.new('ShaderNodeMath'); absx.operation = 'ABSOLUTE'; nt.links.new(sepw.outputs['X'], absx.inputs[0])
+rmp = nt.nodes.new('ShaderNodeMapRange'); rmp.clamp = True; rmp.inputs['From Min'].default_value = globals().get('DETAILS', {}).get('blende_von', 0.18); rmp.inputs['From Max'].default_value = globals().get('DETAILS', {}).get('blende_bis', 0.7)
+nt.links.new(absx.outputs[0], rmp.inputs['Value'])
+mcr = nt.nodes.new('ShaderNodeMix'); mcr.data_type = 'RGBA'; mcr.inputs['A'].default_value = (0.9301, 0.9047, 0.8388, 1); mcr.inputs['B'].default_value = (0.012, 0.009, 0.006, 1)
+nt.links.new(rmp.outputs['Result'], mcr.inputs['Factor']); nt.links.new(mcr.outputs['Result'], cream.inputs['Color'])
+neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.35
 mix = nt.nodes.new('ShaderNodeMixShader')
 nt.links.new(lp.outputs['Is Camera Ray'], mx.inputs[0]); nt.links.new(lp.outputs['Is Transmission Ray'], mx.inputs[1])
 nt.links.new(mx.outputs[0], mix.inputs['Fac']); nt.links.new(neutral.outputs[0], mix.inputs[1]); nt.links.new(cream.outputs[0], mix.inputs[2])

@@ -30,7 +30,13 @@ g.inputs['Color'].default_value = D.get('glas_farbe', (0.94, 0.78, 0.10, 1))
 _gnt = bpy.data.materials['Glas'].node_tree
 _tcg = _gnt.nodes.new('ShaderNodeTexCoord'); _sep = _gnt.nodes.new('ShaderNodeSeparateXYZ'); _mr = _gnt.nodes.new('ShaderNodeMapRange')
 _mr.inputs['From Min'].default_value = 0.6; _mr.inputs['From Max'].default_value = 1.4                    # Höhe in cm: massiver Glasboden (unter ~8 mm) schwächer gefärbt
-_mr.inputs['To Min'].default_value = D.get('glas_dichte_boden', 1.0); _mr.inputs['To Max'].default_value = D.get('glas_dichte', 9.0)
+_mr.inputs['To Min'].default_value = D.get('glas_dichte_boden', 1.0); _mr.inputs['To Max'].default_value = D.get('glas_dichte', 13.0)
+# dunkle Ränder: je flacher der Blickwinkel auf das Glas, desto dunkler und brauner (wie auf dem Foto, dickere Glaswege am Rand)
+_lw = _gnt.nodes.new('ShaderNodeLayerWeight'); _lw.inputs['Blend'].default_value = D.get('rand_blend', 0.35)
+_pw = _gnt.nodes.new('ShaderNodeMath'); _pw.operation = 'POWER'; _pw.inputs[1].default_value = D.get('rand_potenz', 1.6)
+_gnt.links.new(_lw.outputs['Facing'], _pw.inputs[0])
+_mc = _gnt.nodes.new('ShaderNodeMix'); _mc.data_type = 'RGBA'; _mc.inputs['A'].default_value = g.inputs['Color'].default_value; _mc.inputs['B'].default_value = D.get('rand_farbe', (0.20, 0.07, 0.01, 1))
+_gnt.links.new(_pw.outputs[0], _mc.inputs['Factor']); _gnt.links.new(_mc.outputs['Result'], g.inputs['Color'])
 _gnt.links.new(_tcg.outputs['Object'], _sep.inputs[0]); _gnt.links.new(_sep.outputs['Z'], _mr.inputs['Value']); _gnt.links.new(_mr.outputs['Result'], g.inputs['Density'])
 
 bm_ = bpy.data.materials['Bier']
@@ -40,7 +46,7 @@ for n in list(nt.nodes):
         nt.nodes.remove(n)
 out = [n for n in nt.nodes if n.bl_idname == 'ShaderNodeOutputMaterial'][0]
 absn = nt.nodes.new('ShaderNodeVolumeAbsorption'); absn.name = 'BierAbsorption'
-absn.inputs['Color'].default_value = D.get('bier_farbe', (0.99, 0.905, 0.06, 1)); absn.inputs['Density'].default_value = D.get('bier_dichte', 0.8)
+absn.inputs['Color'].default_value = D.get('bier_farbe', (0.99, 0.905, 0.06, 1)); absn.inputs['Density'].default_value = D.get('bier_dichte', 1.0)
 sca = nt.nodes.new('ShaderNodeVolumeScatter'); sca.name = 'BierTruebung'
 sca.inputs['Color'].default_value = (1.0, 0.78, 0.38, 1); sca.inputs['Density'].default_value = 0.012; sca.inputs['Anisotropy'].default_value = 0.35
 tc = nt.nodes.new('ShaderNodeTexCoord')
@@ -209,7 +215,22 @@ for sc_, rn, rx, dn, sd, hh in ((16.0, 0.12, 0.34, 0.95, 3.0, 0.8), (7.5, 0.14, 
     g_, m_ = schicht(sc_, rn, rx, dn, sd, hh)
     mx = wn.new('ShaderNodeMixShader'); wl.new(m_, mx.inputs['Fac']); wl.new(global_sh, mx.inputs[1]); wl.new(g_, mx.inputs[2])
     global_sh = mx.outputs[0]
-wl.new(global_sh, wo.inputs['Surface'])
+# Etikettenbereiche bleiben trocken: Winkel θ von der Vorderseite (−Y) aus; vorn |θ| < 1,339 + Rand (y 17,8–122,2 mm), hinten |θ| > 2,108 − Rand (y 25,8–114,2 mm), Hals |θ| < ~1,07–1,7 (y 149,6–186,4 mm)
+th = wn.new('ShaderNodeMath'); th.operation = 'ARCTAN2'
+negy = mth('MULTIPLY', sepw.outputs['Y'], -1.0)
+wl.new(sepw.outputs['X'], th.inputs[0]); wl.new(negy, th.inputs[1])
+ath = mth('ABSOLUTE', th.outputs[0])
+zc = sepw.outputs['Z']
+def zone(z0, z1):                                              # 1 innerhalb der Höhe (cm), weicher Rand 0,05 cm
+    return mth('MULTIPLY', mth('GREATER_THAN', zc, z0), mth('LESS_THAN', zc, z1))
+vorn = mth('MULTIPLY', zone(1.68, 12.32), mth('LESS_THAN', ath, 1.41))
+hinten = mth('MULTIPLY', zone(2.5, 11.5), mth('GREATER_THAN', ath, 2.04))
+half = wn.new('ShaderNodeMapRange'); half.inputs['From Min'].default_value = 14.9; half.inputs['From Max'].default_value = 18.7; half.inputs['To Min'].default_value = 1.14; half.inputs['To Max'].default_value = 1.78; half.clamp = True
+wl.new(zc, half.inputs['Value'])
+hals = mth('MULTIPLY', zone(14.9, 18.7), mth('LESS_THAN', ath, half.outputs['Result']))
+trocken = mth('MAXIMUM', mth('MAXIMUM', vorn, hinten), hals)
+mixl = wn.new('ShaderNodeMixShader'); wl.new(trocken, mixl.inputs['Fac']); wl.new(global_sh, mixl.inputs[1]); wl.new(trans.outputs[0], mixl.inputs[2])
+wl.new(mixl.outputs[0], wo.inputs['Surface'])
 fl.data.materials.append(fm)
 for _n in ('Flaschenglas', 'Bier', 'Blasen', 'Schaum', 'Tropfenflaeche'):               # Glas wirft keinen Schatten: sonst bleibt das Innere (Schaum, Trübung) unbeleuchtet
     bpy.data.objects[_n].visible_shadow = False
