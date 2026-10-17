@@ -205,7 +205,7 @@ def schicht(scale, rmin, rmax, dichte, seed, hoehe):
 
 
 global_sh = shader
-for sc_, rn, rx, dn, sd, hh in ((7.5, 0.14, 0.36, 0.85, 1.0, 0.8), (3.0, 0.14, 0.36, 0.55, 7.0, 0.8), (1.2, 0.15, 0.34, 0.12, 13.0, 0.8)):
+for sc_, rn, rx, dn, sd, hh in ((16.0, 0.12, 0.34, 0.95, 3.0, 0.8), (7.5, 0.14, 0.36, 0.85, 1.0, 0.8), (3.0, 0.14, 0.36, 0.55, 7.0, 0.8), (1.2, 0.15, 0.34, 0.12, 13.0, 0.8)):
     g_, m_ = schicht(sc_, rn, rx, dn, sd, hh)
     mx = wn.new('ShaderNodeMixShader'); wl.new(m_, mx.inputs['Fac']); wl.new(global_sh, mx.inputs[1]); wl.new(g_, mx.inputs[2])
     global_sh = mx.outputs[0]

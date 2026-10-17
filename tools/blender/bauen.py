@@ -160,20 +160,49 @@ def bier_material():
 
 
 def etikett_material(name, png, alpha=False):
+    """Papieretikett auf nassem Glas: Papier (diffus) + Durchscheinen (Translucent, Bier und Rückseite glimmen schwach durch) + etwas Transparenz (man sieht Bläschen und Glas dahinter)
+    + nasse Klarlackschicht (Reflexe der Softboxen laufen über das Etikett wie über das Glas) + feines Papierkorn."""
+    DD = globals().get('DETAILS', {})
     m = mat(name)
     n, l = m.node_tree.nodes, m.node_tree.links
     out = n.new('ShaderNodeOutputMaterial')
-    p = n.new('ShaderNodeBsdfPrincipled'); p.name = 'EtikettBSDF'
-    p.inputs['Roughness'].default_value = 0.72
-    for key in ('Specular IOR Level', 'Specular'):
-        if key in p.inputs:
-            p.inputs[key].default_value = 0.25
     t = n.new('ShaderNodeTexImage'); t.name = 'EtikettBild'
     t.image = bpy.data.images.load(png); t.image.colorspace_settings.name = 'sRGB'; t.interpolation = 'Smart'
+    p = n.new('ShaderNodeBsdfPrincipled'); p.name = 'EtikettBSDF'
+    p.inputs['Roughness'].default_value = 0.62
+    for key in ('Specular IOR Level', 'Specular'):
+        if key in p.inputs:
+            p.inputs[key].default_value = 0.2
+    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.55)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
+        if key in p.inputs:
+            p.inputs[key].default_value = val
     l.new(t.outputs['Color'], p.inputs['Base Color'])
+    # Papierkorn
+    tc = n.new('ShaderNodeTexCoord'); no = n.new('ShaderNodeTexNoise'); no.inputs['Scale'].default_value = 900.0; no.inputs['Detail'].default_value = 4.0
+    bu = n.new('ShaderNodeBump'); bu.inputs['Strength'].default_value = 0.08; bu.inputs['Distance'].default_value = 0.01
+    l.new(tc.outputs['Object'], no.inputs['Vector']); l.new(no.outputs['Fac'], bu.inputs['Height']); l.new(bu.outputs[0], p.inputs['Normal'])
+    # Durchscheinen: Licht von hinten (Bier, Glas) färbt das Papier mit
+    tr = n.new('ShaderNodeBsdfTranslucent')
+    warm = n.new('ShaderNodeMix'); warm.data_type = 'RGBA'; warm.blend_type = 'MULTIPLY'; warm.inputs['Factor'].default_value = 1.0
+    warm.inputs['B'].default_value = (1.0, 0.86, 0.62, 1.0)                                    # Papier schimmert warm
+    l.new(t.outputs['Color'], warm.inputs['A']); l.new(warm.outputs['Result'], tr.inputs['Color'])
+    mx = n.new('ShaderNodeMixShader'); mx.inputs['Fac'].default_value = DD.get('etikett_durchscheinen', 0.12)
+    # warmer Schimmer von hinten (Licht im Bier scheint durchs Papier): schwache Emission in Papier-/Bierfarbe
+    em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = DD.get('etikett_schimmer', 0.22)
+    l.new(warm.outputs['Result'], em.inputs['Color'])
+    ad = n.new('ShaderNodeAddShader'); l.new(p.outputs[0], ad.inputs[0]); l.new(em.outputs[0], ad.inputs[1])
+    l.new(ad.outputs[0], mx.inputs[1]); l.new(tr.outputs[0], mx.inputs[2])
+    # Transparenz: ein Teil des Lichts geht gerade durch (man sieht das Bier, Bläschen und die Rückseite schwach dahinter)
+    tp = n.new('ShaderNodeBsdfTransparent')
+    mt = n.new('ShaderNodeMixShader')
+    al = n.new('ShaderNodeMath'); al.operation = 'MULTIPLY'; al.inputs[1].default_value = DD.get('etikett_deckkraft', 0.94)
     if alpha:
-        l.new(t.outputs['Alpha'], p.inputs['Alpha'])
-    l.new(p.outputs[0], out.inputs['Surface'])
+        l.new(t.outputs['Alpha'], al.inputs[0])
+    else:
+        al.inputs[0].default_value = 1.0
+    inv = n.new('ShaderNodeMath'); inv.operation = 'SUBTRACT'; inv.inputs[0].default_value = 1.0; l.new(al.outputs[0], inv.inputs[1])
+    l.new(inv.outputs[0], mt.inputs['Fac']); l.new(mx.outputs[0], mt.inputs[1]); l.new(tp.outputs[0], mt.inputs[2])
+    l.new(mt.outputs[0], out.inputs['Surface'])
     return m
 
 
