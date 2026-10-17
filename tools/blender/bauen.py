@@ -353,6 +353,11 @@ r.image_settings.file_format = 'PNG'; r.image_settings.color_mode = 'RGBA'
 scene.view_settings.view_transform = 'Standard'; scene.view_settings.look = 'None'
 c = scene.cycles
 c.samples = 160; c.use_denoising = True; c.denoiser = 'OPENIMAGEDENOISE'
+for _k, _v in (('denoising_input_passes', 'RGB_ALBEDO_NORMAL'), ('denoising_prefilter', 'ACCURATE'), ('denoising_quality', 'HIGH')):
+    try:
+        setattr(c, _k, _v)
+    except Exception:
+        pass                                                  # Albedo und Normale als Hilfsbilder: der Entrauscher erhält feine Kanten (Kronkorken)
 c.max_bounces = 24; c.transmission_bounces = 20; c.glossy_bounces = 8; c.diffuse_bounces = 4; c.volume_bounces = 4; c.transparent_max_bounces = 16
 c.caustics_reflective = False; c.caustics_refractive = False
 c.use_adaptive_sampling = True

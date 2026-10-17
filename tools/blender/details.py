@@ -72,20 +72,30 @@ def falten(r, y, a):
     w = max(0.0, min(1.0, 1.0 - y / 4.9))                      # nur im unteren Teil des Rocks
     ph = (a * 21.0 / (2 * math.pi)) % 1.0
     tri = 1.0 - abs(ph - 0.5) * 2.0                             # 0 … 1 … 0
-    s = tri * tri * (3 - 2 * tri)
-    return r * (1.0 + 0.075 * w * (s - 0.5)) + 0.35 * w * s     # Zacken ragen nach außen
+    s = min(1.0, tri * 1.6) ** 1.4                              # steile Flanken, scharfe Kanten der Falten
+    return r * (1.0 + 0.085 * w * (s - 0.5)) + 0.42 * w * s     # Zacken ragen nach außen
 
 
-kork = revolve([(r, y + CAP_BASE) for r, y in CAPS2], 'Kronkorken', seg=21 * 16, wave=lambda r, y, a: falten(r, y - CAP_BASE, a))
+kork = revolve([(r, y + CAP_BASE) for r, y in CAPS2], 'Kronkorken', seg=21 * 30, wave=lambda r, y, a: falten(r, y - CAP_BASE, a))
 km = bpy.data.materials['Kronkorken']
 bsdf = km.node_tree.nodes['KorkBSDF']
-bsdf.inputs['Base Color'].default_value = (0.62, 0.43, 0.13, 1)
-bsdf.inputs['Roughness'].default_value = 0.34
-nz = km.node_tree.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 60.0; nz.inputs['Detail'].default_value = 6.0
-bump = km.node_tree.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.12; bump.inputs['Distance'].default_value = 0.02
+bsdf.inputs['Base Color'].default_value = (0.70, 0.50, 0.17, 1)
+bsdf.inputs['Roughness'].default_value = 0.22
+nz = km.node_tree.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 220.0; nz.inputs['Detail'].default_value = 6.0
+bump = km.node_tree.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.03; bump.inputs['Distance'].default_value = 0.02
 tcn = km.node_tree.nodes.new('ShaderNodeTexCoord')
 km.node_tree.links.new(tcn.outputs['Object'], nz.inputs['Vector']); km.node_tree.links.new(nz.outputs['Fac'], bump.inputs['Height']); km.node_tree.links.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
 kork.data.materials.append(km)
+for _p in kork.data.polygons:
+    _p.use_smooth = True
+kork.data.update()
+_me = kork.data
+import bmesh as _bm
+_b = _bm.new(); _b.from_mesh(_me)
+for _e in _b.edges:
+    if len(_e.link_faces) == 2 and _e.calc_face_angle(0) > math.radians(38):
+        _e.smooth = False
+_b.to_mesh(_me); _b.free()
 
 stufe('Schaumkrone im Hals (über dem Bier) ──')
 # ── Schaumkrone im Hals (über dem Bier) ──
@@ -168,7 +178,8 @@ stufe('Kondenswasser (Shader)')
 # ── Kondenswasser: durchsichtige Hülle knapp über Glas und Etiketten; die Tropfen entstehen im Shader (Voronoi-Zellen → Kuppelhöhe → Bump-Normale → Glas-BSDF mit IOR 1,33),
 # in drei Größen übereinander. Außerhalb der Tropfen ist die Hülle völlig durchsichtig. Kein Geometrieaufwand, die Brechung entsteht aus der Normale.
 alt_entfernen('Tropfenflaeche')
-fl = revolve([(r_out(y) + 0.27, y) for y in [5 + 0.5 * i for i in range(0, 421)]], 'Tropfenflaeche', seg=192)
+WASSER_BIS = FILL_MM - 0.4                                    # Kondenswasser nur am Glas mit Bier dahinter; darüber (leerer Hals) bleibt es trocken
+fl = revolve([(r_out(y) + 0.27, y) for y in [5 + 0.5 * i for i in range(0, int((WASSER_BIS - 5) / 0.5) + 1)]], 'Tropfenflaeche', seg=192)
 fm = mat('Wasser'); wn, wl = fm.node_tree.nodes, fm.node_tree.links
 wo = wn.new('ShaderNodeOutputMaterial')
 tcw = wn.new('ShaderNodeTexCoord'); sepw = wn.new('ShaderNodeSeparateXYZ')
