@@ -180,7 +180,7 @@ def etikett_material(name, png, alpha=False):
     l.new(t.outputs['Color'], hsv.inputs['Color']); l.new(hsv.outputs['Color'], p.inputs['Base Color'])
     # Papierkorn
     tc = n.new('ShaderNodeTexCoord'); no = n.new('ShaderNodeTexNoise'); no.inputs['Scale'].default_value = 900.0; no.inputs['Detail'].default_value = 4.0
-    bu = n.new('ShaderNodeBump'); bu.inputs['Strength'].default_value = 0.08; bu.inputs['Distance'].default_value = 0.01
+    bu = n.new('ShaderNodeBump'); bu.inputs['Strength'].default_value = 0.015; bu.inputs['Distance'].default_value = 0.01
     l.new(tc.outputs['Object'], no.inputs['Vector']); l.new(no.outputs['Fac'], bu.inputs['Height']); l.new(bu.outputs[0], p.inputs['Normal'])
     # Durchscheinen: Licht von hinten (Bier, Glas) färbt das Papier mit
     tr = n.new('ShaderNodeBsdfTranslucent')

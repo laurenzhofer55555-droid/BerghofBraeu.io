@@ -14,7 +14,7 @@ TROPFEN_KLEIN = D.get('tropfen_klein', 20000)
 TROPFEN_MITTEL = D.get('tropfen_mittel', 3200)
 TROPFEN_GROSS = D.get('tropfen_gross', 160)
 BLASEN_KETTEN = D.get('blasen_ketten', 5)
-BLASEN_DUNST = D.get('blasen_dunst', 60)
+BLASEN_DUNST = D.get('blasen_dunst', 0)
 
 
 def alt_entfernen(name):
@@ -261,12 +261,12 @@ def schicht(scale, rmin, rmax, dichte, seed, hoehe, streck=1.0):
 _nz = wn.new('ShaderNodeTexNoise'); _nz.inputs['Scale'].default_value = 2.2; _nz.inputs['Detail'].default_value = 5.0; _nz.inputs['Roughness'].default_value = 0.65
 wl.new(comb.outputs[0], _nz.inputs['Vector'])
 _rg = wn.new('ShaderNodeMapRange'); _rg.inputs['From Min'].default_value = 0.35; _rg.inputs['From Max'].default_value = 0.65; _rg.inputs['To Min'].default_value = 0.2; _rg.inputs['To Max'].default_value = 0.5
-_fc = wn.new('ShaderNodeMapRange'); _fc.inputs['From Min'].default_value = 0.3; _fc.inputs['From Max'].default_value = 0.7; _fc.inputs['To Min'].default_value = D.get('beschlag_min', 0.03); _fc.inputs['To Max'].default_value = D.get('beschlag_max', 0.13)
+_fc = wn.new('ShaderNodeMapRange'); _fc.inputs['From Min'].default_value = 0.3; _fc.inputs['From Max'].default_value = 0.7; _fc.inputs['To Min'].default_value = D.get('beschlag_min', 0.0); _fc.inputs['To Max'].default_value = D.get('beschlag_max', 0.025)
 wl.new(_nz.outputs['Fac'], _rg.inputs['Value']); wl.new(_nz.outputs['Fac'], _fc.inputs['Value'])
 _hz = wn.new('ShaderNodeBsdfGlass'); _hz.inputs['IOR'].default_value = 1.05; wl.new(_rg.outputs['Result'], _hz.inputs['Roughness'])
 _hm = wn.new('ShaderNodeMixShader'); wl.new(_fc.outputs['Result'], _hm.inputs['Fac']); wl.new(trans.outputs[0], _hm.inputs[1]); wl.new(_hz.outputs[0], _hm.inputs[2])
 global_sh = _hm.outputs[0]
-for sc_, rn, rx, dn, sd, hh, sk_ in ((16.0, 0.12, 0.34, 0.95, 3.0, 1.0, 1.0), (7.5, 0.14, 0.36, 0.80, 1.0, 1.0, 0.9), (3.0, 0.14, 0.34, 0.38, 7.0, 1.0, 0.7), (1.2, 0.15, 0.32, 0.05, 13.0, 1.0, 0.45)):
+for sc_, rn, rx, dn, sd, hh, sk_ in ((6.0, 0.16, 0.36, 0.40, 1.0, 1.0, 0.9), (2.6, 0.15, 0.34, 0.30, 7.0, 1.0, 0.7), (1.1, 0.16, 0.32, 0.05, 13.0, 1.0, 0.45)):
     g_, m_ = schicht(sc_, rn, rx, dn, sd, hh, sk_)
     mx = wn.new('ShaderNodeMixShader'); wl.new(m_, mx.inputs['Fac']); wl.new(global_sh, mx.inputs[1]); wl.new(g_, mx.inputs[2])
     global_sh = mx.outputs[0]
