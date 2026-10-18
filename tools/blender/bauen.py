@@ -173,10 +173,10 @@ def etikett_material(name, png, alpha=False):
     for key in ('Specular IOR Level', 'Specular'):
         if key in p.inputs:
             p.inputs[key].default_value = 0.2
-    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.1)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
+    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.0)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
         if key in p.inputs:
             p.inputs[key].default_value = val
-    hsv = n.new('ShaderNodeHueSaturation'); hsv.inputs['Saturation'].default_value = DD.get('etikett_saettigung', 0.93); hsv.inputs['Value'].default_value = DD.get('etikett_helligkeit', 1.3)   # heller und entsättigt, als wäre das Etikett leicht feucht
+    hsv = n.new('ShaderNodeHueSaturation'); hsv.inputs['Saturation'].default_value = DD.get('etikett_saettigung', 1.0); hsv.inputs['Value'].default_value = DD.get('etikett_helligkeit', 1.0)   # heller und entsättigt, als wäre das Etikett leicht feucht
     l.new(t.outputs['Color'], hsv.inputs['Color']); l.new(hsv.outputs['Color'], p.inputs['Base Color'])
     # Papierkorn
     tc = n.new('ShaderNodeTexCoord'); no = n.new('ShaderNodeTexNoise'); no.inputs['Scale'].default_value = 900.0; no.inputs['Detail'].default_value = 4.0
@@ -307,7 +307,7 @@ def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
 
 ziel = bpy.data.objects.new('Ziel', None); scene.collection.objects.link(ziel); ziel.location = (0, 0, 11.5)
 lights = [
-    flaeche('Licht_Softbox', (-95, -80, 62), (95, 130), 26000),        # große weiche Softbox schräg von oben links
+    flaeche('Licht_Softbox', (-95, -90, 40), (95, 130), 20000),        # große weiche Softbox schräg von oben links
     flaeche('Licht_KanteL', (-62, 52, 14), (7, 170), 14000),           # schmaler Streifen seitlich hinten links: dunkle Glaskanten, helle senkrechte Reflexstreifen
     flaeche('Licht_KanteR', (62, 52, 14), (7, 170), 14000),            # … hinten rechts
     flaeche('Licht_Front', (0, -140, 14), (120, 60), 1200),             # schwacher Aufheller, damit die Etiketten lesbar bleiben

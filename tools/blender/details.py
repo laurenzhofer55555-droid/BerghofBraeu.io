@@ -13,7 +13,7 @@ D = globals().get('DETAILS', {})
 TROPFEN_KLEIN = D.get('tropfen_klein', 20000)
 TROPFEN_MITTEL = D.get('tropfen_mittel', 3200)
 TROPFEN_GROSS = D.get('tropfen_gross', 160)
-BLASEN_KETTEN = D.get('blasen_ketten', 5)
+BLASEN_KETTEN = D.get('blasen_ketten', 22)
 BLASEN_DUNST = D.get('blasen_dunst', 0)
 
 
@@ -38,9 +38,12 @@ for _k in ('Transmission Weight', 'Transmission'):
 g = _gnt.nodes.new('ShaderNodeVolumeAbsorption'); g.name = 'GlasAbsorption'
 g.inputs['Color'].default_value = D.get('glas_farbe', (0.25, 0.13, 0.03, 1))
 _tcg = _gnt.nodes.new('ShaderNodeTexCoord'); _sepg = _gnt.nodes.new('ShaderNodeSeparateXYZ'); _mrg = _gnt.nodes.new('ShaderNodeMapRange'); _mlg = _gnt.nodes.new('ShaderNodeMath')
-_mrg.inputs['From Min'].default_value = 0.5; _mrg.inputs['From Max'].default_value = 1.8; _mrg.inputs['To Min'].default_value = D.get('boden_faktor', 0.22); _mrg.inputs['To Max'].default_value = 1.0   # massiver Glasboden: schwächer absorbierend, bleibt amber statt schwarz
-_mlg.operation = 'MULTIPLY'; _mlg.inputs[1].default_value = D.get('glas_dichte', 1.6)
-_gnt.links.new(_tcg.outputs['Object'], _sepg.inputs[0]); _gnt.links.new(_sepg.outputs['Z'], _mrg.inputs['Value']); _gnt.links.new(_mrg.outputs['Result'], _mlg.inputs[0]); _gnt.links.new(_mlg.outputs[0], g.inputs['Density'])     # dickere Stellen (Rand, Hals, Boden) werden von selbst dunkler
+_mrg.inputs['From Min'].default_value = 0.5; _mrg.inputs['From Max'].default_value = 1.8; _mrg.inputs['To Min'].default_value = D.get('boden_faktor', 0.3); _mrg.inputs['To Max'].default_value = 1.0   # massiver Glasboden: schwächer absorbierend, bleibt amber statt schwarz
+_mlg.operation = 'MULTIPLY'; _mlg.inputs[1].default_value = D.get('glas_dichte', 1.3)
+_gnt.links.new(_tcg.outputs['Object'], _sepg.inputs[0]); _gnt.links.new(_sepg.outputs['Z'], _mrg.inputs['Value']); _gnt.links.new(_mrg.outputs['Result'], _mlg.inputs[0])
+_mh = _gnt.nodes.new('ShaderNodeMapRange'); _mh.inputs['From Min'].default_value = 19.6; _mh.inputs['From Max'].default_value = 20.8; _mh.inputs['To Min'].default_value = 1.0; _mh.inputs['To Max'].default_value = D.get('hals_faktor', 3.4)    # Hals oberhalb des Biers (ab ~20 cm): dunkles Braun wie auf dem Foto
+_m2 = _gnt.nodes.new('ShaderNodeMath'); _m2.operation = 'MULTIPLY'
+_gnt.links.new(_sepg.outputs['Z'], _mh.inputs['Value']); _gnt.links.new(_mlg.outputs[0], _m2.inputs[0]); _gnt.links.new(_mh.outputs['Result'], _m2.inputs[1]); _gnt.links.new(_m2.outputs[0], g.inputs['Density'])     # dickere Stellen (Rand, Hals, Boden) werden von selbst dunkler
 _gnt.links.new(_gp.outputs[0], _go.inputs['Surface']); _gnt.links.new(g.outputs[0], _go.inputs['Volume'])
 
 bm_ = bpy.data.materials['Bier']
@@ -50,9 +53,9 @@ for n in list(nt.nodes):
         nt.nodes.remove(n)
 out = [n for n in nt.nodes if n.bl_idname == 'ShaderNodeOutputMaterial'][0]
 absn = nt.nodes.new('ShaderNodeVolumeAbsorption'); absn.name = 'BierAbsorption'
-absn.inputs['Color'].default_value = D.get('bier_farbe', (0.99, 0.855, 0.05, 1)); absn.inputs['Density'].default_value = D.get('bier_dichte', 1.0)
+absn.inputs['Color'].default_value = D.get('bier_farbe', (0.99, 0.83, 0.03, 1)); absn.inputs['Density'].default_value = D.get('bier_dichte', 1.0)
 sca = nt.nodes.new('ShaderNodeVolumeScatter'); sca.name = 'BierTruebung'
-sca.inputs['Color'].default_value = (1.0, 0.78, 0.38, 1); sca.inputs['Density'].default_value = 0.012; sca.inputs['Anisotropy'].default_value = 0.35
+sca.inputs['Color'].default_value = (1.0, 0.55, 0.12, 1); sca.inputs['Density'].default_value = 0.002; sca.inputs['Anisotropy'].default_value = 0.35
 tc = nt.nodes.new('ShaderNodeTexCoord')
 noise = nt.nodes.new('ShaderNodeTexNoise'); noise.inputs['Scale'].default_value = 0.55; noise.inputs['Detail'].default_value = 3.0; noise.inputs['Roughness'].default_value = 0.6
 rampn = nt.nodes.new('ShaderNodeMapRange'); rampn.inputs['From Min'].default_value = 0.3; rampn.inputs['From Max'].default_value = 0.7; rampn.inputs['To Min'].default_value = 0.8; rampn.inputs['To Max'].default_value = 1.25
@@ -150,7 +153,7 @@ for c in range(BLASEN_KETTEN):
     y = 12.0 + rng.random() * 8
     while y < FILL_MM - 6:
         t = (y - 12.0) / (FILL_MM - 18.0)
-        d = 0.14 + 0.22 * t * (0.8 + 0.4 * rng.random())          # Radius mm: unten klein, oben größer
+        d = 0.2 + 0.32 * t * (0.8 + 0.4 * rng.random())          # Radius mm: unten klein, oben größer
         wob = 0.3 + 1.1 * t
         px = x0 + math.sin(y * 0.09 + a) * wob
         pz = z0 + math.cos(y * 0.07 + a * 1.3) * wob
@@ -266,11 +269,11 @@ wl.new(_nz.outputs['Fac'], _rg.inputs['Value']); wl.new(_nz.outputs['Fac'], _fc.
 _hz = wn.new('ShaderNodeBsdfGlass'); _hz.inputs['IOR'].default_value = 1.05; wl.new(_rg.outputs['Result'], _hz.inputs['Roughness'])
 _hm = wn.new('ShaderNodeMixShader'); wl.new(_fc.outputs['Result'], _hm.inputs['Fac']); wl.new(trans.outputs[0], _hm.inputs[1]); wl.new(_hz.outputs[0], _hm.inputs[2])
 global_sh = _hm.outputs[0]
-for sc_, rn, rx, dn, sd, hh, sk_ in ((6.0, 0.16, 0.36, 0.40, 1.0, 1.0, 0.9), (2.6, 0.15, 0.34, 0.30, 7.0, 1.0, 0.7), (1.1, 0.16, 0.32, 0.05, 13.0, 1.0, 0.45)):
+for sc_, rn, rx, dn, sd, hh, sk_ in ((6.0, 0.16, 0.34, 0.20, 1.0, 1.0, 0.9), (2.6, 0.15, 0.32, 0.16, 7.0, 1.0, 0.7), (1.1, 0.16, 0.30, 0.025, 13.0, 1.0, 0.45)):
     g_, m_ = schicht(sc_, rn, rx, dn, sd, hh, sk_)
     mx = wn.new('ShaderNodeMixShader'); wl.new(m_, mx.inputs['Fac']); wl.new(global_sh, mx.inputs[1]); wl.new(g_, mx.inputs[2])
     global_sh = mx.outputs[0]
-trocken = etikett_zone if D.get('etikett_trocken', False) else mth('MULTIPLY', etikett_zone, 0.0)
+trocken = etikett_zone if D.get('etikett_trocken', True) else mth('MULTIPLY', etikett_zone, 0.0)
 if False:
     pass                         # Standard: Wasser auf der ganzen Flasche inklusive Etiketten (Brief); etikett_trocken=True lässt die Etiketten trocken
 mixl = wn.new('ShaderNodeMixShader'); wl.new(trocken, mixl.inputs['Fac']); wl.new(global_sh, mixl.inputs[1]); wl.new(trans.outputs[0], mixl.inputs[2])
