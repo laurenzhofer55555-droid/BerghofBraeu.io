@@ -7,7 +7,7 @@ from mathutils import Vector
 MM = 0.1                                   # 1 mm = 0,1 Einheiten (cm)
 BOTTLE_H = 229.2                           # mm bis Oberkante Kronkorken
 CAP_BASE, CAP_H = 222.9, 6.3
-FILL_MM = 192.0                            # Füllhöhe
+FILL_MM = 205.0                            # Füllhöhe: bis knapp unter den Halsansatz (kein sichtbarer Luftbalken)
 WALL = 2.7                                 # Glasstärke (mm)
 SEG = 160                                  # Segmente um die Achse
 
@@ -169,14 +169,15 @@ def etikett_material(name, png, alpha=False):
     t = n.new('ShaderNodeTexImage'); t.name = 'EtikettBild'
     t.image = bpy.data.images.load(png); t.image.colorspace_settings.name = 'sRGB'; t.interpolation = 'Smart'
     p = n.new('ShaderNodeBsdfPrincipled'); p.name = 'EtikettBSDF'
-    p.inputs['Roughness'].default_value = 0.62
+    p.inputs['Roughness'].default_value = 0.6
     for key in ('Specular IOR Level', 'Specular'):
         if key in p.inputs:
             p.inputs[key].default_value = 0.2
-    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.18)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
+    for key, val in (('Coat Weight', DD.get('etikett_klarlack', 0.1)), ('Coat Roughness', 0.07), ('Coat IOR', 1.4)):
         if key in p.inputs:
             p.inputs[key].default_value = val
-    l.new(t.outputs['Color'], p.inputs['Base Color'])
+    hsv = n.new('ShaderNodeHueSaturation'); hsv.inputs['Saturation'].default_value = DD.get('etikett_saettigung', 0.93); hsv.inputs['Value'].default_value = DD.get('etikett_helligkeit', 1.3)   # heller und entsättigt, als wäre das Etikett leicht feucht
+    l.new(t.outputs['Color'], hsv.inputs['Color']); l.new(hsv.outputs['Color'], p.inputs['Base Color'])
     # Papierkorn
     tc = n.new('ShaderNodeTexCoord'); no = n.new('ShaderNodeTexNoise'); no.inputs['Scale'].default_value = 900.0; no.inputs['Detail'].default_value = 4.0
     bu = n.new('ShaderNodeBump'); bu.inputs['Strength'].default_value = 0.08; bu.inputs['Distance'].default_value = 0.01
@@ -185,7 +186,7 @@ def etikett_material(name, png, alpha=False):
     tr = n.new('ShaderNodeBsdfTranslucent')
     warm = n.new('ShaderNodeMix'); warm.data_type = 'RGBA'; warm.blend_type = 'MULTIPLY'; warm.inputs['Factor'].default_value = 1.0
     warm.inputs['B'].default_value = (1.0, 0.86, 0.62, 1.0)                                    # Papier schimmert warm
-    l.new(t.outputs['Color'], warm.inputs['A']); l.new(warm.outputs['Result'], tr.inputs['Color'])
+    l.new(hsv.outputs['Color'], warm.inputs['A']); l.new(warm.outputs['Result'], tr.inputs['Color'])
     mx = n.new('ShaderNodeMixShader'); mx.inputs['Fac'].default_value = DD.get('etikett_durchscheinen', 0.0)
     # warmer Schimmer von hinten (Licht im Bier scheint durchs Papier): schwache Emission in Papier-/Bierfarbe
     em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = DD.get('etikett_schimmer', 0.0)
@@ -306,11 +307,10 @@ def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
 
 ziel = bpy.data.objects.new('Ziel', None); scene.collection.objects.link(ziel); ziel.location = (0, 0, 11.5)
 lights = [
-    flaeche('Licht_Fenster', (-75, -85, 28), (70, 140), 9800),     # breites Fensterlicht vorne links
-    flaeche('Licht_StreifenL', (-62, -48, 12), (9, 150), 4900),    # heller Glanzstreifen vorne links
-    flaeche('Licht_StreifenR', (68, -38, 12), (10, 150), 2450),    # Streifen vorne rechts
-    flaeche('Licht_Decke', (0, -12, 105), (90, 70), 3640),         # große Decke
-    flaeche('Licht_Front', (0, -140, 14), (120, 60), 980),        # Aufheller hinter der Kamera
+    flaeche('Licht_Softbox', (-95, -80, 62), (95, 130), 26000),        # große weiche Softbox schräg von oben links
+    flaeche('Licht_KanteL', (-62, 52, 14), (7, 170), 14000),           # schmaler Streifen seitlich hinten links: dunkle Glaskanten, helle senkrechte Reflexstreifen
+    flaeche('Licht_KanteR', (62, 52, 14), (7, 170), 14000),            # … hinten rechts
+    flaeche('Licht_Front', (0, -140, 14), (120, 60), 1200),             # schwacher Aufheller, damit die Etiketten lesbar bleiben
 ]
 for o in lights:
     o.constraints['Track To'].target = ziel
@@ -327,9 +327,9 @@ tcw = nt.nodes.new('ShaderNodeTexCoord'); sepw = nt.nodes.new('ShaderNodeSeparat
 absx = nt.nodes.new('ShaderNodeMath'); absx.operation = 'ABSOLUTE'; nt.links.new(sepw.outputs['X'], absx.inputs[0])
 rmp = nt.nodes.new('ShaderNodeMapRange'); rmp.clamp = True; rmp.inputs['From Min'].default_value = globals().get('DETAILS', {}).get('blende_von', 0.18); rmp.inputs['From Max'].default_value = globals().get('DETAILS', {}).get('blende_bis', 0.7)
 nt.links.new(absx.outputs[0], rmp.inputs['Value'])
-mcr = nt.nodes.new('ShaderNodeMix'); mcr.data_type = 'RGBA'; mcr.inputs['A'].default_value = (0.9301, 0.9047, 0.8388, 1); mcr.inputs['B'].default_value = (0.012, 0.009, 0.006, 1)
+mcr = nt.nodes.new('ShaderNodeMix'); mcr.data_type = 'RGBA'; mcr.inputs['A'].default_value = (0.9301, 0.9047, 0.8388, 1); mcr.inputs['B'].default_value = (0.07, 0.05, 0.035, 1)
 nt.links.new(rmp.outputs['Result'], mcr.inputs['Factor']); nt.links.new(mcr.outputs['Result'], cream.inputs['Color'])
-neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.35
+neutral = nt.nodes.new('ShaderNodeBackground'); neutral.name = 'WeltNeutral'; neutral.inputs['Color'].default_value = (1, 1, 1, 1); neutral.inputs['Strength'].default_value = 0.5
 mix = nt.nodes.new('ShaderNodeMixShader')
 nt.links.new(lp.outputs['Is Camera Ray'], mx.inputs[0]); nt.links.new(lp.outputs['Is Transmission Ray'], mx.inputs[1])
 nt.links.new(mx.outputs[0], mix.inputs['Fac']); nt.links.new(neutral.outputs[0], mix.inputs[1]); nt.links.new(cream.outputs[0], mix.inputs[2])
@@ -339,26 +339,34 @@ nt.links.new(mix.outputs[0], out.inputs['Surface'])
 cd = bpy.data.cameras.new('Kamera')
 dist = 122.6
 cd.sensor_fit = 'VERTICAL'
-cd.angle_y = 2 * math.atan((BOTTLE_H * MM / 0.92 / 2) / dist)
+cd.sensor_fit = 'VERTICAL'; cd.sensor_height = 24.0; cd.lens = 100.0                      # 100 mm
+dist = (BOTTLE_H * MM / 0.92 / 2) / (12.0 / 100.0)                                         # Flasche füllt 92 % der Bildhöhe
+cd.dof.use_dof = True; cd.dof.aperture_fstop = 16.0                                        # leichte Tiefenunschärfe
 cam = bpy.data.objects.new('Kamera', cd); scene.collection.objects.link(cam)
 cam.location = (0, -dist, BOTTLE_H * MM / 2)
+
 cam.rotation_euler = (math.pi / 2, 0, 0)
 scene.camera = cam
+cd.dof.focus_distance = dist - 3.5                                                         # Schärfe auf der Etikett-Vorderseite
 
 # ── Render-Einstellungen ──
 r = scene.render
 r.engine = 'CYCLES'; r.resolution_x, r.resolution_y, r.resolution_percentage = 1000, 2400, 100
 r.film_transparent = True
 r.image_settings.file_format = 'PNG'; r.image_settings.color_mode = 'RGBA'
-scene.view_settings.view_transform = 'Standard'; scene.view_settings.look = 'None'
+scene.view_settings.view_transform = 'AgX'
+try:
+    scene.view_settings.look = 'AgX - Medium High Contrast'
+except Exception:
+    scene.view_settings.look = 'None'
 c = scene.cycles
-c.samples = 160; c.use_denoising = True; c.denoiser = 'OPENIMAGEDENOISE'
+c.samples = 512; c.use_denoising = True; c.denoiser = 'OPENIMAGEDENOISE'
 for _k, _v in (('denoising_input_passes', 'RGB_ALBEDO_NORMAL'), ('denoising_prefilter', 'ACCURATE'), ('denoising_quality', 'HIGH')):
     try:
         setattr(c, _k, _v)
     except Exception:
         pass                                                  # Albedo und Normale als Hilfsbilder: der Entrauscher erhält feine Kanten (Kronkorken)
-c.max_bounces = 24; c.transmission_bounces = 20; c.glossy_bounces = 8; c.diffuse_bounces = 4; c.volume_bounces = 4; c.transparent_max_bounces = 16
+c.max_bounces = 24; c.transmission_bounces = 12; c.glossy_bounces = 12; c.diffuse_bounces = 4; c.volume_bounces = 4; c.transparent_max_bounces = 16
 c.caustics_reflective = False; c.caustics_refractive = False
 c.use_adaptive_sampling = True
 scene.unit_settings.system = 'METRIC'; scene.unit_settings.scale_length = 0.01; scene.unit_settings.length_unit = 'CENTIMETERS'
