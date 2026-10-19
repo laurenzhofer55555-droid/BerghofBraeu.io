@@ -167,7 +167,7 @@ def etikett_material(name, png, alpha=False):
     n, l = m.node_tree.nodes, m.node_tree.links
     out = n.new('ShaderNodeOutputMaterial')
     t = n.new('ShaderNodeTexImage'); t.name = 'EtikettBild'
-    t.image = bpy.data.images.load(png); t.image.colorspace_settings.name = 'sRGB'; t.interpolation = 'Smart'
+    t.image = bpy.data.images.load(png); t.image.colorspace_settings.name = 'sRGB'; t.interpolation = 'Smart'; t.extension = 'EXTEND'      # EXTEND: sonst mischt die unterste Pixelreihe die oberste (weiß) ein → weißer Haarstrich am unteren Etikettrand
     p = n.new('ShaderNodeBsdfPrincipled'); p.name = 'EtikettBSDF'
     p.inputs['Roughness'].default_value = 0.6
     for key in ('Specular IOR Level', 'Specular'):
@@ -308,7 +308,7 @@ def flaeche(name, pos, size, power, target=(0, 0, 11.5), color=(1, 0.98, 0.94)):
 ziel = bpy.data.objects.new('Ziel', None); scene.collection.objects.link(ziel); ziel.location = (0, 0, 11.5)
 lights = [
     flaeche('Licht_Softbox', (-95, -90, 40), (95, 130), 20000),        # große weiche Softbox schräg von oben links
-    flaeche('Licht_KanteL', (-62, 52, 14), (7, 170), 14000),           # schmaler Streifen seitlich hinten links: dunkle Glaskanten, helle senkrechte Reflexstreifen
+    flaeche('Licht_KanteL', (-62, 52, 14), (7, 170), 4900),           # schmaler Streifen seitlich hinten links: dunkle Glaskanten, helle senkrechte Reflexstreifen
     flaeche('Licht_KanteR', (62, 52, 14), (7, 170), 14000),            # … hinten rechts
     flaeche('Licht_Front', (0, -140, 14), (120, 60), 1200),             # schwacher Aufheller, damit die Etiketten lesbar bleiben
 ]
