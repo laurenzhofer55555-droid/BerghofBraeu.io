@@ -38,13 +38,19 @@ for _k in ('Transmission Weight', 'Transmission'):
 g = _gnt.nodes.new('ShaderNodeVolumeAbsorption'); g.name = 'GlasAbsorption'
 g.inputs['Color'].default_value = D.get('glas_farbe', (0.25, 0.13, 0.03, 1))
 _tcg = _gnt.nodes.new('ShaderNodeTexCoord'); _sepg = _gnt.nodes.new('ShaderNodeSeparateXYZ'); _mrg = _gnt.nodes.new('ShaderNodeMapRange'); _mlg = _gnt.nodes.new('ShaderNodeMath')
-_mrg.inputs['From Min'].default_value = 0.5; _mrg.inputs['From Max'].default_value = 1.8; _mrg.inputs['To Min'].default_value = D.get('boden_faktor', 0.3); _mrg.inputs['To Max'].default_value = 1.0   # massiver Glasboden: schwächer absorbierend, bleibt amber statt schwarz
+_mrg.inputs['From Min'].default_value = 0.5; _mrg.inputs['From Max'].default_value = 1.8; _mrg.inputs['To Min'].default_value = D.get('boden_faktor', 0.15); _mrg.inputs['To Max'].default_value = 1.0   # massiver Glasboden: schwächer absorbierend, bleibt amber statt schwarz
 _mlg.operation = 'MULTIPLY'; _mlg.inputs[1].default_value = D.get('glas_dichte', 1.3)
 _gnt.links.new(_tcg.outputs['Object'], _sepg.inputs[0]); _gnt.links.new(_sepg.outputs['Z'], _mrg.inputs['Value']); _gnt.links.new(_mrg.outputs['Result'], _mlg.inputs[0])
 _mh = _gnt.nodes.new('ShaderNodeMapRange'); _mh.inputs['From Min'].default_value = 19.6; _mh.inputs['From Max'].default_value = 20.8; _mh.inputs['To Min'].default_value = 1.0; _mh.inputs['To Max'].default_value = D.get('hals_faktor', 3.4)    # Hals oberhalb des Biers (ab ~20 cm): dunkles Braun wie auf dem Foto
 _m2 = _gnt.nodes.new('ShaderNodeMath'); _m2.operation = 'MULTIPLY'
-_gnt.links.new(_sepg.outputs['Z'], _mh.inputs['Value']); _gnt.links.new(_mlg.outputs[0], _m2.inputs[0]); _gnt.links.new(_mh.outputs['Result'], _m2.inputs[1]); _gnt.links.new(_m2.outputs[0], g.inputs['Density'])     # dickere Stellen (Rand, Hals, Boden) werden von selbst dunkler
+_gnt.links.new(_sepg.outputs['Z'], _mh.inputs['Value']); _gnt.links.new(_mlg.outputs[0], _m2.inputs[0]); _gnt.links.new(_mh.outputs['Result'], _m2.inputs[1]); _gnt.links.new(_m2.outputs[0], g.inputs['Density'])
+# Glasboden: massives Glas ohne Bier dahinter bekommt eine eigene Bernstein-Absorption (dunkles Amber wie auf dem Foto statt farbloses Grau); wirkt nur im untersten Bereich (z < ~1,2 cm)
+_g2 = _gnt.nodes.new('ShaderNodeVolumeAbsorption'); _g2.name = 'GlasBodenAmber'; _g2.inputs['Color'].default_value = D.get('boden_farbe', (0.97, 0.66, 0.001, 1))
+_mb = _gnt.nodes.new('ShaderNodeMapRange'); _mb.inputs['From Min'].default_value = D.get('boden_von', 0.35); _mb.inputs['From Max'].default_value = D.get('boden_bis', 1.5); _mb.inputs['To Min'].default_value = D.get('boden_amber', 0.3); _mb.inputs['To Max'].default_value = 0.0
+_gnt.links.new(_sepg.outputs['Z'], _mb.inputs['Value']); _gnt.links.new(_mb.outputs['Result'], _g2.inputs['Density'])
+_ad = _gnt.nodes.new('ShaderNodeAddShader'); _gnt.links.new(g.outputs[0], _ad.inputs[0]); _gnt.links.new(_g2.outputs[0], _ad.inputs[1]); _gnt.links.new(_ad.outputs[0], _go.inputs['Volume'])     # dickere Stellen (Rand, Hals, Boden) werden von selbst dunkler
 _gnt.links.new(_gp.outputs[0], _go.inputs['Surface']); _gnt.links.new(g.outputs[0], _go.inputs['Volume'])
+_gnt.links.new(_ad.outputs[0], _go.inputs['Volume'])                 # Wand- und Boden-Absorption zusammen
 
 bm_ = bpy.data.materials['Bier']
 nt, ln = bm_.node_tree, bm_.node_tree.links
