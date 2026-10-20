@@ -297,9 +297,9 @@
     }
     @media (prefers-reduced-motion: reduce) { .age, .age-gate .age, .age__card { animation: none; transition: none; } }
     .poster { z-index: 1; pointer-events: none; }
-    .poster picture { position: absolute; left: 50%; top: 9.92%; height: 56.04%; aspect-ratio: 524 / 1401; transform: translateX(-50%); display: block; }
+    .poster picture { position: absolute; left: 50%; top: 10%; height: 60.72%; aspect-ratio: 792 / 1518; transform: translateX(-50%); display: block; }
     .poster img { display: block; width: 100%; height: 100%; max-width: none; }
-    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14%; height: 72.54%; aspect-ratio: 738 / 2010; } }
+    @media (max-aspect-ratio: 4/5) { .poster picture { top: 14.11%; height: 82.1%; aspect-ratio: 1272 / 2275; } }
     main { position: relative; z-index: 2; }
     .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
     .site-header__brand { position: relative; z-index: 61; width: max-content; margin: var(--frame-inset) auto 0; transform: translateY(-50%); padding: 0 18px;
@@ -324,12 +324,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=94aba8b1" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=94aba8b1" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=94aba8b1" /></noscript>
+  <link rel="preload" href="css/style.css?v=b868b200" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=b868b200" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=b868b200" /></noscript>
 
   <!-- Scroll-Sequenz (GSAP + Bildfolge) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=94aba8b1"></script>
+  <script type="module" src="js/main.js?v=b868b200"></script>
 </head>
 <body>
 
@@ -367,10 +367,10 @@
        ersten Bild der Scroll-Sequenz und wird ausgeblendet, sobald diese läuft. Ohne JavaScript bleibt es stehen. -->
   <div class="poster">
     <picture>
-      <source media="(max-aspect-ratio: 4/5)" sizes="27vh" width="419" height="1141"
-              srcset="assets/img/flasche-berghof-hell-hoch-285.webp?v=7677c369 285w, assets/img/flasche-berghof-hell-hoch.webp?v=7677c369 419w, assets/img/flasche-berghof-hell-hoch-586.webp?v=7677c369 586w" />
-      <img src="assets/img/flasche-berghof-hell.webp?v=7677c369" sizes="21vh" width="474" height="1267" fetchpriority="high"
-           srcset="assets/img/flasche-berghof-hell-322.webp?v=7677c369 322w, assets/img/flasche-berghof-hell.webp?v=7677c369 474w, assets/img/flasche-berghof-hell-701.webp?v=7677c369 701w"
+      <source media="(max-aspect-ratio: 4/5)" sizes="46vh" width="419" height="749"
+              srcset="assets/img/flasche-berghof-hell-hoch-285.webp?v=027f7126 285w, assets/img/flasche-berghof-hell-hoch.webp?v=027f7126 419w, assets/img/flasche-berghof-hell-hoch-586.webp?v=027f7126 586w" />
+      <img src="assets/img/flasche-berghof-hell.webp?v=027f7126" sizes="32vh" width="474" height="908" fetchpriority="high"
+           srcset="assets/img/flasche-berghof-hell-322.webp?v=027f7126 322w, assets/img/flasche-berghof-hell.webp?v=027f7126 474w, assets/img/flasche-berghof-hell-701.webp?v=027f7126 701w"
            alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied mit goldenem Kronkorken und Etikett" />
     </picture>
   </div>
@@ -479,14 +479,14 @@
         <!-- Zutaten um die Flasche: Hopfen und Wasser links, Malz rechts, goldene Linien führen zur Flasche (Desktop ab 1100 px, js/etikett.js zeichnet sie beim ersten Erscheinen); schmal: Flasche mittig, darunter die drei Zutaten -->
         <div class="zutaten-buehne" data-etikett>
           <svg class="etikett__linie zutaten__linien" viewBox="0 0 100 58" aria-hidden="true" focusable="false">
-            <path class="etikett__pfad" pathLength="1" d="M32.5 9H38Q42 9 44.4 9.6T46.7 10.2"/>
-            <path class="etikett__pfad" pathLength="1" d="M67.5 24H63Q60.5 24 59 23T57.2 22"/>
-            <path class="etikett__pfad" pathLength="1" d="M32.5 40H36Q40 40 41.2 44.6T42.6 48.3"/>
+            <path class="etikett__pfad" pathLength="1" d="M32.5 9H38Q42 9 44.4 9.5T46.8 10.1"/>
+            <path class="etikett__pfad" pathLength="1" d="M67.5 24H63Q60.5 24 59 22.8T57.1 21.8"/>
+            <path class="etikett__pfad" pathLength="1" d="M32.5 40H36Q40 40 41.2 44.2T42.7 47.7"/>
           </svg>
           <i class="etikett__raute zr1" aria-hidden="true"></i><i class="etikett__raute zr2" aria-hidden="true"></i><i class="etikett__raute zr3" aria-hidden="true"></i>
           <figure class="zutaten__flasche">
             <img class="zf__schatten" src="assets/img/flasche-schatten-320.webp" srcset="assets/img/flasche-schatten-320.webp 426w, assets/img/flasche-schatten-640.webp 852w" sizes="400px" width="426" height="159" loading="lazy" decoding="async" alt="" />
-            <img class="zf__bild" src="assets/img/flasche-360.webp?v=4" srcset="assets/img/flasche-180.webp?v=4 180w, assets/img/flasche-360.webp?v=4 312w" sizes="(min-width: 1100px) 170px, 130px" width="312" height="1029" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell" />
+            <img class="zf__bild" src="assets/img/flasche-360.webp?v=6" srcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" sizes="(min-width: 1100px) 170px, 130px" width="293" height="954" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell" />
           </figure>
           <ul class="ingredients">
             <li class="ingredient">

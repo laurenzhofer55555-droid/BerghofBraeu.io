@@ -89,14 +89,14 @@ body::after {
 
 .poster { z-index: 1; pointer-events: none; transition: opacity .9s ease .2s; }
 .poster picture {
-  position: absolute; left: 50%; top: 9.92%;
-  display: block; height: 56.04%;
-  aspect-ratio: 524 / 1401;          /* feste Proportion → kein Springen beim Laden */
+  position: absolute; left: 50%; top: 10%;
+  display: block; height: 60.72%;
+  aspect-ratio: 792 / 1518;          /* feste Proportion → kein Springen beim Laden */
   transform: translateX(-50%);
 }
 .poster img { display: block; width: 100%; height: 100%; max-width: none; }
 @media (max-aspect-ratio: 4/5) {
-  .poster picture { top: 14%; height: 72.54%; aspect-ratio: 738 / 2010; }   /* Hochformat: Kamera wie tools/sequenz.json (camPortrait) */
+  .poster picture { top: 14.11%; height: 82.1%; aspect-ratio: 1272 / 2275; }   /* Hochformat: Kamera wie tools/sequenz.json (camPortrait) */
 }
 .is-ready .poster { opacity: 0; }
 main { position: relative; z-index: 2; }
@@ -387,9 +387,9 @@ h3 {
   .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 1cqw; }
   .zutaten-buehne .ingredient:nth-child(2) { left: 68cqw; top: 14cqw; }
   .zutaten-buehne .ingredient:nth-child(3) { left: 2cqw; top: 31cqw; }
-  .zutaten-buehne .zr1 { left: 46.7cqw; top: 10.2cqw; }
-  .zutaten-buehne .zr2 { left: 57.2cqw; top: 22cqw; }
-  .zutaten-buehne .zr3 { left: 42.6cqw; top: 48.3cqw; }
+  .zutaten-buehne .zr1 { left: 46.8cqw; top: 10.1cqw; }
+  .zutaten-buehne .zr2 { left: 57.1cqw; top: 21.8cqw; }
+  .zutaten-buehne .zr3 { left: 42.7cqw; top: 47.7cqw; }
 }
 
 .facts {

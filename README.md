@@ -137,6 +137,16 @@ Licht und Material in `js/config.js`.
    eintragen, sonst springt die Flasche beim Übergang vom Standbild zur Sequenz.
 
 
+**Blender-Flasche (Startbild und erster Teil der Fahrt):** `tools/blender/` baut die Flasche als Blender-Szene (Glas, Bier, Etiketten, Kronkorken, Kondenswasser;
+`bauen_cli.py` erzeugt die `.blend`, die nicht eingecheckt wird) und rendert sie auf demselben Kamerapfad wie `tools/sequenz.json`:
+
+1. `Blender -b flasche.blend --python tools/blender/sequenz_blender.py -- tools/sequenz.json <Ordner> <desktop|mobil|poster-quer|poster-hoch> <von> <bis> <Samples>`
+   → freigestellte RGBA-Bilder `<Ordner>/rgba-<Satz>/NNN.png` und `kappe-<Satz>.json`.
+2. `python3 tools/blender/sequenz_mischen.py <Ordner> <Ordner der 3D-Modell-Sequenz> [A B]` legt die Bilder auf Creme (Boden-Schattenrauschen entfernt) und mischt sie
+   mit den Bildern des three.js-Modells (`tools/sequenz-rendern.html`): bis Bild A Blender, ab Bild B das 3D-Modell (Vogelperspektive, Kronkorken-Zoom), dazwischen weiche Überblendung.
+   Schreibt `assets/sequenz/`, `manifest.json` und die Standbilder. Danach wie oben die Werte für `.poster` prüfen und `python3 tools/stempeln.py` ausführen.
+
+
 Das CSS für den Startbereich steht zusätzlich direkt in `index.html` (schnellerer Seitenaufbau).
 Änderungen am Startbereich also an beiden Stellen machen.
 
