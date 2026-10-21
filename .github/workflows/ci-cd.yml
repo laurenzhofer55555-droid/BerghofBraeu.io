@@ -41,16 +41,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Website zusammenstellen (ohne Werkzeuge, Quelldaten und Render-Dateien)
-        # Nur für das lokale Rendern der Bildsequenz (tools/sequenz-rendern.html) gebraucht, Besucher laden sie nie:
-        # 3D-Modell (js/scene.js, bottle.js, stage.js, config.js, textures.js), vendor/three, vendor/lenis, assets/textures
+        # vendor/lenis.min.js wird von keiner Seite geladen, Besucher brauchen es nie
         run: |
           mkdir _site
           rsync -a \
             --exclude '.git*' --exclude '.github' --exclude '.claude' --exclude '.DS_Store' \
             --exclude 'tools' --exclude 'data' --exclude 'README.md' --exclude '_site' \
-            --exclude '/js/scene.js' --exclude '/js/bottle.js' --exclude '/js/stage.js' \
-            --exclude '/js/config.js' --exclude '/js/textures.js' \
-            --exclude '/vendor/three' --exclude '/vendor/lenis.min.js' --exclude '/assets/textures' \
+            --exclude '/vendor/lenis.min.js' \
             --exclude '*.heic' --exclude '/*.png' \
             ./ _site/
       - name: Zusammengestellte Website prüfen (fehlt durch das Weglassen etwas?)

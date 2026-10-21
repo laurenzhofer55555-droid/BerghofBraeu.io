@@ -1,12 +1,12 @@
-// Starter: Die Seite (Text, Rahmen, Standbild der Flasche) erscheint sofort und ist bis zum Ende der Startsequenz gesperrt (CSS).
-// Die Steuerung der zwei Gesten (js/sequenz.js, ohne Bibliothek) startet sofort; ihre Bilder lädt sie nach dem Startbild.
-// Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: Standbild, darunter die normale Seite.
+// Starter: Die Seite (Bier, Titel) erscheint sofort und ist bis zum Ende des Auslaufens gesperrt (CSS).
+// Die Steuerung der einen Geste (js/sequenz.js, ohne Bibliothek) startet sofort.
+// Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=b868b200';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=b868b200';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=b868b200';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=b868b200';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import './altersabfrage.js?v=08bec591';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=08bec591';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=08bec591';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=08bec591';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -33,8 +33,8 @@ const unlock = () => { root.classList.remove('seq'); root.classList.add('frei');
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=b868b200').catch((e) => {
-    console.warn('Startsequenz konnte nicht geladen werden, das Standbild bleibt stehen', e);
+  import('./sequenz.js?v=08bec591').catch((e) => {
+    console.warn('Start mit Bier konnte nicht geladen werden, die Seite wird freigegeben', e);
     unlock();
   });
   const guard = () => setTimeout(() => { if (!window.__sequenz) unlock(); }, 8000);

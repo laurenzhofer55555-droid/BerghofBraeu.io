@@ -16,7 +16,7 @@ export const VIEWS = {
   desktop: { w: 1440, h: 900, mobile: false },
   handy: { w: 390, h: 844, mobile: true },
 };
-// Geräte für die Endsequenz (Bier über die ganze Fläche)
+// Geräte für das Auslaufen des Biers (Bier über die ganze Fläche)
 export const DEVICES = {
   'iphone15': { w: 393, h: 852, mobile: true },
   'ipad-air-hoch': { w: 820, h: 1180, mobile: true },
@@ -26,26 +26,26 @@ export const DEVICES = {
   'desktop-2560': { w: 2560, h: 1440, mobile: false },
 };
 
-// Messfühler (läuft in der Seite): pro Bildschirmbild ein Eintrag, dazu Layoutverschiebungen und leeres Canvas
+// Messfühler (läuft in der Seite): pro Bildschirmbild ein Eintrag, dazu Layoutverschiebungen
 const PROBE = `
 try { localStorage.setItem('berghof-ab16', String(Date.now() + 864e5)); } catch (e) {}
-window.__S = []; window.__cls = 0; window.__blank = 0; window.__lastInput = 0;
+window.__S = []; window.__cls = 0; window.__lastInput = 0;
 try { new PerformanceObserver((l) => l.getEntries().forEach((e) => { if (!e.hadRecentInput) window.__cls += e.value; })).observe({ type: 'layout-shift', buffered: true }); } catch (e) {}
 ['wheel', 'touchstart', 'touchmove', 'keydown', 'pointerdown'].forEach((t) => addEventListener(t, () => { window.__lastInput = performance.now(); }, { passive: true, capture: true }));
 const num = (v) => (v === '' || v == null ? 0 : +v);
 function ty(node) { const m = node && getComputedStyle(node).transform; if (!m || m === 'none') return 0; const v = m.slice(m.indexOf('(') + 1, -1).split(',').map(Number); return m.startsWith('matrix3d') ? v[13] : v[5]; }
 window.__state = () => {
-  const q = window.__sequenz, c = document.getElementById('sequenz');
+  const q = window.__sequenz;
   const cs = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e) : null; };
   const rc = (s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
   return {
     y: Math.round(scrollY), z: q ? q.zustand : null, P: q ? +q.P.toFixed(4) : null, busy: q ? q.busy : null, bereit: q ? q.bereit : null,
     wartet: q ? q.wartet : null, frame: q ? q.frame : null, stalls: q ? q.stalls : 0, geladen: q ? q.geladen : 0,
-    cv: c ? getComputedStyle(c).visibility : null, beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cue: num(cs('.scroll-cue')?.opacity),
+    beer: num(cs('.beer')?.opacity), title: num(cs('.hero__text')?.opacity), cue: num(cs('.scroll-cue')?.opacity),
     frameO: num(cs('#start > .frame')?.opacity), level: Math.round(ty(document.querySelector('.beer__liquid'))), textY: Math.round(ty(document.querySelector('.hero__text')) * 10) / 10, more: num(cs('.hero__more')?.opacity),
     ops: { flock: num(cs('.flock')?.opacity), herd: num(cs('.herd')?.opacity), lead: num(cs('.hero__lead')?.opacity), art: num(cs('.painting')?.opacity), pf: num(cs('.frame--page')?.opacity) },
     tys: { flock: Math.round(ty(document.querySelector('.flock')) * 10) / 10, herd: Math.round(ty(document.querySelector('.herd')) * 10) / 10, lead: Math.round(ty(document.querySelector('.hero__lead')) * 10) / 10, art: Math.round(ty(document.querySelector('.painting')) * 10) / 10 },
-    anim: document.documentElement.classList.contains('anim'), wc: cs('.hero__text')?.willChange, cw: c ? c.width : null,
+    anim: document.documentElement.classList.contains('anim'), wc: cs('.hero__text')?.willChange,
     gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei'),
     overflow: getComputedStyle(document.documentElement).overflow, height: document.documentElement.scrollHeight,
   };
@@ -56,8 +56,7 @@ window.__state = () => {
 })();
 function record() {
   if (!document.documentElement || !document.body) return;
-  const c = document.getElementById('sequenz'), st = window.__state();
-  if (c && c.width && st.cv === 'visible' && getComputedStyle(c).opacity > 0.05) { const d = c.getContext('2d').getImageData(c.width >> 1, c.height >> 2, 1, 1).data; if (d[0] + d[1] + d[2] < 12) window.__blank++; }
+  const st = window.__state();
   st.t = Math.round(performance.now()); st.input = performance.now() - window.__lastInput < 200 ? 1 : 0;
   window.__S.push(st);
 }
@@ -161,9 +160,9 @@ export const gesture = (b, dir = 1) => (b.view.mobile ? touchSwipe(b, dir * 220)
 export const state = (b) => b.js('window.__state()');
 export const samples = async (b) => JSON.parse(await b.js('JSON.stringify(window.__S)'));
 export const log = async (b) => JSON.parse(await b.js('JSON.stringify(window.__sequenz ? window.__sequenz.log : [])'));
-// Sequenz ist bereit: alle Bilder geladen, Standbild ausgeblendet (Startzustand A)
+// Steuerung ist da (Startzustand B: Bier mit Titel und Pfeil)
 export const waitReady = async (b, ms = 30000) => {
-  for (let t = 0; t < ms; t += 100) { if (await b.js(`!!(window.__sequenz && window.__sequenz.bereit && document.documentElement.classList.contains('is-ready'))`)) return true; await sleep(100); }
+  for (let t = 0; t < ms; t += 100) { if (await b.js(`!!(window.__sequenz && window.__sequenz.bereit)`)) return true; await sleep(100); }
   return false;
 };
 // Wartet, bis keine Animation läuft und die Eingabesperre vorbei ist (Zustand steht fest)
