@@ -1,6 +1,6 @@
 # Baut die komplette Szene im Hintergrund (ohne Blender-Fenster): Blender -b --python bauen_cli.py -- <ausgabe.blend> [klein mittel gross ketten dunst]
-import bpy, sys, time
-ROOT = '/private/tmp/claude-501/-Users-agnes-Desktop-Berghof-Helle-Hofer-BR-u-Website/260b0afe-2c3a-4561-b31f-331411fbc907/scratchpad/wt-blender'
+import bpy, sys, time, os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))      # Projektordner
 args = sys.argv[sys.argv.index('--') + 1:]
 DETAILS = {}
 if len(args) > 1:

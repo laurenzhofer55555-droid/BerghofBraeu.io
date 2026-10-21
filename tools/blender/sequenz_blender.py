@@ -78,6 +78,11 @@ def bl(v):                                          # three.js (x, y, z; 1 Einhe
     return Vector((v.x * 10, -v.z * 10, (v.y + BH / 2) * 10))
 
 
+def smooth01(x):
+    x = min(1.0, max(0.0, x))
+    return x * x * (3 - 2 * x)
+
+
 def szene_einrichten():
     """Kontaktschatten wie auf der Seite: der Boden bekommt nur einen weichen Oberlicht-Schatten, die übrigen Lichter (Softbox, Randstreifen) beleuchten nur die Flasche."""
     O = bpy.data.objects
@@ -110,8 +115,63 @@ def szene_einrichten():
 SCHATTEN = dict(groesse=45.0, energie=float(os.environ.get('SCHATTEN_E', '6000')), hoehe=float(os.environ.get('SCHATTEN_H', '70')))
 
 
+def kork_nah_einrichten():
+    """Kronkorken im Zoom: geglättete Studio-Spiegelung (oben dunkles Braun, unten helles Gold wie beim alten Modell). Ein Farbverlauf nach der Spiegelrichtung ersetzt die gleichmäßige Weltreflexion,
+    die das Metall im Nahbild flach und stumpf aussehen lässt. Die Überblendung (Knoten 'KorkNah') läuft über die Bildnummer, die Frontansicht bleibt unverändert."""
+    m = bpy.data.materials['Kronkorken']; nt = m.node_tree; n, l = nt.nodes, nt.links
+    out = [x for x in n if x.bl_idname == 'ShaderNodeOutputMaterial'][0]
+    alt = out.inputs['Surface'].links[0].from_socket
+    geo = n.new('ShaderNodeNewGeometry')
+    vt = n.new('ShaderNodeVectorTransform'); vt.vector_type = 'POINT'; vt.convert_from = 'WORLD'; vt.convert_to = 'CAMERA'       # Punkt im Kamerabild: oben/unten bleibt gleich, egal wie die Kamera steht
+    l.new(geo.outputs['Position'], vt.inputs[0])
+    sep = n.new('ShaderNodeSeparateXYZ'); l.new(vt.outputs[0], sep.inputs[0])
+    mitte = n.new('ShaderNodeValue'); mitte.name = 'KorkMitte'
+    sub = n.new('ShaderNodeMath'); sub.operation = 'SUBTRACT'; l.new(sep.outputs['Y'], sub.inputs[0]); l.new(mitte.outputs[0], sub.inputs[1])    # Abstand von der Kappenmitte (cm, nach oben im Bild)
+    nt_ = n.new('ShaderNodeVectorTransform'); nt_.vector_type = 'NORMAL'; nt_.convert_from = 'WORLD'; nt_.convert_to = 'CAMERA'
+    l.new(geo.outputs['Normal'], nt_.inputs[0])
+    nsep = n.new('ShaderNodeSeparateXYZ'); l.new(nt_.outputs[0], nsep.inputs[0])
+    nmul = n.new('ShaderNodeMath'); nmul.operation = 'MULTIPLY'; nmul.inputs[1].default_value = KORK_NAH['normal_cm']; l.new(nsep.outputs['Y'], nmul.inputs[0])   # Flächen, die nach oben im Bild kippen, spiegeln den dunklen Raum (Kappenrand, Falten)
+    sub2 = n.new('ShaderNodeMath'); sub2.operation = 'ADD'; l.new(sub.outputs[0], sub2.inputs[0]); l.new(nmul.outputs[0], sub2.inputs[1])
+    vorz = KORK_NAH['vorzeichen']
+    t = n.new('ShaderNodeMapRange'); t.clamp = True
+    t.inputs['From Min'].default_value = -KORK_NAH['breite'] * vorz; t.inputs['From Max'].default_value = KORK_NAH['breite'] * vorz
+    t.inputs['To Min'].default_value = 1.0; t.inputs['To Max'].default_value = 0.0                    # 1 = hell (vorn/unten im Bild), 0 = dunkel (hinten/oben)
+    l.new(sub2.outputs[0], t.inputs['Value'])
+    rp = n.new('ShaderNodeValToRGB')
+    for i, (pos, col) in enumerate(KORK_NAH['rampe']):
+        if i >= len(rp.color_ramp.elements):
+            rp.color_ramp.elements.new(pos)
+        rp.color_ramp.elements[i].position = pos; rp.color_ramp.elements[i].color = col
+    l.new(t.outputs['Result'], rp.inputs['Fac'])
+    em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = KORK_NAH['staerke']; l.new(rp.outputs['Color'], em.inputs['Color'])
+    pb = n.new('ShaderNodeBsdfPrincipled'); pb.inputs['Base Color'].default_value = KORK_NAH['basis']
+    pb.inputs['Metallic'].default_value = 1.0; pb.inputs['Roughness'].default_value = KORK_NAH['rauheit']
+    if os.environ.get('KN_DEBUG'):
+        dm = n.new('ShaderNodeMapRange'); dm.inputs['From Min'].default_value = -1; dm.inputs['From Max'].default_value = 1
+        l.new({'y': sep.outputs['Y'], 'sub': sub.outputs[0]}[os.environ['KN_DEBUG']], dm.inputs['Value'])
+        cb = n.new('ShaderNodeCombineColor'); [l.new(dm.outputs[0], cb.inputs[i]) for i in range(3)]; l.new(cb.outputs[0], em.inputs['Color']); em.inputs['Strength'].default_value = 1.0
+    ad = n.new('ShaderNodeAddShader'); l.new(em.outputs[0], ad.inputs[0]); l.new(pb.outputs[0], ad.inputs[1])
+    mix = n.new('ShaderNodeMixShader'); mix.name = 'KorkNahMix'
+    wert = n.new('ShaderNodeValue'); wert.name = 'KorkNah'; wert.outputs[0].default_value = 0.0
+    nz = n.new('ShaderNodeSeparateXYZ'); l.new(geo.outputs['Normal'], nz.inputs[0])
+    nr = n.new('ShaderNodeMapRange'); nr.clamp = True; nr.inputs['From Min'].default_value = 0.45; nr.inputs['From Max'].default_value = 0.8; l.new(nz.outputs['Z'], nr.inputs['Value'])     # nur nach oben zeigende Flächen (Deckel) bekommen den Verlauf, der Rock bleibt wie im freigegebenen Bild
+    fm = n.new('ShaderNodeMath'); fm.operation = 'MULTIPLY'; l.new(wert.outputs[0], fm.inputs[0]); l.new(nr.outputs['Result'], fm.inputs[1])
+    l.new(fm.outputs[0], mix.inputs['Fac']); l.new(alt, mix.inputs[1]); l.new(ad.outputs[0], mix.inputs[2])
+    l.new(mix.outputs[0], out.inputs['Surface'])
+    return wert, mitte
+
+
+KORK_NAH = dict(
+    vorzeichen=float(os.environ.get('KN_VORZ', '1')), breite=float(os.environ.get('KN_BREITE', '1.4')), staerke=float(os.environ.get('KN_STAERKE', '2.8')),
+    rauheit=0.2, basis=(0.25, 0.17, 0.04, 1.0), normal_cm=float(os.environ.get('KN_NORMAL', '3.0')),
+    rampe=[(0.0, (0.05, 0.025, 0.005, 1)), (0.35, (0.30, 0.16, 0.025, 1)), (0.6, (0.60, 0.37, 0.06, 1)), (0.85, (0.72, 0.47, 0.10, 1)), (1.0, (0.80, 0.56, 0.14, 1))],
+)
+KORK_WERT = None
+
+
 sc = bpy.context.scene
 szene_einrichten()
+KORK_WERT, KORK_MITTE = kork_nah_einrichten()
 _kb = bpy.data.materials['Kronkorken'].node_tree.nodes['KorkBSDF']
 if os.environ.get('KORK_FARBE'):
     _kb.inputs['Base Color'].default_value = tuple(float(x) for x in os.environ['KORK_FARBE'].split(',')) + (1.0,)
@@ -155,6 +215,9 @@ for f in range(VON, BIS + 1):
     cam.rotation_euler = (bl(ps['target']) - bl(ps['pos'])).to_track_quat('-Z', 'Y').to_euler()
     for o in bottle:
         o.rotation_euler = (0.0, 0.0, ps['rot'])
+    bpy.context.view_layer.update()
+    KORK_MITTE.outputs[0].default_value = float((cam.matrix_world.inverted() @ Vector((0, 0, BH * 10))).y)      # Höhe der Kappenmitte im Kamerabild
+    KORK_WERT.outputs[0].default_value = float(os.environ['KN_FIX']) if os.environ.get('KN_FIX') else smooth01((f - 4) / 10.0)
     bpy.context.view_layer.update()
     # Mitte der Kronkorken-Oberseite im Bild (0…1 von links/oben) – dort beginnt der Farbwechsel zu Bier (js/sequenz.js)
     sc.render.resolution_x, sc.render.resolution_y = (1600, 800) if not F['portrait'] else (1600, 2580)
