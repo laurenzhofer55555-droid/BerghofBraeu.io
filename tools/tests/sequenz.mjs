@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, laden, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen, phasen, alter, reste, sprung
+// Szenarien: gesten, flick, sperre, laden, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen, phasen, alter, reste, sprung, flasche
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -126,13 +126,13 @@ async function laden() {
   }
 }
 
-// 8. Zustand B (der Start) auf allen Geräten: Bier von Rand zu Rand, kein Rahmen, „Hofer Bräu“ frei, Titel unten mittig, Bläschen verteilt, Seite gesperrt
+// 8. Zustand B (der Start) auf allen Geräten (die Flasche über dem Titel ist für die Farbmessung ausgeblendet, sie hat einen eigenen Test): Bier von Rand zu Rand, kein Rahmen, „Hofer Bräu“ frei, Titel unten mittig, Bläschen verteilt, Seite gesperrt
 async function zustandB() {
   for (const [name, view] of Object.entries(DEVICES)) {
     const b = await browser({ view });
     try {
       check(`zustandB ${name}: Start in B`, await start(b, view) && (await state(b)).z === 'B');
-      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }'; document.head.appendChild(s); })()`);
       await sleep(300);
       const s = await state(b);
       const buf = await shot(b, join(OUT, 'zustandB', `${name}.png`));
@@ -179,7 +179,7 @@ async function geste2() {
     const b = await browser({ view });
     try {
       await start(b, view);
-      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }'; document.head.appendChild(s); })()`);
       await sleep(300);
       // Bilder zu festen Zeitpunkten (Zustand als Funktion von P)
       const anteile = {};
@@ -641,8 +641,8 @@ async function reduziert() {
     const b = await browser({ view, reducedMotion: true });
     try {
       await open(b, '', { wait: 3500 });
-      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display })`));
-      check(`reduziert ${view}: normale Seite mit dem Titel oben, keine Sperre, kein Bier-Intro, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.titel < 300 && r.skip === 'none' && r.cue === 'none', JSON.stringify(r));
+      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display, fl: getComputedStyle(document.querySelector('.hero__flasche')).display })`));
+      check(`reduziert ${view}: normale Seite mit dem Titel oben, keine Sperre, kein Bier-Intro, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.titel < 300 && r.skip === 'none' && r.cue === 'none' && r.fl === 'none', JSON.stringify(r));
       await b.js(`window.scrollTo(0, 900)`); await sleep(500);
       check(`reduziert ${view}: darunter normal scrollbar`, (await b.js('scrollY')) >= 800);
     } finally { b.close(); }
@@ -920,9 +920,10 @@ async function alter() {
       await b.js(`document.querySelector('[data-age="ja"]').click()`); await sleep(1000);
       const ja = JSON.parse(await b.js(`JSON.stringify({ gate: document.documentElement.classList.contains('age-gate'), disp: getComputedStyle(document.querySelector('.age')).display, inert: [...document.body.children].some((e) => e.inert), ab: (() => { try { return Number(localStorage.getItem('berghof-ab16')); } catch (e) { return 0; } })() })`));
       const tage = (ja.ab - t0) / 864e5;
+      const nachJa = (await state(b)).z === 'B' && (await starts(b)) === 0;             // der Klick auf „Ja“ darf das Bier nicht auslaufen lassen
       await gesture(b, 1);
-      check(`alter ${name}: „Ja“ speichert ${tage.toFixed(2)} Tage, blendet die Abfrage aus (Anzeige ${ja.disp}), gibt die Seite frei (inert ${ja.inert}) und das Intro läuft (Zustand ${await b.js('window.__sequenz.zustand')} nach Geste)`,
-        !ja.gate && ja.disp === 'none' && !ja.inert && tage > 29.9 && tage < 30.1 && (await waitZustand(b, 'C', 12000)), JSON.stringify(ja));
+      check(`alter ${name}: „Ja“ speichert ${tage.toFixed(2)} Tage, blendet die Abfrage aus (Anzeige ${ja.disp}), gibt die Seite frei (inert ${ja.inert}) und das Intro läuft (Zustand ${await b.js('window.__sequenz.zustand')} nach Geste; nach „Ja“ bleibt das Bier stehen)`,
+        !ja.gate && ja.disp === 'none' && !ja.inert && tage > 29.9 && tage < 30.1 && nachJa && (await waitZustand(b, 'C', 12000)), JSON.stringify(ja));
       check(`alter ${name}: keine Fehler, CLS 0, keine externen Anfragen`, b.errors.length === 0 && (await b.js('window.__cls')) === 0 && b.external.length === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
@@ -1008,8 +1009,67 @@ async function sprung() {
   }
 }
 
+// 22. Flasche über dem Titel (Start mit Bier): steht mittig über dem Titel, wackelt nach 3 s und danach alle 5 s, blendet mit dem Auslaufen aus, in C weg;
+//     ein Tipp oder Klick irgendwo auf die Seite lässt das Bier auslaufen (Bedienelemente behalten ihre eigene Wirkung)
+async function flasche() {
+  const tipp = async (b, x, y) => {
+    if (b.view.mobile) { await b.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] }); await sleep(60); await b.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
+    else { await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }); await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 }); await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 }); }
+  };
+  for (const [name, view] of [['iphone15', DEVICES.iphone15], ['ipad-quer', DEVICES['ipad-air-quer']], ['desktop-1440', DEVICES['desktop-1440']]]) {
+    let b = await browser({ view });
+    try {
+      await start(b, view);
+      const g = JSON.parse(await b.js(`JSON.stringify((() => { const i = document.querySelector('.hero__flasche img'), r = i.getBoundingClientRect(), t = document.querySelector('.hero__title').getBoundingClientRect(), h = document.querySelector('.site-header__brand').getBoundingClientRect();
+        return { l: r.left, ri: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height, tt: t.top, hb: h.bottom, vw: innerWidth, ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 20, sh: getComputedStyle(i).filter }; })())`));
+      check(`flasche ${name}: mittig über dem Titel (Unterkante ${Math.round(g.b)} ≤ Titel ${Math.round(g.tt)}), Oberkante ${Math.round(g.t)} unter „Hofer Bräu“ (${Math.round(g.hb)}), ${Math.round(g.w)}×${Math.round(g.h)} px, geladen, mit Beschreibung`,
+        g.ok && g.alt && Math.abs((g.l + g.ri) / 2 - g.vw / 2) <= 2 && g.b <= g.tt + 1 && g.t >= g.hb && Math.abs(g.w / g.h - 293 / 954) < 0.01, JSON.stringify(g));
+      // Wackeln: Beginn nach 3 s, dann alle 5 s, dazwischen Ruhe (Animationsuhr des Browsers)
+      const w = JSON.parse(await b.js(`(async () => { const i = document.querySelector('.hero__flasche img'), a = i.getAnimations()[0], t0 = a.startTime, on = []; let last = -1e9, ruhe = 0;
+        await new Promise((ok) => { (function f() { const t = document.timeline.currentTime - t0, m = getComputedStyle(i).transform, an = m !== 'none' && m !== 'matrix(1, 0, 0, 1, 0, 0)';
+          if (an) { if (t - last > 1500) on.push(Math.round(t)); last = t; } else if (t > 1200 && t < 2800) ruhe++;
+          if (t > 13400) ok(); else requestAnimationFrame(f); })(); });
+        const tm = a.effect.getTiming(); return JSON.stringify({ on, ruhe, d: tm.delay, du: tm.duration, it: String(tm.iterations) }); })()`));
+      check(`flasche ${name}: wackelt nach 3 s (Beginn ${w.on[0]} ms) und danach alle 5 s (${w.on.slice(1).join(', ')} ms), vorher Ruhe (${w.ruhe} Bilder), Zeiten ${w.d}/${w.du} ms, unbegrenzt (${w.it})`,
+        w.on.length >= 3 && w.on[0] >= 2950 && w.on[0] <= 3300 && Math.abs(w.on[1] - w.on[0] - 5000) <= 250 && Math.abs(w.on[2] - w.on[1] - 5000) <= 250 && w.d === 3000 && w.du === 5000 && w.it === 'Infinity', JSON.stringify(w));
+      check(`flasche ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
+    } finally { b.close(); }
+    // Auslaufen: die Flasche blendet schnell aus, in C ist sie weg
+    b = await browser({ view });
+    try {
+      await start(b, view);
+      const op = () => b.js(`+getComputedStyle(document.querySelector('.hero__flasche')).opacity`);
+      const vor = await op();
+      await keyPress(b, 'ArrowDown'); await sleep(900);
+      const mitten = await op();
+      await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(400);
+      const anz = await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).display`);
+      check(`flasche ${name}: vor dem Auslaufen sichtbar (${vor}), nach 0,9 s schon weg (${mitten}), in C nicht mehr da (${anz})`, vor === 1 && mitten === 0 && anz === 'none');
+    } finally { b.close(); }
+    // Tipp oder Klick irgendwo löst das Auslaufen aus
+    for (const [wo, fx, fy] of [['in der Mitte oben', 0.5, 0.2], ['auf die Flasche', 0.5, 0.35], ['links am Rand', 0.08, 0.6], ['auf den Titel', 0.5, 0.78]]) {
+      b = await browser({ view });
+      try {
+        await start(b, view);
+        await tipp(b, Math.round(view.w * fx), Math.round(view.h * fy));
+        const ok = await waitZustand(b, 'C', 12000) && await idle(b, 12000);
+        check(`flasche ${name}: ${view.mobile ? 'Tippen' : 'Klicken'} ${wo} lässt das Bier auslaufen (ein Übergang, endet in C)`, ok && (await starts(b)) === 1 && b.errors.length === 0, `${await starts(b)} Übergänge ${b.errors[0] || ''}`);
+      } finally { b.close(); }
+    }
+    b = await browser({ view });
+    try {                                                           // der Pfeil löst nur einmal aus (kein Doppelstart durch Pfeil und Seite)
+      await start(b, view); await sleep(400);
+      const c = JSON.parse(await b.js(`JSON.stringify((() => { const r = document.querySelector('.scroll-cue').getBoundingClientRect(); return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 }; })())`));
+      await tipp(b, c.x, c.y);
+      await waitZustand(b, 'C', 12000); await idle(b, 12000);
+      const log2 = await log(b);
+      check(`flasche ${name}: Tipp auf den Pfeil startet genau einmal (${await starts(b)} Übergang, ${log2.filter((e) => e.art === 'ignoriert').length} ignoriert)`, (await starts(b)) === 1 && log2.filter((e) => e.art === 'ignoriert').length === 0);
+    } finally { b.close(); }
+  }
+}
+
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['laden', laden], ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen],
-  ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['phasen', phasen], ['alter', alter], ['reste', reste], ['sprung', sprung]];
+  ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['phasen', phasen], ['alter', alter], ['reste', reste], ['sprung', sprung], ['flasche', flasche]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);

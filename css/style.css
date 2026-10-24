@@ -123,6 +123,18 @@ main { position: relative; z-index: 2; }
 
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { position: relative; }
+/* Flasche über dem Titel (nur im Bier-Start B): sie steht auf dem Titel und fährt mit ihm; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
+   mit dem Auslaufen blendet sie aus (js/sequenz.js), in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
+.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none;
+  --flasche-h: clamp(140px, calc(100svh - var(--b-pad) - var(--text-h) - 96px), 560px); }
+.hero__flasche img { display: block; height: var(--flasche-h); width: auto; max-width: none; aspect-ratio: 293 / 954; transform-origin: 50% 100%; filter: drop-shadow(0 10px 12px rgba(50, 36, 0, .3)); }
+html:not(.seq) .hero__flasche, .frei .hero__flasche { display: none; }
+html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
+@keyframes flasche-wackeln { 0% { transform: rotate(0); } 3% { transform: rotate(-5deg); } 6% { transform: rotate(4.5deg); } 9% { transform: rotate(-3.5deg); } 12% { transform: rotate(2.5deg); }
+  15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
+@media (max-height: 520px) { .hero__flasche { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
+.seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
 .anim .hero__text, .anim .hero__lead, .anim .painting, .anim .herd, .anim .frame--page, .anim .beer__liquid { will-change: transform, opacity; }   /* nur während einer Animation (html.anim, js/sequenz.js) */
 
 /* Gold-Phase am Kronkorken (Klasse aus js/sequenz.js, alle Geräte) – ganze Seite in Gold, auch hinter Statusleiste, Adressleiste und beim Überscrollen */

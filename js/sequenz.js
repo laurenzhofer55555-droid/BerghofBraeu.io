@@ -1,7 +1,7 @@
 // Start der Seite als Zustandsautomat mit genau EINER Geste (gleich auf Handy, iPad und Desktop), ohne 3D-Flasche:
 //
-//   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen, Schwappen aktiv), unten stehen Titel und Untertitel, unten mittig der Weiter-Pfeil
-//   ── Geste: das Bier leert sich (ca. 4 s), der Titel rutscht mit dem Bierspiegel nach oben, Einleitung, Schafe und Gemälde erscheinen
+//   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen, Schwappen aktiv), unten stehen Titel und Untertitel mit der wackelnden Flasche darüber, unten mittig der Weiter-Pfeil
+//   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo): das Bier leert sich (ca. 4 s), der Titel rutscht mit dem Bierspiegel nach oben, Einleitung, Schafe und Gemälde erscheinen
 //   C  Inhalt: normal scrollbare Seite, Titel oben, darunter Einleitung und Herde
 //
 // Das Intro läuft EINMAL: in C sind alle Gesten-Listener entfernt und die Seitensperre aufgehoben (teardown). Nichts wird im Browser
@@ -15,8 +15,8 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=08bec591';
-import { ladeHerde } from './herde.js?v=08bec591';
+import { createBeer } from './bier-leeren.js?v=9071a410';
+import { ladeHerde } from './herde.js?v=9071a410';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
@@ -49,6 +49,7 @@ const el = {
   frame: hero.querySelector(':scope > .frame'),
   pageFrame: document.querySelector('.frame--page'),
   text: hero.querySelector('.hero__text'),
+  flasche: hero.querySelector('.hero__flasche'),
   more: hero.querySelector('.hero__more'),
   lead: hero.querySelector('.hero__lead'),
   art: hero.querySelector('.painting'),
@@ -152,6 +153,7 @@ function render(pv) {
   const ride = easeOut(ramp(T, PH1 + PAUSE, PH1 + PAUSE + RIDE));    // Fahrt 0 … 1
   const einblenden = easeOut(ramp(T, PH1 + PAUSE, PH1 + PAUSE + FADE));    // Einblenden 0 … 1
   const dy = textDy * (1 - ride);                                // noch zu fahrender Weg (px)
+  put('flasche', el.flasche, 'opacity', (1 - ramp(T, 0, 350)).toFixed(3));   // die Flasche über dem Titel blendet mit dem Auslaufen schnell aus
   put('textY', el.text, 'transform', `translate3d(0, ${dy.toFixed(1)}px, 0)`);
   // Einleitung, Gemälde, Schafe und Seitenrahmen unmerklich (1 %) schon gezeichnet: Dekodieren und Rastern passiert vor dem Einblenden und nicht mittendrin
   // (sonst ruckelt das Auftauchen am Ende der Geste)
@@ -354,6 +356,11 @@ function onKey(e) {
   if (!e.repeat) request(dir);
 }
 
+// Ein Tipp oder Klick irgendwo auf die Seite löst dieselbe Geste aus wie Wischen oder Scrollen (einfacher für alle). Bedienelemente (Altersabfrage, Pfeil, Links, Überspringen) behalten ihre eigene Wirkung.
+function onClick(e) {
+  if (e.target.closest?.('.age, .skip, a, button, input, select, textarea, summary')) return;
+  request(1);
+}
 const onScroll = () => { if (state !== 'C' && window.scrollY !== 0) window.scrollTo(0, 0); };   // Fokus/Anker dürfen die gesperrte Seite nicht verschieben
 let attached = false;
 function attach() {
@@ -363,6 +370,7 @@ function attach() {
   window.addEventListener('touchstart', onTouchStart, { passive: true });
   window.addEventListener('touchmove', onTouchMove, { passive: false });
   window.addEventListener('keydown', onKey);
+  window.addEventListener('click', onClick);
   window.addEventListener('scroll', onScroll, { passive: true });
 }
 function detach() {
@@ -371,6 +379,7 @@ function detach() {
   window.removeEventListener('touchstart', onTouchStart);
   window.removeEventListener('touchmove', onTouchMove);
   window.removeEventListener('keydown', onKey);
+  window.removeEventListener('click', onClick);
   window.removeEventListener('scroll', onScroll);
 }
 
