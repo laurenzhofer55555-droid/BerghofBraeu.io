@@ -2,10 +2,11 @@
 //
 //   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen), unten stehen Titel und Untertitel mit der wackelnden Flasche darüber, unten der Weiter-Pfeil.
 //      Die Seite (Einleitung, Schafe, Gemälde, Rahmen) liegt unverändert an ihrem Platz hinter dem Bier, leicht verschwommen.
-//   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo), eine Fahrt in drei Schritten (T2 ≈ 3,8 s):
-//      1. das Bier läuft von oben nach unten aus (die Schaumkrone vorneweg) und gibt die leicht verschwommene Seite frei; die Flasche blendet am Anfang im Bier aus;
+//   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo), eine Fahrt (T2 ≈ 4,3 s):
+//      1. die Flasche wird losgelassen und fällt (freier Fall mit leichter Neigung) hinter dem Titel nach unten aus dem Bild;
+//         das Bier läuft von oben nach unten aus (die Schaumkrone vorneweg) und gibt die verschwommene Seite frei (Gemälde und Schafe nur als weiche Farbflecken);
 //      2. der Titel (scharf, deutlich lesbar) fliegt nach oben an seinen Platz;
-//      3. dabei wird die ganze Seite klar (Unschärfe weg).
+//      3. dabei wird der Text klar, danach tauchen Gemälde und Schafe auf (Unschärfe weg).
 //      Wie das Bier am Ende abgeht, ist offen (später evtl. eine eigene Animation): es läuft einfach unten aus dem Bild.
 //   C  Inhalt: normal scrollbare Seite, Titel oben, darunter Einleitung und Herde
 //
@@ -20,20 +21,23 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=9c7cc6fa';
-import { ladeHerde } from './herde.js?v=9c7cc6fa';
+import { createBeer } from './bier-leeren.js?v=a6880068';
+import { ladeHerde } from './herde.js?v=a6880068';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
 
 // ── Einstellungen ───────────────────────────────
 // Die Geste ist EINE Fahrt (P läuft linear von 1 nach 2 in T2 ms), T = Zeit seit der Geste:
-//   0 … DRAIN        das Bier läuft aus (sinus-in-out: die Schaumkrone schiebt sich von oben ins Bild, schnelle Mitte, weiches Ausklingen unten); die Flasche blendet in FLASCHE ms im Bier aus
+//   0 … HOLD         die Flasche wird noch gehalten (steht), dann lässt jemand los: freier Fall mit Beschleunigung G (px/ms²) und leichter Neigung, bis sie unten aus dem Bild ist
+//   0 … DRAIN        das Bier läuft aus (sinus-in-out: die Schaumkrone schiebt sich von oben ins Bild, schnelle Mitte, weiches Ausklingen unten)
 //   FLY0 … FLY1      der Titel fliegt nach oben an seinen Platz (cubic in-out); er startet kurz bevor das Bier unten vorbei ist
-//   KLAR0 … KLAR1    die Seite wird klar: Unschärfe von BLUR px auf 0 (ease-out), beginnt mit dem Flug
-const T2 = 3800;                                             // ms für die ganze Geste
-const DRAIN = 2400, FLASCHE = 800, FLY0 = 2250, FLY1 = 3450, KLAR0 = 2300, KLAR1 = 3750;
-const BLUR = 8;                                              // px Unschärfe der Seite hinter dem Bier (leicht verschwommen; Start in B: CSS --blur, Ende: 0)
+//   KLAR0 … KLAR1    der Text der Seite wird klar: Unschärfe von BLUR px auf 0 (ease-out), beginnt mit dem Flug
+//   BILD0 … BILD1    Gemälde und Schafe tauchen auf: Unschärfe von BLUR_BILD px auf 0, beginnt erst, wenn der Titel (fast) oben angekommen ist
+const T2 = 4250;                                             // ms für die ganze Geste
+const DRAIN = 2400, HOLD = 150, FLY0 = 2250, FLY1 = 3450, KLAR0 = 2300, KLAR1 = 3750, BILD0 = 3250, BILD1 = 4200;
+const G = 0.0026, TILT = 11;                                 // Fall: Beschleunigung in px/ms² (ca. 0,8 s über den Bildschirm), Neigung in Grad bis zum Ende des Falls
+const BLUR = 8, BLUR_BILD = 26;                              // px Unschärfe: Text der Seite hinter dem Bier (leicht) und Gemälde mit Schafen (stark)
 const FOAM_GAP = 12;                                         // px: Reserve zwischen Schaumkrone und Oberfläche für die Browserleisten
 const LOCK_AFTER = 400;       // ms Sperre nach der Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
@@ -103,7 +107,7 @@ function setGold(top, bottom, page) {
   if (last.goldPage !== page) { last.goldPage = page; root.classList.toggle('gold-page', page); }
 }
 // Titel: in C steht er oben (normales Layout), in B unten im Bild. textDy ist der Weg dazwischen in px (gemessen); der Titel fliegt ihn nach dem Auslaufen des Biers.
-let textDy = 0;
+let textDy = 0, fallD = 900;                                  // fallD: Fallweg der Flasche in px (bis sie ganz unter dem Bildschirm ist)
 function measureDy() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:absolute;left:0;top:0;width:0;height:100svh;pointer-events:none;visibility:hidden';
@@ -120,6 +124,7 @@ function measureDy() {
   const lift = fig && window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - (fig.offsetTop + fig.offsetHeight - top0)) / 2 - top0))) : 0;
   hero.style.setProperty('--lift', lift + 'px');
   textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
+  if (!busy && state === 'B' && el.flasche) { const r = el.flasche.getBoundingClientRect(); if (r.height > 0 && P === 1) fallD = Math.max(300, window.innerHeight - (r.top - (last.fallY || 0)) + 40); }   // Fallweg: von der Oberkante der Flasche bis unter den Bildschirm
   const lead = hero.querySelector('.hero__lead');   // Handy: Herde im Bereich unter der Einleitung (--zone, 16 px Abstand zum Text) und das Gemälde darunter, unter dem ersten Bildschirm (--fold)
   if (lead) {
     const bottom = lead.offsetTop + lead.offsetHeight;
@@ -140,10 +145,15 @@ function render(pv) {
   const fly = easeInOut(ramp(T, FLY0, FLY1));
   put('text', el.text, 'opacity', '1');
   put('textY', el.text, 'transform', `translate3d(0, ${(textDy * (1 - fly)).toFixed(1)}px, 0)`);
-  put('flasche', el.flasche, 'opacity', (1 - ramp(T, 0, FLASCHE)).toFixed(3));
+  // Flasche: gehalten und losgelassen: nach HOLD freier Fall (y = ½·G·t²) mit leichter Neigung, hinter dem Titel; ist sie unten raus, bleibt sie unsichtbar (der Titel fliegt später nach oben, sie darf nicht wiederkommen)
+  const tf = Math.max(0, T - HOLD), fy = Math.min(fallD, 0.5 * G * tf * tf);
+  last.fallY = fy;
+  put('flascheY', el.flasche, 'transform', fy > 0 ? `translate3d(0, ${fy.toFixed(1)}px, 0) rotate(${(TILT * clamp01(tf / 700)).toFixed(2)}deg)` : 'none');
+  put('flascheV', el.flasche, 'visibility', fy >= fallD ? 'hidden' : 'visible');
 
-  // Die Seite hinter dem Bier (Einleitung, Schafe, Gemälde, Seitenrahmen) steht still an ihrem Platz, leicht verschwommen; mit dem Titelflug wird sie klar
+  // Die Seite hinter dem Bier (Einleitung, Schafe, Gemälde, Seitenrahmen) steht still an ihrem Platz, verschwommen; mit dem Titelflug wird der Text klar, danach tauchen Gemälde und Schafe auf
   put('blur', root, '--blur', (BLUR * (1 - easeOut(ramp(T, KLAR0, KLAR1)))).toFixed(2) + 'px');
+  put('blurBild', root, '--blur-bild', (BLUR_BILD * (1 - easeOut(ramp(T, BILD0, BILD1)))).toFixed(2) + 'px');   // Gemälde und Schafe: erst weiche Farbflecken, tauchen auf, wenn der Titel oben ist
 
   // Der Startrahmen mit Eckverzierung ist nicht mehr da; „Hofer Bräu“ oben bleibt frei: die Creme-Fläche dahinter (unterbricht die Rahmenlinie des Seitenrahmens) kommt,
   // sobald die Schaumkrone unter dem oberen Rand ist (vorher steht dort Bier)
@@ -221,9 +231,12 @@ async function begin() {                                       // B → C
   state = 'C';
   // Am Ende der Geste wird nichts neu gemessen: die Fahrt endet genau an der Stelle, die vor dem Start gemessen wurde (Layout-Variablen --lift, --fold, --zone ändern sich nicht mehr, nichts springt)
   unlock();
+  nachlauf = true;
   await wheelQuiet();                                          // ein langes Trackpad-Nachlaufen der Geste darf die Seite nicht wegschieben: der Listener fängt es ab, bis es abgeklungen ist
+  nachlauf = false;
   detach(); setTimeout(teardown, 350);                         // das Schwere (Aufräumen) erst kurz nach dem letzten Bild: kein Ruckler am Ende
 }
+let nachlauf = false;                                          // nach dem Ende der Geste: Mausrad-Ereignisse gehören noch zum Trackpad-Nachlaufen und schieben die Seite nicht
 const wheelQuiet = () => new Promise((ok) => {
   const t0 = performance.now();
   (function warte() { if (performance.now() - wheelLast > 400 || performance.now() - t0 > 6000) ok(); else setTimeout(warte, 50); })();
@@ -292,7 +305,7 @@ function onWheel(e) {
   }
   wheelLast = now;
   // gesperrt: kein Bildlauf. Auch das Nachlaufen einer Geste, die einen Übergang ausgelöst hat, darf die Seite danach nicht verschieben
-  if (state !== 'C' || busy || wheelGesture?.done) e.preventDefault();
+  if (state !== 'C' || busy || nachlauf || wheelGesture?.done) e.preventDefault();
   if (!wheelGesture || wheelGesture.done || !wheelGesture.valid) return;
   const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1);
   wheelBuf.push([now, dy]);
@@ -393,7 +406,7 @@ window.__sequenz = {
   get wartet() { return false; }, get stalls() { return stalls; }, get frame() { return 0; },
   get geladen() { return 0; }, get anzahl() { return 0; }, log,
   get kante() { return beer.surfaceY(levelOf(P)); },                    // Lage der Bierkante (px von oben)
-  get aktiv() { return attached; }, phasen: { T2, DRAIN, FLASCHE, FLY0, FLY1, KLAR0, KLAR1, BLUR },
+  get aktiv() { return attached; }, phasen: { T2, DRAIN, HOLD, FLY0, FLY1, KLAR0, KLAR1, BILD0, BILD1, G, TILT, BLUR, BLUR_BILD },
   replay,
   get gestenbereit() { return !busy && performance.now() >= lockUntil; },   // Eingabesperre vorbei?
   async zeige(pv) {                                            // Zustand zu P ohne Animation zeigen (Screenshots)

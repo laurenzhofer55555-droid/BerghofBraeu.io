@@ -46,7 +46,8 @@ window.__state = () => {
     ops: { flock: num(cs('.flock')?.opacity), herd: num(cs('.herd')?.opacity), lead: num(cs('.hero__lead')?.opacity), art: num(cs('.painting')?.opacity), pf: num(cs('.frame--page')?.opacity) },
     tys: { flock: Math.round(ty(document.querySelector('.flock')) * 10) / 10, herd: Math.round(ty(document.querySelector('.herd')) * 10) / 10, lead: Math.round(ty(document.querySelector('.hero__lead')) * 10) / 10, art: Math.round(ty(document.querySelector('.painting')) * 10) / 10 },
     anim: document.documentElement.classList.contains('anim'), wc: cs('.hero__text')?.willChange,
-    kante: q ? q.kante : null, tb: (rc('.hero__text') || {}).b ?? null, bl: parseFloat((cs('.painting')?.filter || '').replace(/[^0-9.]/g, '') || '0'), fo: num(cs('.hero__flasche')?.opacity),
+    kante: q ? q.kante : null, tb: (rc('.hero__text') || {}).b ?? null, bl: parseFloat((cs('.hero__lead')?.filter || '').replace(/[^0-9.]/g, '') || '0'), bb: parseFloat((cs('.painting')?.filter || '').replace(/[^0-9.]/g, '') || '0'),
+    ft: (rc('.hero__flasche img') || {}).t ?? null, fv: cs('.hero__flasche')?.visibility ?? null, fop: num(cs('.hero__flasche')?.opacity),
     gold: document.documentElement.classList.contains('gold-page'), frei: document.documentElement.classList.contains('frei'),
     overflow: getComputedStyle(document.documentElement).overflow, height: document.documentElement.scrollHeight,
   };

@@ -124,8 +124,8 @@ main { position: relative; z-index: 2; }
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { position: relative; }
 /* Flasche über dem Titel (nur im Bier-Start B): sie steht auf dem Titel; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
-   sie blendet am Anfang des Auslaufens im Bier aus (js/sequenz.js), in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
-.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none;
+   bei der Geste lässt jemand sie los: sie fällt nach unten aus dem Bild (js/sequenz.js), das Wackeln hält dabei an, in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
+.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none; z-index: -1;      /* hinter dem Titel */
   --flasche-h: clamp(140px, calc(100svh - var(--b-pad) - var(--text-h) - 96px), 560px); }
 .hero__flasche img { display: block; height: var(--flasche-h); width: auto; max-width: none; aspect-ratio: 293 / 954; transform-origin: 50% 100%; filter: drop-shadow(0 10px 12px rgba(50, 36, 0, .3)); }
 html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
@@ -133,6 +133,7 @@ html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infini
   15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
 html:not(.seq) .hero__flasche, .frei .hero__flasche { display: none; }
 @media (max-height: 520px) { .hero__flasche { display: none; } }
+.anim .hero__flasche img { animation-play-state: paused; }                    /* losgelassen: das Wackeln hält an, die Flasche fällt mit ihrer Neigung */
 @media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
 .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
 .anim .hero__text, .anim .beer__liquid { will-change: transform, opacity; }
@@ -171,7 +172,9 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
 .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel und Flasche unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
-.seq:not(.frei) .hero__lead, .seq:not(.frei) .painting, .seq:not(.frei) .herd { filter: blur(var(--blur, 8px)); }   /* die Seite hinter dem Bier ist leicht verschwommen und wird mit dem Titelflug klar (nicht auf .hero__more: ein Filter würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt) */
+.seq:not(.frei) .hero__lead { filter: blur(var(--blur, 8px)); }
+.seq:not(.frei) .painting, .seq:not(.frei) .herd { filter: blur(var(--blur-bild, 26px)); }                    /* Gemälde und Schafe sind zuerst nur weiche Farbflecken und tauchen erst auf, wenn der Titel oben angekommen ist */
+/* Die Seite hinter dem Bier ist verschwommen und wird nach dem Titelflug klar (Filter nicht auf .hero__more: er würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt). */
 .seq:not(.frei) .hero__more { z-index: 1; }                  /* Flex-Element des Hero: z-index wirkt ohne Positionierung (der Bezug der absoluten Herde bleibt der Hero, nichts verschiebt sich beim Ende); unter dem Bier (z-index 2): die Kante wischt den Inhalt frei */
 .seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis alles gemessen ist (js/sequenz.js setzt .bier-an): kein Aufblitzen, kein Layoutsprung hinter dem Bier */
 /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
