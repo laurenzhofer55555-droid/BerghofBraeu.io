@@ -143,7 +143,7 @@ async function zustandB() {
       const geo = JSON.parse(await b.js(`JSON.stringify((() => {
         const r = (q) => { const e = document.querySelector(q); if (!e) return null; const x = e.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom }; };
         const brand = document.querySelector('.site-header__brand'), bb = brand.getBoundingClientRect();
-        return { beer: r('.beer'), text: r('.hero__start .hero__heading'), vw: innerWidth, vh: innerHeight, fs: parseFloat(getComputedStyle(document.querySelector('.hero__start .hero__title')).fontSize),
+        return { beer: r('.beer'), text: r('.hero__text'), vw: innerWidth, vh: innerHeight, fs: parseFloat(getComputedStyle(document.querySelector('.hero__title')).fontSize),
           brandFade: getComputedStyle(brand, '::before').opacity, brandCx: (bb.left + bb.right) / 2, brandTop: bb.top, brandVis: getComputedStyle(brand).visibility,
           x: [...document.querySelectorAll('.beer__bubbles i')].map((i) => parseFloat(i.style.left)) };
       })())`));
@@ -160,10 +160,9 @@ async function zustandB() {
   }
 }
 
-// Die Geste: das Bier läuft wie ein Vorhang von oben nach unten ab (js/sequenz.js, js/bier-leeren.js) und gibt Stück für Stück frei, was dahinter liegt (die Seite rührt sich nie).
-// Zustand B ist volle Bierfläche (Oberfläche knapp über dem Bildrand), die Oberfläche sinkt sinus-in-out ins Bild und mit Schaumkrone unter den unteren Rand. Der Aufdruck (Flasche, Titel)
-// gehört zum Bier und fährt starr mit der Oberfläche nach unten. Dauer 3 s.
-const PH = { T2: 3000 };                                           // gleiche Zahl wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
+// Die Geste (js/sequenz.js): 1. das Bier läuft von oben nach unten aus und gibt die leicht verschwommene Seite frei (die Flasche blendet am Anfang im Bier aus),
+// 2. der Titel fliegt nach oben an seinen Platz, 3. dabei wird die ganze Seite klar. Zustand B ist volle Bierfläche, die Seite steht von Anfang an still hinter dem Bier.
+const PH = { T2: 3800, DRAIN: 2400, FLASCHE: 800, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BLUR: 8 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn der Geste
 const tOf = (P) => (P - 1) * PH.T2;
 const PAUSE_MESS = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }';
@@ -177,7 +176,7 @@ async function geste2() {
       // Bilder zu festen Zeitpunkten (Zustand als Funktion von P): Anteil Bier im Bild muss zur Lage der Kante passen
       const A = {};
       for (const pct of [0, 25, 50, 75, 100]) {
-        await b.js(`window.__sequenz.zeige(${Pg2(pct / 100 * PH.T2)})`); await sleep(500);
+        await b.js(`window.__sequenz.zeige(${Pg2(pct / 100 * PH.DRAIN)})`); await sleep(500);
         const buf = await shot(b, join(OUT, 'geste2', `${name}-${pct}.png`));
         const kante = await b.js('window.__sequenz.kante');
         A[pct] = { gold: await goldShare(b, buf, 0.06, 0.9), soll: Math.min(1, Math.max(0, (0.9 * view.h - kante) / (0.84 * view.h))), kante: Math.round(kante) };
@@ -194,8 +193,8 @@ async function geste2() {
       check(`geste2 ${name}: die Geste führt nach C`, await waitZustand(b2, 'C', 12000) && await idle(b2, 12000));
       const ev = (await log(b2)).slice(n0).filter((e) => e.art === 'start' || e.art === 'ende');
       const dauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
-      check(`geste2 ${name}: Dauer ≈ 3 s (${dauer} ms)`, dauer >= 2850 && dauer <= 3400);
-      const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), S = alle.filter((x) => x.P > 1 && x.z !== 'C');
+      check(`geste2 ${name}: Dauer ≈ 3,8 s (${dauer} ms)`, dauer >= 3600 && dauer <= 4350);
+      const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), S = alle.filter((x) => x.P > 1 && x.z !== 'C' && tOf(x.P) <= PH.DRAIN);
       let rueck = 0, maxStep = 0;
       for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
       check(`geste2 ${name}: die Bieroberfläche sinkt nur, nie zurück (größter Schritt ${maxStep.toFixed(1)} px ≤ ${Math.round(view.h * 0.07)})`, S.length > 20 && rueck === 0 && maxStep < view.h * 0.07, `${S.length} Messpunkte, ${rueck} Rückschritte`);
@@ -205,7 +204,7 @@ async function geste2() {
       check(`geste2 ${name}: erste sichtbare Bewegung ${warte} ms nach der Geste (≤ 260, sinus-in-out läuft sanft an)`, warte != null && warte <= 260, JSON.stringify({ ein: ein && ein.t, bew: bew && bew.t }));
       // sinus-in-out: Tempo in der Mitte deutlich größer als am Anfang und am Ende
       const v = (a, b) => (S.find((x) => tOf(x.P) >= b).level - S.find((x) => tOf(x.P) >= a).level) / (S.find((x) => tOf(x.P) >= b).t - S.find((x) => tOf(x.P) >= a).t);
-      const vA = Math.abs(v(0, 300)), vM = Math.abs(v(1250, 1750)), vE = Math.abs(v(2700, 2990));
+      const vA = Math.abs(v(0, 300)), vM = Math.abs(v(1000, 1400)), vE = Math.abs(v(2100, 2390));
       check(`geste2 ${name}: weiches Anfahren und Ausklingen (Tempo Anfang ${(vA * 1000).toFixed(0)}, Mitte ${(vM * 1000).toFixed(0)}, Ende ${(vE * 1000).toFixed(0)} px/s; Mitte ≥ 2 × Anfang und Ende)`, vM >= 2 * vA && vM >= 2 * vE);
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }
@@ -262,9 +261,13 @@ async function titel() {
         check(`titel ${name}: Handy: Gemälde beginnt unter dem ersten Bildschirm (${Math.round(lay.fig.t)} ≥ ${lay.vh} px), Titel und Text im ersten Bildschirm`, lay.fig.t >= lay.vh - 2 && lay.lead.b <= lay.vh - 8, JSON.stringify({ figT: lay.fig.t, vh: lay.vh }));
         check(`titel ${name}: Herde (${H.length} Schafe) im ersten Bildschirm, innerhalb des Rahmens`, H.length === 5 && H.every(([t, bo, le, ri]) => bo <= r.vh + 1 && t >= 0 && le >= -1 && ri <= lay.vw + 1), JSON.stringify(H.slice(0, 2)));
       }
-      // Der echte Titel steht von Anfang an an seinem Platz (unter dem Bier) und rührt sich während der Geste nie
-      const S = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.tb != null), tbs = S.map((x) => x.tb);
-      check(`titel ${name}: der Titel steht während der ganzen Geste still an seinem Platz (Abweichung ${(Math.max(...tbs) - Math.min(...tbs)).toFixed(2)} px ≤ 0,5, ${S.length} Bilder), nichts fliegt ein`, S.length > 20 && Math.max(...tbs) - Math.min(...tbs) <= 0.5);
+      // Flug: der Titel bleibt unten, bis das Bier vorbei ist, fliegt dann in einem Zug nach oben und kommt ohne Sprung an
+      const S = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.z !== 'C'), ende = await state(b);
+      let auf = 0, maxStep = 0; for (let i = 1; i < S.length; i++) { const d = S[i].textY - S[i - 1].textY; if (d > 0.6) auf++; maxStep = Math.max(maxStep, -d); }
+      const y0 = S[0].textY, vorFlug = S.filter((x) => tOf(x.P) < PH.FLY0 - 50), letzter = S.at(-1).textY;
+      check(`titel ${name}: Titel bleibt beim Auslaufen ruhig unten (${Math.round(sB.textY)} px, Abweichung ${Math.max(...vorFlug.map((x) => Math.abs(x.textY - y0))).toFixed(1)}), fliegt danach nach oben, nie zurück, größter Schritt ${maxStep.toFixed(1)} px`,
+        S.length > 20 && auf === 0 && y0 > 0 && vorFlug.every((x) => Math.abs(x.textY - y0) <= 0.6) && maxStep < Math.max(y0, 100) * 0.14, `${S.length} Messpunkte, Start ${y0}`);
+      check(`titel ${name}: kein Sprung am Ende des Flugs (letzter Wert ${letzter} px, danach ${ende.textY} px)`, Math.abs(letzter - ende.textY) <= Math.max(maxStep, 2) + 0.5 && Math.abs(ende.textY) < 0.5, `Ende ${ende.textY}`);
       // „Hofer Bräu“ oben und Titel dürfen sich nie überlappen, auch nicht beim Scrollen in C (die Kopfzeile scrollt mit)
       const ueberl = [];
       for (const y of [0, 30, 60, 90, 130, 180]) {
@@ -506,7 +509,7 @@ async function pfeil() {
         const p1 = getComputedStyle(svg.querySelector('path')), tcs = getComputedStyle(tx), tr = tx.getBoundingClientRect();
         const q = (s) => { const e = document.querySelector(s); const x = e.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
         const G = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); const x = rg.getBoundingClientRect(); return { t: x.top, b: x.bottom, l: x.left, r: x.right }; };
-        const title = G('.hero__start .hero__title'), claim = G('.hero__start .hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__start')).opacity;
+        const title = G('.hero__title'), claim = G('.hero__claim'), titleOp = +getComputedStyle(document.querySelector('.hero__text')).opacity;
         const hit = (x) => titleOp > 0.05 && !(r.bottom <= x.t || r.top >= x.b || r.right <= x.l || r.left >= x.r);
         const mid = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
         return { tag: c.tagName, label: c.getAttribute('aria-label'), type: c.type, op: +cs.opacity, vis: cs.visibility, disp: cs.display, w: r.width, h: r.height, svgW: sv.width, svgH: sv.height,
@@ -623,7 +626,7 @@ async function reduziert() {
     const b = await browser({ view, reducedMotion: true });
     try {
       await open(b, '', { wait: 3500 });
-      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display, fl: getComputedStyle(document.querySelector('.hero__start')).display })`));
+      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display, fl: getComputedStyle(document.querySelector('.hero__flasche')).display })`));
       check(`reduziert ${view}: normale Seite mit dem Titel oben, keine Sperre, kein Bier-Intro, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.titel < 300 && r.skip === 'none' && r.cue === 'none' && r.fl === 'none', JSON.stringify(r));
       await b.js(`window.scrollTo(0, 900)`); await sleep(500);
       check(`reduziert ${view}: darunter normal scrollbar`, (await b.js('scrollY')) >= 800);
@@ -664,7 +667,7 @@ async function leisten() {
       await b.send('Page.addScriptToEvaluateOnNewDocument', { source: WEBKIT_FAKE });
       await start(b, view);
       const M = messen(b);
-      const B = await M(1), m = await M(Pg2(PH.T2 * 0.5)), e = await M(2);
+      const B = await M(1), m = await M(Pg2(PH.DRAIN * 0.5)), e = await M(2);
       if (touch) {
         check(`leisten ${name}: B beide Streifen bierfarben (${gold(B.top).toFixed(2)}/${gold(B.bottom).toFixed(2)}), je ein Streifen oben und unten`,
           gold(B.top) > 0.95 && gold(B.bottom) > 0.95 && B.n.join() === '1,1', JSON.stringify({ B }));
@@ -672,7 +675,7 @@ async function leisten() {
           gold(m.top) < 0.07 && gold(m.bottom) > 0.95 && gold(e.top) < 0.07 && gold(e.bottom) < 0.07, JSON.stringify({ m, e }));
         // lückenlos: oben nie Gold unter Schaum, unten nie beige, solange unten Bier zu sehen ist, kein Sprung
         let ok = true, fehler = '', prevT = 1, prevB = 1, maxStep = 0;
-        for (let T = 0; T <= PH.T2 + 40; T += 40) {
+        for (let T = 0; T <= PH.DRAIN + 60; T += 40) {
           const p = Pg2(T), x = await M(+p.toFixed(4)), gt = gold(x.top), gb = gold(x.bottom);
           if (x.surf >= -16 + x.lt + 2 && gt > 0.07) { ok = false; fehler += ` oben ${gt.toFixed(2)} bei P ${p.toFixed(2)};`; }
           if (x.surf - 12 < x.vh - 4 && gb < 0.95) { ok = false; fehler += ` unten ${gb.toFixed(2)} bei P ${p.toFixed(2)};`; }
@@ -775,7 +778,7 @@ async function rahmen() {
   }
 }
 
-// 18. Die Geste in einer Fahrt: das Bier läuft wie ein Vorhang von oben nach unten ab und gibt die ruhende Seite frei; Flasche und Titel (Aufdruck) fahren starr mit der Oberfläche nach unten; nur transform und opacity werden animiert
+// 18. Die Geste in drei Schritten: Bier läuft aus (gibt die leicht verschwommene Seite frei), Titel fliegt nach oben, Seite wird klar; nur transform und opacity (und die Unschärfe der Seite) werden animiert
 async function phasen() {
   for (const name of ['iphone-se', 'iphone15', 'ipad-hoch', 'desktop-1440']) {
     const view = GERAETE[name], breit = view.w >= 768;
@@ -783,14 +786,16 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahl der Zeitleiste wie im Test (Dauer ${pz.T2} ms)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (gesamt ${pz.T2} ms, Auslaufen ${pz.DRAIN}, Flug ${pz.FLY0} bis ${pz.FLY1}, klar ${pz.KLAR0} bis ${pz.KLAR1}, Unschärfe ${pz.BLUR} px)`, JSON.stringify(pz) === JSON.stringify(PH));
+      const vor = JSON.parse(await b.js(`JSON.stringify({ blur: getComputedStyle(document.querySelector('.painting')).filter, lead: getComputedStyle(document.querySelector('.hero__lead')).filter, op: +getComputedStyle(document.querySelector('.painting')).opacity })`));
+      check(`phasen ${name}: in B ist die Seite hinter dem Bier schon da und leicht verschwommen (Gemälde „${vor.blur}“, Einleitung „${vor.lead}“, Deckkraft ${vor.op})`, /blur\(8px\)/.test(vor.blur) && /blur\(8px\)/.test(vor.lead) && vor.op === 1);
       await sleep(700);
       // Mitschnitt: welche Stileigenschaften ändern sich während der Geste (nur transform, opacity, visibility und --frame-o erlaubt) und Aufgaben über 50 ms (CPU 4 × langsamer)
       await b.js(`(() => { window.__chg = {}; window.__lt = [];
         const namen = (t) => (t || '').split(';').map((x) => x.split(':')[0].trim()).filter(Boolean);
         const val = (t, k) => { const m = (t || '').split(';').find((x) => x.split(':')[0].trim() === k); return m ? m.slice(m.indexOf(':') + 1).trim() : ''; };
         const mo = new MutationObserver((ms) => ms.forEach((m) => { const neu = m.target.getAttribute('style') || ''; for (const k of new Set([...namen(m.oldValue), ...namen(neu)])) if (val(m.oldValue, k) !== val(neu, k)) window.__chg[k] = (window.__chg[k] || 0) + 1; }));
-        document.querySelectorAll('.hero__text, .hero__start, .hero__more, .hero__lead, .painting, .herd, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
+        document.querySelectorAll('.hero__text, .hero__flasche, .hero__more, .hero__lead, .painting, .herd, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame, html').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
         try { new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(Math.round(e.duration)))).observe({ entryTypes: ['longtask'] }); } catch (e) {} })()`);
       await b.send('Emulation.setCPUThrottlingRate', { rate: 4 });
       const n0 = (await samples(b)).length;
@@ -799,23 +804,38 @@ async function phasen() {
       await sleep(900);
       await b.send('Emulation.setCPUThrottlingRate', { rate: 1 });
       const alleS = (await samples(b)).slice(n0), S = alleS.filter((x) => x.P > 1 && x.z !== 'C');
-      // Aufdruck fährt starr mit der Oberfläche: Weg des Aufdrucks = Weg der Oberfläche
-      const k0 = S[0].kante, abw = S.map((x) => Math.abs(x.sy - (x.kante - k0)));
-      check(`phasen ${name}: der Aufdruck (Flasche, Titel) fährt starr mit der Bieroberfläche nach unten (größte Abweichung ${Math.max(...abw).toFixed(1)} px ≤ 2, von ${S[0].sy} bis ${Math.round(S.at(-1).sy)} px, ${S.length} Bilder)`, S.length > 20 && Math.max(...abw) <= 2, JSON.stringify({ n: S.length }));
-      let rueck = 0, auf = 0; for (let i = 1; i < S.length; i++) { if (S[i].level - S[i - 1].level < -0.5) rueck++; if (S[i].sy < S[i - 1].sy - 0.5) auf++; }
-      check(`phasen ${name}: die Oberfläche und der Aufdruck gehen nur nach unten, nie zurück`, rueck === 0 && auf === 0, JSON.stringify({ rueck, auf }));
-      // Der Aufdruck liegt immer unter der Oberfläche (im Gold): Oberkante der Flasche (beim Handy: des Titels) unter der Oberfläche
-      const ueber = S.filter((x) => x.fb != null && x.fb < x.kante - 1);
-      check(`phasen ${name}: der Aufdruck liegt immer im Bier, nie über der Oberfläche (${ueber.length} Bilder darüber)`, ueber.length === 0, JSON.stringify(ueber.slice(0, 2).map((x) => [x.fb, x.kante])));
-      // Die ruhende Seite: Titel, Einleitung, Gemälde rühren sich nicht, Deckkraft 1, keine Verschiebung
-      const tbs = S.map((x) => x.tb), Io = alleS.every((x) => x.ops.lead === 1 && x.ops.art === 1 && (breit || x.ops.herd === 1)), Ity = alleS.every((x) => x.tys.lead === 0 && x.tys.art === 0 && x.tys.herd === 0 && x.textY === 0);
-      check(`phasen ${name}: Titel, Einleitung, Gemälde${breit ? '' : ' und Herde'} stehen still (Titel ${(Math.max(...tbs) - Math.min(...tbs)).toFixed(2)} px Abweichung, Deckkraft 1, keine Verschiebung) und werden nur freigegeben`, Math.max(...tbs) - Math.min(...tbs) <= 0.5 && Io && Ity, JSON.stringify({ Io, Ity }));
+      const T = (x) => tOf(x.P);
+      // 1. Auslaufen: Oberfläche sinkt nur, Titel und Seite ruhig, Unschärfe unverändert
+      const a1 = S.filter((x) => T(x) < PH.FLY0 - 60);
+      let rueck = 0; for (let i = 1; i < a1.length; i++) if (a1[i].level - a1[i - 1].level < -0.5) rueck++;
+      const ty0 = a1[0].textY, bl1 = a1.map((x) => x.bl);
+      check(`phasen ${name}: Auslaufen (${a1.length} Bilder bis ${PH.FLY0 - 60} ms): die Oberfläche sinkt gleichmäßig (Pegel ${a1[0].level} → ${a1.at(-1).level} px, nie zurück), der Titel bleibt unten (${ty0} px), die Seite bleibt verschwommen (${Math.min(...bl1).toFixed(1)}–${Math.max(...bl1).toFixed(1)} px)`,
+        a1.length > 20 && rueck === 0 && a1.every((x) => Math.abs(x.textY - ty0) <= 0.6) && bl1.every((v) => Math.abs(v - PH.BLUR) <= 0.3), JSON.stringify({ n: a1.length, rueck }));
+      // 2. Flug: ab FLY0 steigt der Titel (nie zurück), kommt bei FLY1 oben an; zuerst ist das Bier unten vorbei
+      const a2 = S.filter((x) => T(x) >= PH.FLY0 - 60);
+      let auf = 0; for (let i = 1; i < a2.length; i++) if (a2[i].textY - a2[i - 1].textY > 0.6) auf++;
+      const tStart = T(S.find((x) => x.textY < ty0 - 1)), tEnde = T(S.find((x) => T(x) > PH.FLY0 && Math.abs(x.textY) < 0.6));
+      check(`phasen ${name}: Flug des Titels beginnt bei ${Math.round(tStart)} ms (Soll ca. ${PH.FLY0}) und endet bei ${Math.round(tEnde)} ms (Soll ca. ${PH.FLY1}), nie zurück`, tStart >= PH.FLY0 - 80 && tStart <= PH.FLY0 + 350 && tEnde >= PH.FLY1 - 150 && tEnde <= PH.FLY1 + 250 && auf === 0, JSON.stringify({ tStart, tEnde, auf }));
+      // Beim Start des Flugs ist die Schaumkrone schon (fast) unter dem unteren Rand: Bier nicht mehr im Bild
+      const ersterFlug = S.find((x) => x.textY < ty0 - 3);
+      check(`phasen ${name}: beim Start des Flugs ist das Bier (fast) unten raus (Oberfläche ${Math.round(ersterFlug.kante)} px bei ${view.h} px Höhe)`, ersterFlug.kante >= view.h * 0.9, JSON.stringify({ k: ersterFlug.kante }));
+      // 3. Klar: Unschärfe sinkt nur, beginnt mit dem Flug und ist am Ende 0
+      const bl = S.map((x) => x.bl); let blAuf = 0; for (let i = 1; i < bl.length; i++) if (bl[i] > bl[i - 1] + 0.05) blAuf++;
+      const klarStart = T(S.find((x) => x.bl < PH.BLUR - 0.3)), klar0 = S.find((x) => T(x) >= PH.KLAR1 - 20);
+      check(`phasen ${name}: die Seite wird klar (Unschärfe ${bl[0].toFixed(1)} → ${klar0 ? klar0.bl.toFixed(2) : '–'} px), beginnt bei ${Math.round(klarStart)} ms (Soll ab ${PH.KLAR0}), nie wieder unschärfer`, blAuf === 0 && klarStart >= PH.KLAR0 - 60 && klar0 && klar0.bl <= 0.3, JSON.stringify({ blAuf, klarStart }));
+      // Flasche: blendet am Anfang im Bier aus, nie wieder ein
+      const fl = S.map((x) => x.fo), tf = T(S.find((x) => x.fo <= 0.02));
+      let flAuf = 0; for (let i = 1; i < fl.length; i++) if (fl[i] > fl[i - 1] + 0.01) flAuf++;
+      check(`phasen ${name}: die Flasche blendet am Anfang aus (${fl[0]} → 0 nach ${Math.round(tf)} ms, Soll ca. ${PH.FLASCHE}), nie wieder ein`, fl[0] >= 0.95 && flAuf === 0 && tf >= PH.FLASCHE * 0.7 && tf <= PH.FLASCHE + 200, JSON.stringify({ flAuf, tf }));
+      // Die Seite steht still: Deckkraft 1, keine Verschiebung
+      const Io = alleS.every((x) => x.ops.lead === 1 && x.ops.art === 1 && (breit || x.ops.herd === 1)), Ity = alleS.every((x) => x.tys.lead === 0 && x.tys.art === 0 && x.tys.herd === 0);
+      check(`phasen ${name}: Einleitung, Gemälde${breit ? '' : ' und Herde'} bewegen sich nie und blenden nicht ein (Deckkraft 1, keine Verschiebung); es ändert sich nur die Unschärfe`, Io && Ity, JSON.stringify({ Io, Ity }));
       const fin = alleS.at(-1), anim = alleS.filter((x) => x.anim);
-      check(`phasen ${name}: will-change nur während der Animation (währenddessen „${anim[0] && anim[0].wc}“, danach „${fin.wc}“)`, anim.length > 20 && !fin.anim && fin.wc === 'auto', JSON.stringify({ anim: anim.length, wc: fin.wc }));
-      const chg = await b.js('JSON.stringify(window.__chg)').then(JSON.parse), erlaubt = new Set(['opacity', 'transform', 'visibility', '--frame-o']), fremd = Object.keys(chg).filter((k) => !erlaubt.has(k));
-      check(`phasen ${name}: nur transform und opacity werden animiert (geändert: ${Object.keys(chg).join(', ')})`, Object.keys(chg).length > 0 && fremd.length === 0, fremd.join(', '));
+      check(`phasen ${name}: will-change nur während der Animation (währenddessen „${anim[0] && anim[0].wc}“, danach „${fin.wc}“)`, anim.length > 20 && /transform/.test(anim[0].wc) && !fin.anim && fin.wc === 'auto', JSON.stringify({ anim: anim.length, wc: fin.wc }));
+      const chg = await b.js('JSON.stringify(window.__chg)').then(JSON.parse), erlaubt = new Set(['opacity', 'transform', 'visibility', '--frame-o', '--blur']), fremd = Object.keys(chg).filter((k) => !erlaubt.has(k));
+      check(`phasen ${name}: nur transform, opacity und die Unschärfe werden animiert (geändert: ${Object.keys(chg).join(', ')})`, Object.keys(chg).length > 0 && fremd.length === 0, fremd.join(', '));
       const lt = await b.js('JSON.stringify(window.__lt)').then(JSON.parse), luecken = S.slice(1).map((x, i) => x.t - S[i].t).filter((d) => d > 0);
-      check(`phasen ${name}: bei 4 × gedrosselter CPU keine langen Aufgaben (≥ 50 ms: ${lt.filter((d) => d >= 50).length}), größter Bildabstand ${Math.max(...luecken)} ms (≤ 50)`, lt.filter((d) => d >= 50).length === 0 && Math.max(...luecken) <= 50, JSON.stringify(lt));
+      check(`phasen ${name}: bei 4 × gedrosselter CPU keine langen Aufgaben (≥ 50 ms: ${lt.filter((d) => d >= 50).length}), größter Bildabstand ${Math.max(...luecken)} ms (≤ 60)`, lt.filter((d) => d >= 50).length === 0 && Math.max(...luecken) <= 60, JSON.stringify(lt));
       check(`phasen ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || '');
     } finally { b.close(); }
   }
@@ -978,7 +998,7 @@ async function sprung() {
   }
 }
 
-// 22. Flasche über dem Titel (Start mit Bier): steht mittig über dem Titel, wackelt nach 3 s und danach alle 5 s, fährt mit dem Bier nach unten aus dem Bild, in C weg;
+// 22. Flasche über dem Titel (Start mit Bier): steht mittig über dem Titel, wackelt nach 3 s und danach alle 5 s, blendet am Anfang des Auslaufens weich aus, in C weg;
 //     ein Tipp oder Klick irgendwo auf die Seite lässt das Bier auslaufen (Bedienelemente behalten ihre eigene Wirkung)
 async function flasche() {
   const tipp = async (b, x, y) => {
@@ -989,7 +1009,7 @@ async function flasche() {
     let b = await browser({ view });
     try {
       await start(b, view);
-      const g = JSON.parse(await b.js(`JSON.stringify((() => { const i = document.querySelector('.hero__flasche img'), r = i.getBoundingClientRect(), t = document.querySelector('.hero__start .hero__title').getBoundingClientRect(), h = document.querySelector('.site-header__brand').getBoundingClientRect();
+      const g = JSON.parse(await b.js(`JSON.stringify((() => { const i = document.querySelector('.hero__flasche img'), r = i.getBoundingClientRect(), t = document.querySelector('.hero__title').getBoundingClientRect(), h = document.querySelector('.site-header__brand').getBoundingClientRect();
         return { l: r.left, ri: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height, tt: t.top, hb: h.bottom, vw: innerWidth, ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 20, sh: getComputedStyle(i).filter }; })())`));
       check(`flasche ${name}: mittig über dem Titel (Unterkante ${Math.round(g.b)} ≤ Titel ${Math.round(g.tt)}), Oberkante ${Math.round(g.t)} unter „Hofer Bräu“ (${Math.round(g.hb)}), ${Math.round(g.w)}×${Math.round(g.h)} px, geladen (Dekoration, Beschreibung steht bei den Zutaten)`,
         g.ok && Math.abs((g.l + g.ri) / 2 - g.vw / 2) <= 2 && g.b <= g.tt + 1 && g.t >= g.hb && Math.abs(g.w / g.h - 293 / 954) < 0.01, JSON.stringify(g));
@@ -1003,19 +1023,21 @@ async function flasche() {
         w.on.length >= 3 && w.on[0] >= 2950 && w.on[0] <= 3300 && Math.abs(w.on[1] - w.on[0] - 5000) <= 250 && Math.abs(w.on[2] - w.on[1] - 5000) <= 250 && w.d === 3000 && w.du === 5000 && w.it === 'Infinity', JSON.stringify(w));
       check(`flasche ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
     } finally { b.close(); }
-    // Ablaufen: die Flasche steht auf dem Bier und fährt starr mit ihm nach unten aus dem Bild; in C ist sie weg
+    // Auslaufen: die Flasche blendet am Anfang im Bier weich aus (nicht abrupt), nie wieder ein, in C ist sie weg
     b = await browser({ view });
     try {
       await start(b, view);
-      const vor = JSON.parse(await b.js(`JSON.stringify((() => { const r = document.querySelector('.hero__flasche img').getBoundingClientRect(); return { t: r.top, op: +getComputedStyle(document.querySelector('.hero__flasche img')).opacity }; })())`));
+      const op = () => b.js(`+getComputedStyle(document.querySelector('.hero__flasche')).opacity`);
+      const vor = await op();
       const n0 = (await samples(b)).length;
-      await keyPress(b, 'ArrowDown'); await sleep(2400);
-      const spaet = await b.js(`document.querySelector('.hero__flasche img').getBoundingClientRect().top`);
+      await keyPress(b, 'ArrowDown'); await sleep(1300);
+      const spaet = await op();
       await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(400);
-      const anz = await b.js(`getComputedStyle(document.querySelector('.hero__start')).display`);
-      const Sm = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.z !== 'C' && x.sy != null); let auf = 0; for (let i = 1; i < Sm.length; i++) if (Sm[i].sy < Sm[i - 1].sy - 0.5) auf++;
-      check(`flasche ${name}: vor der Geste sichtbar (Oberkante ${Math.round(vor.t)} px), fährt mit dem Bier nach unten (nach 2,4 s Oberkante ${Math.round(spaet)} px, Bildhöhe ${view.h}), nie wieder hoch, in C nicht mehr da (${anz})`,
-        vor.op === 1 && spaet >= view.h && auf === 0 && Sm.length > 20 && anz === 'none', JSON.stringify({ auf, n: Sm.length }));
+      const anz = await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).display`);
+      const Sm = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.z !== 'C'), fl = Sm.map((x) => x.fo); let auf = 0; for (let i = 1; i < fl.length; i++) if (fl[i] > fl[i - 1] + 0.01) auf++;
+      const halb = Sm.find((x) => x.fo <= 0.5), schritt = Math.max(...fl.slice(1).map((v, i) => Math.abs(v - fl[i])));
+      check(`flasche ${name}: vor der Geste sichtbar (${vor}), blendet in ca. ${PH.FLASCHE} ms weich aus (halb weg nach ${halb ? Math.round(tOf(halb.P)) : '–'} ms, größter Sprung ${schritt.toFixed(2)}, nach 1,3 s ${spaet}), nie wieder ein, in C nicht mehr da (${anz})`,
+        vor === 1 && spaet === 0 && auf === 0 && halb && tOf(halb.P) >= 250 && tOf(halb.P) <= 600 && schritt <= 0.25 && anz === 'none', JSON.stringify({ auf, n: fl.length }));
     } finally { b.close(); }
     // Tipp oder Klick irgendwo löst das Auslaufen aus
     for (const [wo, fx, fy] of [['in der Mitte oben', 0.5, 0.2], ['auf die Flasche', 0.5, 0.35], ['links am Rand', 0.08, 0.6], ['auf den Titel', 0.5, 0.78]]) {

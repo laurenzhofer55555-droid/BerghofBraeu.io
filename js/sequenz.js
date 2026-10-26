@@ -1,9 +1,12 @@
 // Start der Seite als Zustandsautomat mit genau EINER Geste (gleich auf Handy, iPad und Desktop), ohne 3D-Flasche:
 //
-//   B  Bier: wie ein Bier-Vorhang vor der Seite: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen), darauf stehen Flasche (wackelt) und Titel als Aufdruck, unten der Weiter-Pfeil.
-//      Die Seite (Titel, Einleitung, Schafe, Gemälde, Rahmen) liegt unverändert an ihrem Platz dahinter und rührt sich nie.
-//   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo): das Bier läuft in ca. 3 s von oben nach unten ab, die Schaumkrone vorneweg, und gibt Stück für Stück frei, was dahinter liegt.
-//      Der Aufdruck (Flasche, Titel) gehört zum Bier und fährt mit der Oberfläche nach unten aus dem Bild; nichts fliegt ein, nichts blendet ein.
+//   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen), unten stehen Titel und Untertitel mit der wackelnden Flasche darüber, unten der Weiter-Pfeil.
+//      Die Seite (Einleitung, Schafe, Gemälde, Rahmen) liegt unverändert an ihrem Platz hinter dem Bier, leicht verschwommen.
+//   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo), eine Fahrt in drei Schritten (T2 ≈ 3,8 s):
+//      1. das Bier läuft von oben nach unten aus (die Schaumkrone vorneweg) und gibt die leicht verschwommene Seite frei; die Flasche blendet am Anfang im Bier aus;
+//      2. der Titel (scharf, deutlich lesbar) fliegt nach oben an seinen Platz;
+//      3. dabei wird die ganze Seite klar (Unschärfe weg).
+//      Wie das Bier am Ende abgeht, ist offen (später evtl. eine eigene Animation): es läuft einfach unten aus dem Bild.
 //   C  Inhalt: normal scrollbare Seite, Titel oben, darunter Einleitung und Herde
 //
 // Das Intro läuft EINMAL: in C sind alle Gesten-Listener entfernt und die Seitensperre aufgehoben (teardown). Nichts wird im Browser
@@ -17,16 +20,20 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=45d8031e';
-import { ladeHerde } from './herde.js?v=45d8031e';
+import { createBeer } from './bier-leeren.js?v=9c7cc6fa';
+import { ladeHerde } from './herde.js?v=9c7cc6fa';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
 
 // ── Einstellungen ───────────────────────────────
-// Die Geste ist EINE Fahrt (P läuft linear von 1 nach 2 in T2 ms): die Bieroberfläche (js/bier-leeren.js) sinkt sinus-in-out von knapp über dem oberen Bildrand bis mit Schaumkrone und Wellen
-// unter den unteren Rand und gibt dabei die Seite dahinter frei. Der Aufdruck (Flasche, Titel) fährt starr mit der Oberfläche mit (gleicher Weg in px).
-const T2 = 3000;                                             // ms für die ganze Geste
+// Die Geste ist EINE Fahrt (P läuft linear von 1 nach 2 in T2 ms), T = Zeit seit der Geste:
+//   0 … DRAIN        das Bier läuft aus (sinus-in-out: die Schaumkrone schiebt sich von oben ins Bild, schnelle Mitte, weiches Ausklingen unten); die Flasche blendet in FLASCHE ms im Bier aus
+//   FLY0 … FLY1      der Titel fliegt nach oben an seinen Platz (cubic in-out); er startet kurz bevor das Bier unten vorbei ist
+//   KLAR0 … KLAR1    die Seite wird klar: Unschärfe von BLUR px auf 0 (ease-out), beginnt mit dem Flug
+const T2 = 3800;                                             // ms für die ganze Geste
+const DRAIN = 2400, FLASCHE = 800, FLY0 = 2250, FLY1 = 3450, KLAR0 = 2300, KLAR1 = 3750;
+const BLUR = 8;                                              // px Unschärfe der Seite hinter dem Bier (leicht verschwommen; Start in B: CSS --blur, Ende: 0)
 const FOAM_GAP = 12;                                         // px: Reserve zwischen Schaumkrone und Oberfläche für die Browserleisten
 const LOCK_AFTER = 400;       // ms Sperre nach der Animation
 const WHEEL_IDLE = 150;       // ms ohne Mausrad-Ereignis = neue Geste (davor: Nachlaufen der vorigen)
@@ -34,6 +41,8 @@ const WHEEL_WINDOW = 50, WHEEL_MIN = 30, WHEEL_TOTAL = 120;   // Summe über 50 
 const TOUCH_MIN = 40;         // px senkrecht
 
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
+const easeOut = (t) => 1 - (1 - t) ** 3;                                     // cubic.out
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2);   // cubic.inOut
 const ramp = (g, a, b) => clamp01((g - a) / (b - a));         // 0 vor a, 1 nach b, dazwischen linear
 const linear = (t) => t;
 
@@ -41,7 +50,7 @@ const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
-  start: hero.querySelector('.hero__start'),
+  flasche: hero.querySelector('.hero__flasche'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -93,19 +102,24 @@ function setGold(top, bottom, page) {
   if (last.barBottom !== cb) { last.barBottom = cb; paintStrip('bottom', cb); }
   if (last.goldPage !== page) { last.goldPage = page; root.classList.toggle('gold-page', page); }
 }
-// Layout der Seite in C (Block aus Titel, Einleitung und Gemälde mittig, Handy: Herde und Gemälde): wird gemessen und als CSS-Variablen gesetzt. Der Titel im Bier ist ein Aufdruck (kein Weg zu messen).
+// Titel: in C steht er oben (normales Layout), in B unten im Bild. textDy ist der Weg dazwischen in px (gemessen); der Titel fliegt ihn nach dem Auslaufen des Biers.
+let textDy = 0;
 function measureDy() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:absolute;left:0;top:0;width:0;height:100svh;pointer-events:none;visibility:hidden';
-  hero.append(probe);
+  const pad = document.createElement('div');
+  pad.style.cssText = 'position:absolute;left:0;width:0;height:0;bottom:var(--b-pad)';
+  hero.append(probe, pad);
   const H = probe.getBoundingClientRect().height;
-  probe.remove();
+  const bPad = hero.getBoundingClientRect().bottom - pad.getBoundingClientRect().bottom;
+  probe.remove(); pad.remove();
   // Block aus Titel, Einleitung und Gemälde mittig im ersten Bildschirm (Tablet/Desktop), wenn er niedriger ist als der Bildschirm: --lift schiebt ihn nach unten.
-  // Das wirkt nur auf das Layout in C (hinter dem Bier), nichts springt.
+  // Das wirkt nur auf das Layout in C; in B bleibt der Titel unten verankert (textDy wird danach mit dem neuen Platz gemessen), nichts springt.
   hero.style.setProperty('--lift', '0px');
   const fig = hero.querySelector('.painting'), top0 = el.text.offsetTop;
   const lift = fig && window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - (fig.offsetTop + fig.offsetHeight - top0)) / 2 - top0))) : 0;
   hero.style.setProperty('--lift', lift + 'px');
+  textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
   const lead = hero.querySelector('.hero__lead');   // Handy: Herde im Bereich unter der Einleitung (--zone, 16 px Abstand zum Text) und das Gemälde darunter, unter dem ersten Bildschirm (--fold)
   if (lead) {
     const bottom = lead.offsetTop + lead.offsetHeight;
@@ -113,17 +127,23 @@ function measureDy() {
     hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
   }
 }
-// Weg der Oberfläche 0 … 1 (sinus-in-out): langsames Anfahren (die Schaumkrone schiebt sich von oben ins Bild), schnelle Mitte, weiches Ausklingen unten
-const levelOf = (p) => (1 - Math.cos(Math.PI * clamp01(p - 1))) / 2;
+// Weg der Bieroberfläche 0 … 1 (sinus-in-out, nur das Auslaufen): langsames Anfahren (die Schaumkrone schiebt sich von oben ins Bild), schnelle Mitte, weiches Ausklingen unten
+const levelOf = (p) => (1 - Math.cos(Math.PI * clamp01(((p - 1) * T2) / DRAIN))) / 2;
 
 // Alles eine reine Funktion von P
 function render(pv) {
+  const T = Math.max(0, pv - 1) * T2;                            // ms seit Beginn der Geste
   const p = levelOf(pv);                                         // Weg der Oberfläche 0 … 1
   const surf = beer.surfaceY(p), foamH = beer.foamHeight();      // mittlere Lage der Oberfläche (px von oben) und Höhe der Schaumkrone darüber
-  const down = surf - beer.surfaceY(0);                          // so weit ist das Bier schon nach unten gefahren (px)
 
-  // Aufdruck (Flasche und Titel) gehört zum Bier: er fährt starr mit der Oberfläche nach unten und liegt immer unter ihr, also im Gold (nur translate3d)
-  put('start', el.start, 'transform', `translate3d(0, ${down.toFixed(1)}px, 0)`);
+  // Titel (mit der Flasche): bleibt unten, bis das Bier vorbei ist, und fliegt dann nach oben an seinen Platz (nur translate3d, gemessener Weg textDy, FLIP). Die Flasche blendet am Anfang im Bier aus.
+  const fly = easeInOut(ramp(T, FLY0, FLY1));
+  put('text', el.text, 'opacity', '1');
+  put('textY', el.text, 'transform', `translate3d(0, ${(textDy * (1 - fly)).toFixed(1)}px, 0)`);
+  put('flasche', el.flasche, 'opacity', (1 - ramp(T, 0, FLASCHE)).toFixed(3));
+
+  // Die Seite hinter dem Bier (Einleitung, Schafe, Gemälde, Seitenrahmen) steht still an ihrem Platz, leicht verschwommen; mit dem Titelflug wird sie klar
+  put('blur', root, '--blur', (BLUR * (1 - easeOut(ramp(T, KLAR0, KLAR1)))).toFixed(2) + 'px');
 
   // Der Startrahmen mit Eckverzierung ist nicht mehr da; „Hofer Bräu“ oben bleibt frei: die Creme-Fläche dahinter (unterbricht die Rahmenlinie des Seitenrahmens) kommt,
   // sobald die Schaumkrone unter dem oberen Rand ist (vorher steht dort Bier)
@@ -373,7 +393,7 @@ window.__sequenz = {
   get wartet() { return false; }, get stalls() { return stalls; }, get frame() { return 0; },
   get geladen() { return 0; }, get anzahl() { return 0; }, log,
   get kante() { return beer.surfaceY(levelOf(P)); },                    // Lage der Bierkante (px von oben)
-  get aktiv() { return attached; }, phasen: { T2 },
+  get aktiv() { return attached; }, phasen: { T2, DRAIN, FLASCHE, FLY0, FLY1, KLAR0, KLAR1, BLUR },
   replay,
   get gestenbereit() { return !busy && performance.now() >= lockUntil; },   // Eingabesperre vorbei?
   async zeige(pv) {                                            // Zustand zu P ohne Animation zeigen (Screenshots)
