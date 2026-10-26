@@ -139,24 +139,21 @@
     html:not(.seq) .skip, .frei .skip { display: none; }
     /* Start: Zustand C (Inhalt) ist das Grundlayout: Titel oben, darunter Einleitung und Bild. In A und B (.seq ohne .frei) ist die Seite genau
        einen Bildschirm hoch und gesperrt; der Titel sitzt dort unten im Bild (um --dy verschoben) und rutscht beim Leeren des Biers nach oben
-       (js/sequenz.js setzt dafür die genaue Verschiebung, --dy-css ist der Startwert bis dahin). */
+       (der Titel im Bier ist ein Aufdruck, .hero__start; der echte Titel steht oben und wird vom Bier freigegeben). */
     .hero {
       position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
       padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
       --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
       --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
-      --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
       --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
     }
     html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
     .frame--page { z-index: 3; }
     .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
     .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
-    .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
     .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
     .seq:not(.frei) .hero__more { z-index: 1; }                  /* Flex-Element des Hero: z-index wirkt ohne Positionierung (der Bezug der absoluten Herde bleibt der Hero, nichts verschiebt sich beim Ende); unter dem Bier (z-index 2): die Kante wischt den Inhalt frei */
-    .seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis das Bier gezeichnet ist (js/sequenz.js setzt .bier-an): kein Aufblitzen */
-    .seq:not(.frei) .hero__text { z-index: 3; }                                      /* Titel und Flasche liegen über dem Bier */
+    .seq:not(.frei):not(.bier-an) .hero__text, .seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis das Bier gezeichnet und alles gemessen ist (js/sequenz.js setzt .bier-an): kein Aufblitzen, kein Layoutsprung hinter dem Bier */
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
     .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
@@ -285,12 +282,14 @@
     .frame__corner--tl { top: 1px; left: 1px; } .frame__corner--tr { top: 1px; right: 1px; }
     .frame__corner--bl { bottom: 1px; left: 1px; } .frame__corner--br { bottom: 1px; right: 1px; }
     .hero__text { position: relative; }
-/* Flasche über dem Titel (nur im Bier-Start B): sie steht auf dem Titel und fährt mit ihm; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
-   mit dem Auslaufen blendet sie aus (js/sequenz.js), in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
+/* Flasche über dem Titel-Aufdruck (nur im Bier-Start B): sie steht auf dem Titel; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
+   sie fährt mit dem Bier nach unten weg (js/sequenz.js). Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
+/* Aufdruck auf dem Bier (nur B): Flasche und Titel stehen unten auf dem Bier und fahren mit der Bieroberfläche nach unten weg (js/sequenz.js); der echte Titel (.hero__text) steht oben an seinem Platz unter dem Bier */
+    .hero__start { position: absolute; left: 0; right: 0; bottom: var(--b-pad); padding: 0 var(--gutter); text-align: center; z-index: 3; pointer-events: none; }
+    html:not(.seq) .hero__start, .frei .hero__start { display: none; }
     .hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none;
       --flasche-h: clamp(140px, calc(100svh - var(--b-pad) - var(--text-h) - 96px), 560px); }
     .hero__flasche img { display: block; height: var(--flasche-h); width: auto; max-width: none; aspect-ratio: 293 / 954; transform-origin: 50% 100%; filter: drop-shadow(0 10px 12px rgba(50, 36, 0, .3)); }
-    html:not(.seq) .hero__flasche, .frei .hero__flasche { display: none; }
     html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
     @keyframes flasche-wackeln { 0% { transform: rotate(0); } 3% { transform: rotate(-5deg); } 6% { transform: rotate(4.5deg); } 9% { transform: rotate(-3.5deg); } 12% { transform: rotate(2.5deg); }
       15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
@@ -310,13 +309,13 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=b1f6e578" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=b1f6e578" media="print" id="css-main" />
+  <link rel="preload" href="css/style.css?v=45d8031e" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=45d8031e" media="print" id="css-main" />
   <link rel="preload" as="image" href="assets/img/flasche-360.webp?v=6" imagesrcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" imagesizes="160px" fetchpriority="high" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=b1f6e578" /></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=45d8031e" /></noscript>
 
   <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=b1f6e578"></script>
+  <script type="module" src="js/main.js?v=45d8031e"></script>
 </head>
 <body>
 
@@ -378,16 +377,23 @@
       </div>
 
       <div class="hero__text">
-        <!-- Flasche über dem Titel (nur im Start mit Bier): wackelt nach 3 s und danach alle 5 s; dieselbe Aufnahme wie bei den Zutaten -->
-        <div class="hero__flasche">
-          <img src="assets/img/flasche-360.webp?v=6" srcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" sizes="160px" width="293" height="954" fetchpriority="high" decoding="async"
-               alt="Flasche Berghof Hell, bayerisches Helles vom Berghof Agatharied" />
-        </div>
         <h1 class="hero__heading" id="hero-title">
           <span class="hero__title">Berghof <em>Hell</em></span>
           <span class="visually-hidden">, </span>
           <span class="hero__claim">Helles aus Agatharied</span>
         </h1>
+      </div>
+
+      <!-- Aufdruck auf dem Bier (nur im Start, nur Dekoration): Flasche (wackelt nach 3 s und danach alle 5 s; dieselbe Aufnahme wie bei den Zutaten) und Titel stehen unten auf dem Bier und
+           fahren mit der Bieroberfläche nach unten weg (js/sequenz.js). Der echte Titel steht oben an seinem Platz und wird vom Bier freigegeben. -->
+      <div class="hero__start" aria-hidden="true" data-nosnippet>
+        <div class="hero__flasche">
+          <img src="assets/img/flasche-360.webp?v=6" srcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" sizes="160px" width="293" height="954" fetchpriority="high" decoding="async" alt="" />
+        </div>
+        <div class="hero__heading">
+          <span class="hero__title">Berghof <em>Hell</em></span>
+          <span class="hero__claim">Helles aus Agatharied</span>
+        </div>
       </div>
 
       <!-- Einleitung und Bildgestaltung: erscheinen, während das Bier sich leert (Zustand C, js/sequenz.js) -->
