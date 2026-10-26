@@ -150,11 +150,13 @@
     }
     html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
     .frame--page { z-index: 3; }
-    .seq:not(.frei) .frame--page { opacity: 0; }                            /* blendet am Ende von Geste 2 ein (js/sequenz.js) */
+    .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
     .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
     .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
     .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-    .seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
+    .seq:not(.frei) .hero__more { z-index: 1; }                  /* Flex-Element des Hero: z-index wirkt ohne Positionierung (der Bezug der absoluten Herde bleibt der Hero, nichts verschiebt sich beim Ende); unter dem Bier (z-index 2): die Kante wischt den Inhalt frei */
+    .seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis das Bier gezeichnet ist (js/sequenz.js setzt .bier-an): kein Aufblitzen */
+    .seq:not(.frei) .hero__text { z-index: 3; }                                      /* Titel und Flasche liegen über dem Bier */
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
     .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
@@ -195,7 +197,7 @@
     .seq { --cue-w: 40px; --cue-h: var(--cue-w); }
     .scroll-cue { display: none; }
     .seq .scroll-cue {
-      display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
+      display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; z-index: 4;   /* über dem Bier */
       position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
       min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
       color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
@@ -216,7 +218,8 @@
       .hero { --b-pad: calc(var(--frame-inset) + 14px + 8px + var(--cue-h) + 18px + env(safe-area-inset-bottom)); }   /* Titel 18 px über dem Pfeil */
     }
         @media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
-    .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }
+    .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; }
+    .seq:not(.frei) .beer { z-index: 2; }                                       /* über dem Inhalt (wischt ihn frei), unter Titel und Pfeil */
     .frei .beer { display: none; }                                           /* nach dem Intro ist kein Bier mehr auf der Seite (kein Rest, kein Zeichnen) */
     /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss.
        Desktop/iPad: kleine Karte mittig; Handy: Bottom Sheet am unteren Rand (Safe Area beachtet). Dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (ohne backdrop-filter nur dunkler). */
@@ -307,13 +310,13 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=9071a410" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=9071a410" media="print" id="css-main" />
+  <link rel="preload" href="css/style.css?v=b1f6e578" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=b1f6e578" media="print" id="css-main" />
   <link rel="preload" as="image" href="assets/img/flasche-360.webp?v=6" imagesrcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" imagesizes="160px" fetchpriority="high" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=9071a410" /></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=b1f6e578" /></noscript>
 
   <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=9071a410"></script>
+  <script type="module" src="js/main.js?v=b1f6e578"></script>
 </head>
 <body>
 

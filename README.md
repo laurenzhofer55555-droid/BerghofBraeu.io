@@ -1,9 +1,9 @@
 # Berghof Hell
 
 Markenwebseite für das Berghof Hell aus Agatharied. Der Einstieg ist eine einzige Geste (ohne Bibliothek, ohne 3D-Flasche): Die Seite beginnt voll Bier
-(Bläschen, Titel „Berghof Hell“, Pfeil). Eine Geste (Scrollen, Wischen, Pfeiltaste, Klick auf den Pfeil) leert das Glas in zwei klar getrennten Phasen
-(3,95 s, eine Zeitleiste): Phase 1 (2,8 s) nur das Bier, der Titel bleibt ruhig: sofort gleitet die Schaumkrone in 0,3 s ins Bild, danach läuft das Bier ruhig und gleichmäßig aus;
-150 ms Pause; Phase 2 (1 s) Titel, Schafe, Einleitung und Gemälde fahren gleichzeitig nach oben und blenden ein, dazu der Seitenrahmen.
+(Bläschen, Titel „Berghof Hell“, Pfeil). Eine Geste (Scrollen, Wischen, Pfeiltaste, Tipp oder Klick irgendwo) wischt das Bier in 3 s von unten nach oben weg: eine wellige Kante mit weißem Schaumband darunter steigt durchs Bild,
+Titel und Flasche (die nach 3 s und danach alle 5 s wackelt) steigen vor ihr her und blenden die Flasche beim Aufsteigen weich aus, darunter wird die Seite aufgedeckt
+(Einleitung, Schafe, Gemälde, Seitenrahmen liegen unter dem Bier an ihrem Platz).
 Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Bier Animation erneut anzeigen“ im Fuß).
 
 **Varianten mit der 3D-Flasche** (Start mit Flasche auf Augenhöhe, Kamerafahrt in den Kronkorken, dann das Bier) liegen als Branches im Repository, nicht auf der Webseite:
@@ -27,8 +27,9 @@ Dann http://localhost:5173 öffnen.
 - `js/main.js` – kleiner Starter: startet die Steuerung sofort; Notausgang: kommt sie nicht in Gang, wird die Sperre aufgehoben;
   bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite (Zustand C)
 - `js/sequenz.js` – **Zustandsautomat mit zwei Zuständen und einem Übergang**, gleich auf Handy, iPad und Desktop:
-  B Bier (der Start: ganzer Bildschirm Bier, Spiegel über dem Bildrand, keine Schaumkrone, kein Rahmen, Titel unten, Pfeil) → Geste (3,95 s: der Spiegel sinkt ins Bild,
-  erst dabei kommt die Schaumkrone; der Titel rutscht im selben Takt von unten nach oben, die Einleitung blendet erst ein, wenn er oben angekommen ist) → C Inhalt (Titel, Einleitung;
+  B Bier (der Start: ganzer Bildschirm Bier, Kante knapp unter dem Bildrand, kein Rahmen, Titel mit der wackelnden Flasche unten, Pfeil) → Geste (3 s: die Kante steigt sinus-in-out von unten nach oben und wischt das Bier weg;
+  der Titel steht `GAP` px über der Kante und wird von ihr nach oben geschoben, kommt weich an seinem Platz an (softplus `SOFT`) und die Kante läuft danach über ihn hinweg; die Flasche hängt am Titel und blendet beim Steigen aus;
+  Einleitung, Gemälde, Schafe und Seitenrahmen werden nicht eingeblendet, sondern von der Kante freigegeben) → C Inhalt (Titel, Einleitung;
   Tablet/Desktop: Schafe neben dem Titel und Gemälde neben dem Text, Handy: Herde unten; normal scrollbar). Einen Rückweg gibt es nicht.
   Alles hängt an einem Wert P (1 bis 2), der per Zeit animiert wird; jeder Zustand ist eine reine Funktion von P (`render`), am Ende
   der Animation wird der Zielzustand ausdrücklich gesetzt. Kein Einrasten, kein Scroll-Fortschritt, keine Bibliothek.
@@ -41,7 +42,7 @@ Dann http://localhost:5173 öffnen.
   **Aufräumen in C (`teardown`)**: alle Gesten-Listener (wheel, touch, keydown, scroll) werden entfernt. `replay()` (Link „Bier Animation erneut
   ansehen“ im Fuß) scrollt nach oben, zeigt B wieder und räumt in C wieder auf.
   `js/bier-leeren.js` zeichnet die Bierfläche als SVG (`.beer`, Höhe 100lvh, Rand zu Rand): Welle (Amplitude fest in Pixeln, Wellenlänge
-  wächst mit der Breite), Schaumkrone, Bläschen (nach Fläche gezählt, gleichmäßig verteilt). Pegel nur aus P, das Schwappen verformt nur
+  wächst mit der Breite), Schaumband (die Grafik ist senkrecht gespiegelt: Gold oben, Schaum unter der Kante), Bläschen (nach Fläche gezählt, gleichmäßig verteilt). Pegel nur aus P, das Schwappen verformt nur
   die Welle.
 - Zustand C ist das Grundlayout des Hero (`.hero` in `css/style.css` und im Start-CSS der `index.html`): Titel, Zierlinie, Untertitel, Einleitung (`.hero__lead`, zentriert, höchstens 60 Zeichen je Zeile)
   und Stallhofer-Gemälde (`.painting` mit Bildunterschrift) stehen als **ein zentrierter Block untereinander**, Abstände im 8-px-Raster (`--g2`: 28 px, am sehr großen Fenster 40 px). Ist der Block
@@ -55,17 +56,15 @@ Dann http://localhost:5173 öffnen.
     Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
   Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen kurz nach dem Start und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
   der Fenstergröße kommt der Rest nach).
-- Die Geste in zwei Phasen (`PH_IN`, `PH1`, `PAUSE`, `RIDE`, `FADE`, `T2`, `DRINK` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 3,75 s): **Phase 1** (2,6 s) leert nur das Bier:
-  0 bis 0,3 s gleitet die Schaumkrone (ease-out) ins Bild, der Spiegel steht dann `FOAM_GAP` px unter ihr direkt unter der Oberkante; danach 2,3 s „Trinken“: sieben Abschnitte (`DRINK`: Schluck, Pause, Schluck, Pause,
-  Schluck, Pause, langer letzter Zug; sine.inOut bzw. sine.in) mit kleinen Pausen, in denen das Bier nur nachsackt und schwappt. Start und Ende des Weges kommen aus der echten Höhe des Layers (100lvh):
-  `beer.levelAt()` – der Spiegel startet 16 px über der Oberkante (kein unsichtbarer Vorlauf), das Ende liegt 110 px unter der Schaumkrone (auch kräftiges Schwappen bleibt unter dem Rand). Der Pegel wird nur per `transform`
-  verschoben. Der Titel bleibt ruhig unten; **Pause** 150 ms; **Phase 2** (1 s): der ganze Block fährt **gleichzeitig** nach oben und blendet gleichzeitig ein: Titel „Berghof Hell“ (mit den Schafen
-  daneben), Einleitung, Gemälde und die Herde am Handy gleiten um denselben Weg `textDy` (der Block bleibt starr, FLIP: der Weg wird vorher gemessen, bewegt wird nur `translate3d`), der Seitenrahmen
-  blendet mit (cubic.out). Pfeil und „Wischen“ sind in beiden Phasen aus. Es werden nur `transform` und `opacity` animiert (Test `phasen` prüft das per MutationObserver). Am Ende der Geste wird **nicht neu gemessen** (`--lift`, `--fold`, `--zone` bleiben, die Fahrt endet genau an der vorher gemessenen Stelle; Test `sprung`); die Bildfläche des Gemäldes (`.painting__bild`) hat per `aspect-ratio` schon vor dem Laden die richtige Höhe (WebKit misst ein `<img>` ohne `src` nur mit der Alt-Text-Zeile, 18 px, das ergab einen Sprung von ca. 100–160 px am Ende). Geste während Geste 1 (oder in der kurzen Sperre danach) nach unten: `queued`, Geste 2 beginnt sofort (Test `puffer`); `will-change` steht nur
-  während einer Animation (`html.anim`); die Welle wird nur gezeichnet, solange Oberfläche oder Schaum im Bild sind,
-  Bläschen stehen still, sobald kein Bier mehr zu sehen ist; Einleitung, Gemälde, Schafe und Seitenrahmen sind ab B mit 1 % Deckkraft schon gezeichnet (kein Dekodieren mitten im Einblenden),
-  `js/herde.js` dekodiert früh. Das Schwere am Ende (Messen, Speicher freigeben) läuft erst 350 ms nach dem letzten Bild. Messung (Chrome, CPU 4 × gedrosselt, iPhone-15-Profil): 60 Bilder/s vorher
-  und nachher, Hauptfaden je Bild Median 1,1 → 0,6 ms, größter Bildaufwand 11,1 → 7,9 ms, Hauptfaden 10 → 8 % ausgelastet, keine Aufgabe ≥ 50 ms.
+- Die Geste in einer Fahrt (`T2`, `GAP`, `SOFT` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, die Kante folgt `wipe(h)` = sinus-in-out): Die Kante (js/bier-leeren.js) steigt von `H + 16` px bis `−(Schaumhöhe + 110)` px;
+  Start und Ende kommen aus der echten Höhe des Layers (100lvh, `beer.surfaceY`), der Pegel wird nur per `transform` verschoben. Der Titelblock soll mit der Unterkante bei `Kante − GAP` stehen, aber nie unter seiner Ausgangslage
+  und nie über seiner Endlage: `titleDy()` begrenzt das mit zwei softplus-Termen ohne Knick (kein Ruck beim Anschieben und Ankommen); solange die Kante unter dem Titel ankommt, bleibt mindestens ca. 15 px Abstand zum Schaum
+  (Test `phasen`). Die Flasche hängt am Titelblock (`.hero__flasche`, absolut über ihm), sie blendet nach 40 bis 240 px Aufstieg aus. Einleitung, Gemälde, Schafe und der Seitenrahmen liegen in B in ihrer Endposition **unter** dem
+  Bier (CSS: `.beer` z-index 2, `.hero__more` z-index 1 als Flex-Element, damit der Bezug der absoluten Herde der Hero bleibt, `.frame--page` z-index 1, Titel und Pfeil darüber) und werden von der Kante freigegeben; bis das Bier
+  gezeichnet ist (`.bier-an`), sind sie unsichtbar. Pfeil und „Wischen“ sind während der Geste aus. Es werden nur `transform` und `opacity` animiert (Test `phasen` prüft das per MutationObserver). Am Ende der Geste wird
+  **nicht neu gemessen** (`--lift`, `--fold`, `--zone` bleiben, die Fahrt endet genau an der vorher gemessenen Stelle; Test `sprung`); die Bildfläche des Gemäldes (`.painting__bild`) hat per `aspect-ratio` schon vor dem Laden die
+  richtige Höhe (WebKit misst ein `<img>` ohne `src` nur mit der Alt-Text-Zeile, 18 px, das ergab einen Sprung von ca. 100–160 px am Ende). `will-change` steht nur während einer Animation (`html.anim`); die Welle wird nur
+  gezeichnet, solange Kante oder Schaumband im Bild sind, Bläschen stehen still, sobald kein Bier mehr zu sehen ist. Ein Tipp oder Klick irgendwo (außer auf Bedienelemente) löst dieselbe Geste aus.
 - Altersabfrage (`.age`, nur `index.html`): kleine Karte (max. 420 px, abgerundet, beiger Grund, feiner goldener Doppelrand) mittig am Desktop/iPad, Bottom Sheet am Handy (≈ 36 % der Höhe, Safe Area unten);
   dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (`backdrop-filter`, ohne Unterstützung nur dunkler). Frage, „Ja, ich bin 16“ (primär) und „Nein“, kurzer Jugendschutz-Hinweis, Schrift
   ≥ 15 px, Schaltflächen ≥ 48 px. Fade plus Hochgleiten (bei „Bewegung reduzieren“ ohne Animation), Fokusfalle (Tab/Umschalt + Tab bleiben in der Abfrage, Escape schließt nicht), Seite `inert` und Intro
@@ -76,9 +75,8 @@ Dann http://localhost:5173 öffnen.
   der oberen Linie. Er blendet am Ende der Geste in ca. 0,6 s ein (`ramp(h, .88, 1)` in `js/sequenz.js`, aus dem Fortschritt); der Startrahmen im Hero (`.hero > .frame`) ist in B und C aus. Bei „Bewegung reduzieren“, ohne JavaScript und nach Neuladen in C ist er sofort da. Abschnitte (`.section`) haben `margin-inline: --frame-gap`, Inhalt des Starts `--gutter`: nichts
   berührt die Linie (Trennlinien enden innerhalb, die Timeline am Handy wird an der Rahmeninnenkante abgeschnitten).
   Ohne das Intro (Bewegung reduzieren, ohne JavaScript) zeigt der erste Bildschirm gleich Zustand C: Titel, Einleitung und Gemälde.
-- Farben der Browserleisten (Statusleiste oben, Leiste unten am iPhone): B bierfarben (#C5A149); in der Geste wird **oben** beige, sobald die Schaumkrone
-  ins Bild kommt, **unten** bleibt es bierfarben, solange unten Bier zu sehen ist, und blendet erst danach weich auf beige (`setGold` in `js/sequenz.js`, berechnet aus der
-  Lage der Bieroberfläche, `beer.surfaceY`, kein Zeitgeber); in C beide beige. Safari 26 ignoriert `theme-color` und nimmt beide Leisten sonst vom Seitenhintergrund (dann
+- Farben der Browserleisten (Statusleiste oben, Leiste unten am iPhone): B bierfarben (#C5A149); in der Geste wird **unten** beige, sobald die Kante die untere Leiste verlassen hat, **oben** bleibt es bierfarben,
+  bis die Kante oben ist (`setGold` in `js/sequenz.js`, berechnet aus der Lage der Kante, `beer.surfaceY`, kein Zeitgeber); in C beide beige. Safari 26 ignoriert `theme-color` und nimmt beide Leisten sonst vom Seitenhintergrund (dann
   wäre nur eine Farbe für oben und unten möglich). Darum erzeugt `js/sequenz.js` am Touch-WebKit (iPhone/iPad, `-webkit-touch-callout` + `(hover: none)`) während des Intros
   zwei 6 px hohe, deckende, feste Streifen (`.edge--top`, `.edge--bottom`, z-index 60, über dem Papierkorn z-index 50): Safari liest einen Streifen nur beim Erzeugen und nur, wenn
   er sichtbar und oberstes Element am Rand ist (durchsichtig, `opacity: 0`, `clip-path` oder unter dem Korn zählt nicht). Bei jeder neuen Farbstufe (1/16)

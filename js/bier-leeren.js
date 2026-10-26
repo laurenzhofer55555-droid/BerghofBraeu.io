@@ -1,12 +1,11 @@
-// Letzte Scroll-Stufe: das Bier leert sich. Grafisch statt realistisch:
-// flache Goldfläche (--gold-beer, Farbe des Kronkorkens), flache cremeweiße Schaumkrone, wenige aufsteigende Bläschen.
-// Die Oberfläche ist eine Welle aus drei überlagerten Sinuswellen (SVG-Pfad, per requestAnimationFrame),
-// die sich dauerhaft sanft bewegt. Beim Scrollen schwappt das Bier: die Scrollgeschwindigkeit kippt die
-// Oberfläche leicht, eine stark gedämpfte Feder beruhigt sie sofort wieder (kaum Schwappen). Der Schaum folgt leicht verzögert.
-// Der Pegel selbst wird nur per transform verschoben (level() aus js/sequenz.js, allein aus dem Scrollfortschritt).
+// Das Bier beim Start: flache Goldfläche (--gold-beer, Farbe des Kronkorkens), flache cremeweiße Schaumkante, wenige aufsteigende Bläschen. Grafisch statt realistisch.
+// Die Kante ist eine Welle aus drei überlagerten Sinuswellen (SVG-Pfad, per requestAnimationFrame), die sich dauerhaft sanft bewegt; bei Bewegung schwappt sie: die Geschwindigkeit
+// der Kante kippt sie leicht, eine stark gedämpfte Feder beruhigt sie sofort wieder. Der Schaum folgt leicht verzögert.
+// Die Geste wischt das Bier von unten nach oben weg: die Grafik ist senkrecht gespiegelt (CSS scaleY(-1) auf .beer__svg), das Gold liegt OBEN, das Schaumband UNTER der Kante,
+// darunter bleibt das Papier (der Inhalt der Seite). Die Kante wird nur per transform verschoben (level() aus js/sequenz.js, allein aus dem Fortschritt P).
 // Das Bier füllt auf allen Geräten den ganzen Bildschirm von Rand zu Rand (Höhe 100lvh, siehe .beer in css/style.css).
-// Zustand B: Pegel 0 = der Spiegel steht knapp (16 px) über dem Bildrand, das Bild ist ganz Bier, die Schaumkrone liegt darüber außerhalb. Beim Leeren sinkt er ins Bild, dabei gleitet die Schaumkrone ein.
-// Start und Ende des Weges kommen aus der echten Höhe des Bier-Layers (100lvh): from() = Spiegel knapp über der Oberkante, to() = Schaumkrone samt Wellen und Schwappen vollständig unter der Unterkante.
+// Zustand B: Pegel 0 = die Kante steht knapp (16 px) unter dem unteren Bildrand, das Bild ist ganz Bier, das Schaumband liegt darunter außerhalb. Beim Wegwischen steigt sie durchs Bild bis über den oberen Rand.
+// Start und Ende des Weges kommen aus der echten Höhe des Bier-Layers (100lvh): surfaceY(0) = Kante knapp unter der Unterkante, surfaceY(1) = Schaumband samt Wellen und Schwappen vollständig über der Oberkante.
 // Es gibt keinen unsichtbaren Vorlauf. Mit dem Ende des Intros wird der Layer abgeschaltet (display: none, css/style.css .frei .beer), danach ist kein Bier mehr auf der Seite.
 // Die Wellenamplitude ist in Pixeln fest; die Wellenlänge wächst mit der Bildschirmbreite (2 bis 3 Wellenberge). Die Bläschen
 // werden nach Fläche gezählt und gleichmäßig über die Breite verteilt.
@@ -16,8 +15,8 @@ const PAD = 170;                     // Platz oberhalb der Oberfläche für Scha
 const BELOW = 100;                   // Überstand unten: das Gold reicht auch beim Start (Spiegel knapp über dem Rand) bis unter die Unterkante
 const STEP = 8;                      // Punktabstand des Pfads (px)
 const REF_W = 393;                   // Breite, für die die Wellenform ursprünglich gezeichnet wurde (Handy)
-const START_SURF = -16;              // Spiegel im Zustand B (px von oben): Wellenberge in Ruhe ±10 px, Schaumkante 3 px, 3 px Reserve: das Bild ist ganz Gold, kein Schaum zu sehen
-const END_OVER = 110;                // Überstand am Ende (px unter dem Schaum): auch bei kräftigem Schwappen ist die Schaumkrone ganz unter der Unterkante, wenn das Bier „leer“ ist
+const START_BELOW = 16;              // Kante im Zustand B (px unter dem unteren Bildrand): Wellenberge in Ruhe ±10 px, 6 px Reserve: das Bild ist ganz Gold, kein Schaum zu sehen
+const END_OVER = 110;                // Überstand am Ende (px über dem Schaum): auch bei kräftigem Schwappen ist das Schaumband ganz über der Oberkante, wenn das Bier weg ist
 
 // Bläschen: Anzahl nach Fläche (Handy 12), gleichmäßig über die Breite verteilt, wiederholbar (feste Zufallsfolge)
 function random(seed) {
@@ -71,14 +70,14 @@ export function createBeer(hero) {
     draw();
   }
 
-  // Weg der mittleren Oberfläche (px von oben): Start knapp über der Oberkante (reines Gold, die Schaumkrone kommt von oben), Ende mit der Schaumkrone unter der Unterkante
-  const from = () => START_SURF;
-  const to = () => H + foamH + END_OVER;
+  // Weg der mittleren Kante (px von oben): Start knapp unter der Unterkante (reines Gold, das Schaumband liegt darunter), Ende mit dem Schaumband über der Oberkante
+  const from = () => H + START_BELOW;
+  const to = () => -(foamH + END_OVER);
 
-  // Pegel 0 (voll) … 1 (leer, alles unter dem unteren Rand)
+  // Pegel 0 (voll) … 1 (weggewischt, alles über dem oberen Rand). Gespiegelt: die Kante liegt im Layer bei H + BELOW (Höhe − PAD des gespiegelten SVG)
   function setLevel(p) {
     level = p;
-    liquid.style.transform = `translate3d(0, ${from() + (to() - from()) * p - PAD}px, 0)`;
+    liquid.style.transform = `translate3d(0, ${from() + (to() - from()) * p - H - BELOW}px, 0)`;
   }
 
   // Oberfläche: drei Sinuswellen + Neigung durch Schwappen
@@ -147,7 +146,7 @@ export function createBeer(hero) {
   measure();
 
   return {
-    // p: Pegel; visible: Bierfläche ist im Bild (in B steht der Spiegel über dem Bildrand: dann nichts zeichnen, Welle in Ruhe)
+    // p: Pegel; visible: Kante oder Schaumband können im Bild sein (in B steht die Kante unter dem Bildrand: dann nichts zeichnen, Welle in Ruhe)
     level(p, visible = true) {
       setLevel(p);
       const on = visible && p > 0 && p < 1;
@@ -157,8 +156,7 @@ export function createBeer(hero) {
       if (still) draw();
     },
     velocity(v) { scrollV = v; },
-    surfaceY(p) { return H ? from() + (to() - from()) * p : START_SURF + 1000 * p; },   // Lage der mittleren Bieroberfläche (px von oben) beim Pegel p, gleiche Rechnung wie setLevel
-    levelAt(surf) { return H ? (surf - from()) / (to() - from()) : 0.1; },              // Pegel, bei dem die mittlere Oberfläche bei surf px von oben steht
+    surfaceY(p) { return H ? from() + (to() - from()) * p : 1000 * (1 - p); },         // Lage der mittleren Kante (px von oben) beim Pegel p, gleiche Rechnung wie setLevel
     foamHeight() { return H ? foamH : 80; },                                           // Höhe der Schaumkrone (px)
     remeasure() { W = 0; H = 0; measure(); },                                          // nach dem Wiederholen: der Layer ist wieder da, neu messen
   };

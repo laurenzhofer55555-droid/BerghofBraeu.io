@@ -135,7 +135,7 @@ html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infini
 @media (max-height: 520px) { .hero__flasche { display: none; } }
 @media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
 .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
-.anim .hero__text, .anim .hero__lead, .anim .painting, .anim .herd, .anim .frame--page, .anim .beer__liquid { will-change: transform, opacity; }   /* nur während einer Animation (html.anim, js/sequenz.js) */
+.anim .hero__text, .anim .beer__liquid { will-change: transform, opacity; }   /* nur während einer Animation (html.anim, js/sequenz.js) */
 
 /* Gold-Phase am Kronkorken (Klasse aus js/sequenz.js, alle Geräte) – ganze Seite in Gold, auch hinter Statusleiste, Adressleiste und beim Überscrollen */
 html.gold-page, html.gold-page body { background: var(--gold-beer); }
@@ -166,11 +166,13 @@ html:not(.seq) .skip, .frei .skip { display: none; }
 }
 html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
 .frame--page { z-index: 3; }
-.seq:not(.frei) .frame--page { opacity: 0; }                            /* blendet am Ende von Geste 2 ein (js/sequenz.js) */
+.seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-.seq:not(.frei) .hero__more { opacity: 0; visibility: hidden; }        /* erscheint mit dem Leeren des Biers (js/sequenz.js) */
+.seq:not(.frei) .hero__more { z-index: 1; }                  /* Flex-Element des Hero: z-index wirkt ohne Positionierung (der Bezug der absoluten Herde bleibt der Hero, nichts verschiebt sich beim Ende); unter dem Bier (z-index 2): die Kante wischt den Inhalt frei */
+.seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis das Bier gezeichnet ist (js/sequenz.js setzt .bier-an): kein Aufblitzen */
+.seq:not(.frei) .hero__text { z-index: 3; }                                      /* Titel und Flasche liegen über dem Bier */
 /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
 .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
 .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
@@ -219,7 +221,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .seq { --cue-w: 40px; --cue-h: var(--cue-w); }
 .scroll-cue { display: none; }
 .seq .scroll-cue {
-  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px;
+  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; z-index: 4;   /* über dem Bier */
   position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
   color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
@@ -261,14 +263,15 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 /* ── Letzte Stufe: das Bier leert sich (js/bier-leeren.js) ──
    Grafisch: flache Goldfläche in der Farbe des Kronkorkens, flache Schaumkrone, wenige Bläschen.
    Welle und Schaum zeichnet das Skript in den SVG-Pfad, der Pegel läuft nur über transform. */
-.beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; background: var(--cream); }   /* Rand zu Rand, Höhe 100lvh: auch unter der eingeklappten Adressleiste */
+.beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; }   /* Rand zu Rand, Höhe 100lvh: auch unter der eingeklappten Adressleiste */
+.seq:not(.frei) .beer { z-index: 2; }                                       /* über dem Inhalt (wischt ihn frei), unter Titel und Pfeil */
 .frei .beer { display: none; }                                           /* nach dem Intro ist kein Bier mehr auf der Seite (kein Rest, kein Zeichnen) */
 .beer__liquid { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 270px); }   /* PAD + BELOW in js/bier-leeren.js */
-.beer__svg { position: absolute; inset: 0; display: block; overflow: visible; }
+.beer__svg { position: absolute; inset: 0; display: block; overflow: visible; transform: scaleY(-1); }   /* gespiegelt: Gold oben, Schaumband unter der Kante (js/bier-leeren.js) */
 .beer__gold { fill: var(--gold-beer); }
 .beer__foam { fill: #FFFFFF; }
 .beer__edge { fill: none; stroke: #D8C9A4; stroke-width: 2; stroke-linejoin: round; }
-.beer__bubbles { position: absolute; left: 0; right: 0; top: 260px; bottom: 0; overflow: hidden; }
+.beer__bubbles { position: absolute; left: 0; right: 0; top: 0; bottom: 170px; overflow: hidden; }   /* das Gold liegt oben (PAD = 170 in js/bier-leeren.js) */
 .beer__bubbles i {
   position: absolute; bottom: -12px;
   width: var(--s); height: var(--s); border-radius: 50%;
