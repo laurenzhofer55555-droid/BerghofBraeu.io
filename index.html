@@ -295,7 +295,7 @@
     html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
     @keyframes flasche-wackeln { 0% { transform: rotate(0); } 3% { transform: rotate(-5deg); } 6% { transform: rotate(4.5deg); } 9% { transform: rotate(-3.5deg); } 12% { transform: rotate(2.5deg); }
       15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
-    html:not(.seq) .hero__flasche, .frei .hero__flasche { display: none; }
+    .hero__flasche { display: none; }                  /* Vorschau ohne Flaschenbild: nur das auslaufende Bier */
     @media (max-height: 520px) { .hero__flasche { display: none; } }
     @media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
     .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
@@ -312,13 +312,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=dfb3a962" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=dfb3a962" media="print" id="css-main" />
-  <link rel="preload" as="image" href="assets/img/flasche-360.webp?v=6" imagesrcset="assets/img/flasche-180.webp?v=6 180w, assets/img/flasche-360.webp?v=6 293w" imagesizes="160px" fetchpriority="high" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=dfb3a962" /></noscript>
+  <link rel="preload" href="css/style.css?v=388bd80c" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=388bd80c" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=388bd80c" /></noscript>
 
   <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=dfb3a962"></script>
+  <script type="module" src="js/main.js?v=388bd80c"></script>
 </head>
 <body>
 

@@ -21,8 +21,8 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=dfb3a962';
-import { ladeHerde } from './herde.js?v=dfb3a962';
+import { createBeer } from './bier-leeren.js?v=388bd80c';
+import { ladeHerde } from './herde.js?v=388bd80c';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
