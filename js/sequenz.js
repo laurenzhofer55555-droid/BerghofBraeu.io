@@ -1,10 +1,9 @@
 // Start der Seite als Zustandsautomat mit genau EINER Geste (gleich auf Handy, iPad und Desktop), ohne 3D-Flasche:
 //
-//   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen), unten stehen Titel und Untertitel mit der wackelnden Flasche darüber, unten der Weiter-Pfeil.
+//   B  Bier: der Bildschirm ist voll Bier (Rand zu Rand, Bläschen), unten stehen Titel und Untertitel, darunter der Weiter-Pfeil.
 //      Die Seite (Einleitung, Schafe, Gemälde, Rahmen) liegt unverändert an ihrem Platz hinter dem Bier, leicht verschwommen.
 //   ── Geste (Scrollen, Wischen, Taste, Tipp/Klick irgendwo), eine Fahrt (T2 ≈ 4,3 s):
-//      1. die Flasche wird losgelassen und fällt (freier Fall mit leichter Neigung) hinter dem Titel nach unten aus dem Bild;
-//         das Bier läuft von oben nach unten aus (die Schaumkrone vorneweg) und gibt die verschwommene Seite frei (Gemälde und Schafe nur als weiche Farbflecken);
+//      1. das Bier läuft von oben nach unten aus (die Schaumkrone vorneweg) und gibt die verschwommene Seite frei (Gemälde und Schafe nur als weiche Farbflecken);
 //      2. der Titel (scharf, deutlich lesbar) fliegt nach oben an seinen Platz;
 //      3. dabei wird der Text klar, danach tauchen Gemälde und Schafe auf (Unschärfe weg).
 //      Wie das Bier am Ende abgeht, ist offen (später evtl. eine eigene Animation): es läuft einfach unten aus dem Bild.
@@ -21,22 +20,20 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=388bd80c';
-import { ladeHerde } from './herde.js?v=388bd80c';
+import { createBeer } from './bier-leeren.js?v=40660cc8';
+import { ladeHerde } from './herde.js?v=40660cc8';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
 
 // ── Einstellungen ───────────────────────────────
 // Die Geste ist EINE Fahrt (P läuft linear von 1 nach 2 in T2 ms), T = Zeit seit der Geste:
-//   0 … FLY0         die Flasche bleibt stehen (das Bier läuft an ihr vorbei aus); sie hängt am Titel
 //   0 … DRAIN        das Bier läuft aus (sinus-in-out: die Schaumkrone schiebt sich von oben ins Bild, schnelle Mitte, weiches Ausklingen unten)
-//   FLY0 … FLY1      der Titel fliegt nach oben an seinen Platz (cubic in-out); er startet kurz bevor das Bier unten vorbei ist. Die Flasche fliegt mit, wird dabei kleiner (auf 1 − SCHRUMPF, zum Titel hin) und blendet aus
+//   FLY0 … FLY1      der Titel fliegt nach oben an seinen Platz (cubic in-out); er startet kurz bevor das Bier unten vorbei ist.
 //   KLAR0 … KLAR1    der Text der Seite wird klar: Unschärfe von BLUR px auf 0 (ease-out), beginnt mit dem Flug
 //   BILD0 … BILD1    Gemälde und Schafe tauchen auf: Unschärfe von BLUR_BILD px auf 0, beginnt erst, wenn der Titel (fast) oben angekommen ist
 const T2 = 4250;                                             // ms für die ganze Geste
 const DRAIN = 2400, FLY0 = 2250, FLY1 = 3450, KLAR0 = 2300, KLAR1 = 3750, BILD0 = 3250, BILD1 = 4200;
-const SCHRUMPF = 0.9;                                        // Flasche: um so viel (Anteil) wird sie beim Titelflug kleiner, Fußpunkt am Titel
 const BLUR = 8, BLUR_BILD = 26;                              // px Unschärfe: Text der Seite hinter dem Bier (leicht) und Gemälde mit Schafen (stark)
 const FOAM_GAP = 12;                                         // px: Reserve zwischen Schaumkrone und Oberfläche für die Browserleisten
 const LOCK_AFTER = 400;       // ms Sperre nach der Animation
@@ -54,7 +51,6 @@ const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
-  flasche: hero.querySelector('.hero__flasche'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -140,14 +136,10 @@ function render(pv) {
   const p = levelOf(pv);                                         // Weg der Oberfläche 0 … 1
   const surf = beer.surfaceY(p), foamH = beer.foamHeight();      // mittlere Lage der Oberfläche (px von oben) und Höhe der Schaumkrone darüber
 
-  // Titel (mit der Flasche): bleibt unten, bis das Bier vorbei ist, und fliegt dann nach oben an seinen Platz (nur translate3d, gemessener Weg textDy, FLIP). Die Flasche blendet am Anfang im Bier aus.
+  // Titel: bleibt unten, bis das Bier vorbei ist, und fliegt dann nach oben an seinen Platz (nur translate3d, gemessener Weg textDy, FLIP).
   const fly = easeInOut(ramp(T, FLY0, FLY1));
   put('text', el.text, 'opacity', '1');
   put('textY', el.text, 'transform', `translate3d(0, ${(textDy * (1 - fly)).toFixed(1)}px, 0)`);
-  // Flasche: steht, solange das Bier ausläuft; beim Titelflug fliegt sie mit, wird dabei kleiner (Fußpunkt am Titel) und blendet aus; danach bleibt sie unsichtbar
-  put('flascheY', el.flasche, 'transform', fly > 0 ? `scale(${(1 - SCHRUMPF * fly).toFixed(3)})` : 'none');
-  put('flascheO', el.flasche, 'opacity', (1 - clamp01((fly - 0.4) / 0.55)).toFixed(3));
-  put('flascheV', el.flasche, 'visibility', fly >= 1 ? 'hidden' : 'visible');
 
   // Die Seite hinter dem Bier (Einleitung, Schafe, Gemälde, Seitenrahmen) steht still an ihrem Platz, verschwommen; mit dem Titelflug wird der Text klar, danach tauchen Gemälde und Schafe auf
   put('blur', root, '--blur', (BLUR * (1 - easeOut(ramp(T, KLAR0, KLAR1)))).toFixed(2) + 'px');
@@ -404,7 +396,7 @@ window.__sequenz = {
   get wartet() { return false; }, get stalls() { return stalls; }, get frame() { return 0; },
   get geladen() { return 0; }, get anzahl() { return 0; }, log,
   get kante() { return beer.surfaceY(levelOf(P)); },                    // Lage der Bierkante (px von oben)
-  get aktiv() { return attached; }, phasen: { T2, DRAIN, FLY0, FLY1, KLAR0, KLAR1, BILD0, BILD1, SCHRUMPF, BLUR, BLUR_BILD },
+  get aktiv() { return attached; }, phasen: { T2, DRAIN, FLY0, FLY1, KLAR0, KLAR1, BILD0, BILD1, BLUR, BLUR_BILD },
   replay,
   get gestenbereit() { return !busy && performance.now() >= lockUntil; },   // Eingabesperre vorbei?
   async zeige(pv) {                                            // Zustand zu P ohne Animation zeigen (Screenshots)

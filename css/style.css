@@ -123,17 +123,6 @@ main { position: relative; z-index: 2; }
 
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { position: relative; }
-/* Flasche über dem Titel (nur im Bier-Start B): sie steht auf dem Titel; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
-   bei der Geste lässt jemand sie los: sie fällt nach unten aus dem Bild (js/sequenz.js), das Wackeln hält dabei an, in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
-.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none; z-index: -1; transform-origin: 50% 100%;      /* hinter dem Titel; schrumpft beim Titelflug zum Titel hin */
-  --flasche-h: clamp(140px, calc(100svh - var(--b-pad) - var(--text-h) - 96px), 560px); }
-.hero__flasche img { display: block; height: var(--flasche-h); width: auto; max-width: none; aspect-ratio: 293 / 954; transform-origin: 50% 100%; filter: drop-shadow(0 10px 12px rgba(50, 36, 0, .3)); }
-html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
-@keyframes flasche-wackeln { 0% { transform: rotate(0); } 3% { transform: rotate(-5deg); } 6% { transform: rotate(4.5deg); } 9% { transform: rotate(-3.5deg); } 12% { transform: rotate(2.5deg); }
-  15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
-.hero__flasche { display: none; }                  /* Vorschau ohne Flaschenbild: nur das auslaufende Bier */
-@media (max-height: 520px) { .hero__flasche { display: none; } }
-@media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
 .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
 .anim .hero__text, .anim .beer__liquid { will-change: transform, opacity; }
 .anim .hero__lead, .anim .painting, .anim .herd { will-change: filter; }   /* nur während einer Animation (html.anim, js/sequenz.js) */
@@ -170,7 +159,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel und Flasche unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
+.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
 .seq:not(.frei) .hero__lead { filter: blur(var(--blur, 8px)); }
 .seq:not(.frei) .painting, .seq:not(.frei) .herd { filter: blur(var(--blur-bild, 26px)); }                    /* Gemälde und Schafe sind zuerst nur weiche Farbflecken und tauchen erst auf, wenn der Titel oben angekommen ist */
 /* Die Seite hinter dem Bier ist verschwommen und wird nach dem Titelflug klar (Filter nicht auf .hero__more: er würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt). */

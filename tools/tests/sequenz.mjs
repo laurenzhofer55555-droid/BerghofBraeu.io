@@ -4,7 +4,7 @@
 //   python3 tools/tests/serve.py . 5263
 // Aufruf:
 //   node tools/tests/sequenz.mjs [szenario …]            (ohne Angabe: alle)
-// Szenarien: gesten, flick, sperre, laden, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen, phasen, alter, reste, sprung, flasche
+// Szenarien: gesten, flick, sperre, laden, zustandB, geste2, titel, herde, pfeil, timeline, einmalig, replay, neuladen, drehen, tasten, skip, reduziert, extern, leisten, rahmen, phasen, alter, reste, sprung, tippen
 // Rückgabewert 1, wenn ein Test fehlschlägt. Bilder landen in $TMPDIR/berghof-tests/.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -126,13 +126,13 @@ async function laden() {
   }
 }
 
-// 8. Zustand B (der Start) auf allen Geräten (die Flasche über dem Titel ist für die Farbmessung ausgeblendet, sie hat einen eigenen Test): Bier von Rand zu Rand, kein Rahmen, „Hofer Bräu“ frei, Titel unten mittig, Bläschen verteilt, Seite gesperrt
+// 8. Zustand B (der Start) auf allen Geräten Bier von Rand zu Rand, kein Rahmen, „Hofer Bräu“ frei, Titel unten mittig, Bläschen verteilt, Seite gesperrt
 async function zustandB() {
   for (const [name, view] of Object.entries(DEVICES)) {
     const b = await browser({ view });
     try {
       check(`zustandB ${name}: Start in B`, await start(b, view) && (await state(b)).z === 'B');
-      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }'; document.head.appendChild(s); })()`);
+      await b.js(`(() => { const s = document.createElement('style'); s.textContent = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }'; document.head.appendChild(s); })()`);
       await sleep(300);
       const s = await state(b);
       const buf = await shot(b, join(OUT, 'zustandB', `${name}.png`));
@@ -160,12 +160,12 @@ async function zustandB() {
   }
 }
 
-// Die Geste (js/sequenz.js): 1. die Flasche wird losgelassen und fällt, das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, 2. der Titel fliegt nach oben an seinen Platz,
+// Die Geste (js/sequenz.js): 1. das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, 2. der Titel fliegt nach oben an seinen Platz,
 // 3. dabei wird der Text klar, danach tauchen Gemälde und Schafe auf. Zustand B ist volle Bierfläche, die Seite steht von Anfang an still hinter dem Bier.
-const PH = { T2: 4250, DRAIN: 2400, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, SCHRUMPF: 0.9, BLUR: 8, BLUR_BILD: 26 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
+const PH = { T2: 4250, DRAIN: 2400, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, BLUR: 8, BLUR_BILD: 26 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn der Geste
 const tOf = (P) => (P - 1) * PH.T2;
-const PAUSE_MESS = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }';
+const PAUSE_MESS = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }';
 async function geste2() {
   for (const [name, view] of Object.entries(DEVICES)) {
     if (name === 'desktop-2560' && !only.length) continue;   // gleiche Logik wie 1440, spart Zeit im Gesamtlauf
@@ -239,7 +239,7 @@ async function titel() {
       const l = await b.js(`(() => { const e = document.querySelector('.hero__lead'), c = getComputedStyle(e); return { op: +getComputedStyle(document.querySelector('.hero__more')).opacity, vis: c.visibility, fs: parseFloat(c.fontSize), w: e.getBoundingClientRect().width, text: e.textContent.trim().length }; })()`);
       check(`titel ${name}: Titel oben (${Math.round(r.titel.t)} px), Einleitungstext ganz im ersten Bildschirm (Ende ${Math.round(r.lead.b)} von ${r.vh} px)`, r.titel.t < r.vh * 0.22 && r.lead.t > r.titel.b && r.lead.b <= r.vh - 8 && l.op === 1 && l.vis === 'visible', JSON.stringify({ titelTop: Math.round(r.titel.t), leadEnde: Math.round(r.lead.b) }));
       const zeichen = Math.round(l.w / (l.fs * 0.5));          // grob: Breite / halbe Schriftgröße = Zeichen je Zeile
-      check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, Tablet/Desktop breiter als das Gemälde, grob ≤ 100 bzw. ≤ 120 Zeichen ab 1800 px)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer ticken, liegt der historische Berghof von Agatharied. Ein Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : view.w < 1800 ? 100 : 120), `${zeichen} Zeichen`);
+      check(`titel ${name}: Einleitung wortgetreu, Zeilenbreite begrenzt (Handy ≈ 38, Tablet/Desktop breiter als das Gemälde, grob ≤ 100 bzw. ≤ 120 Zeichen ab 1800 px)`, l.text === 'Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer gehen, liegt der historische Berghof von Agatharied. Ein Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.'.length && zeichen <= (view.w < 768 ? 46 : view.w < 1800 ? 100 : 120), `${zeichen} Zeichen`);
       const lay = JSON.parse(await b.js(`JSON.stringify((() => { const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width }; };
         const tg = (sel) => { const rg = document.createRange(); rg.selectNodeContents(document.querySelector(sel)); return R(rg); };
         const i = document.querySelector('.painting img'), cap = document.querySelector('.painting figcaption');
@@ -626,8 +626,8 @@ async function reduziert() {
     const b = await browser({ view, reducedMotion: true });
     try {
       await open(b, '', { wait: 3500 });
-      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display, fl: getComputedStyle(document.querySelector('.hero__flasche')).display })`));
-      check(`reduziert ${view}: normale Seite mit dem Titel oben, keine Sperre, kein Bier-Intro, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.titel < 300 && r.skip === 'none' && r.cue === 'none' && r.fl === 'none', JSON.stringify(r));
+      const r = JSON.parse(await b.js(`JSON.stringify({ seq: document.documentElement.classList.contains('seq'), q: !!window.__sequenz, ov: getComputedStyle(document.documentElement).overflow, titel: Math.round(document.querySelector('.hero__title').getBoundingClientRect().top), skip: getComputedStyle(document.querySelector('[data-skip]')).display, cue: getComputedStyle(document.querySelector('.scroll-cue')).display })`));
+      check(`reduziert ${view}: normale Seite mit dem Titel oben, keine Sperre, kein Bier-Intro, kein Überspringen-Knopf`, !r.seq && !r.q && r.ov !== 'hidden' && r.titel < 300 && r.skip === 'none' && r.cue === 'none', JSON.stringify(r));
       await b.js(`window.scrollTo(0, 900)`); await sleep(500);
       check(`reduziert ${view}: darunter normal scrollbar`, (await b.js('scrollY')) >= 800);
     } finally { b.close(); }
@@ -786,7 +786,7 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (gesamt ${pz.T2} ms, Flasche steht bis ${pz.FLY0}, Auslaufen ${pz.DRAIN}, Flug ${pz.FLY0} bis ${pz.FLY1}, Text klar ${pz.KLAR0} bis ${pz.KLAR1}, Bild klar ${pz.BILD0} bis ${pz.BILD1}, Unschärfe ${pz.BLUR} / ${pz.BLUR_BILD} px)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (gesamt ${pz.T2} ms, Auslaufen ${pz.DRAIN}, Flug ${pz.FLY0} bis ${pz.FLY1}, Text klar ${pz.KLAR0} bis ${pz.KLAR1}, Bild klar ${pz.BILD0} bis ${pz.BILD1}, Unschärfe ${pz.BLUR} / ${pz.BLUR_BILD} px)`, JSON.stringify(pz) === JSON.stringify(PH));
       const vor = JSON.parse(await b.js(`JSON.stringify({ blur: getComputedStyle(document.querySelector('.painting')).filter, lead: getComputedStyle(document.querySelector('.hero__lead')).filter, op: +getComputedStyle(document.querySelector('.painting')).opacity })`));
       check(`phasen ${name}: in B ist die Seite hinter dem Bier schon da: Einleitung leicht verschwommen („${vor.lead}“), Gemälde und Schafe stark (nur weiche Farbflecken, „${vor.blur}“), Deckkraft ${vor.op}`, /blur\(8px\)/.test(vor.lead) && /blur\(26px\)/.test(vor.blur) && vor.op === 1);
       await sleep(700);
@@ -795,7 +795,7 @@ async function phasen() {
         const namen = (t) => (t || '').split(';').map((x) => x.split(':')[0].trim()).filter(Boolean);
         const val = (t, k) => { const m = (t || '').split(';').find((x) => x.split(':')[0].trim() === k); return m ? m.slice(m.indexOf(':') + 1).trim() : ''; };
         const mo = new MutationObserver((ms) => ms.forEach((m) => { const neu = m.target.getAttribute('style') || ''; for (const k of new Set([...namen(m.oldValue), ...namen(neu)])) if (val(m.oldValue, k) !== val(neu, k)) window.__chg[k] = (window.__chg[k] || 0) + 1; }));
-        document.querySelectorAll('.hero__text, .hero__flasche, .hero__more, .hero__lead, .painting, .herd, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame, html').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
+        document.querySelectorAll('.hero__text, .hero__more, .hero__lead, .painting, .herd, .frame--page, .site-header, .beer, .beer__liquid, .hero > .frame, html').forEach((n) => mo.observe(n, { attributes: true, attributeFilter: ['style'], attributeOldValue: true }));
         try { new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(Math.round(e.duration)))).observe({ entryTypes: ['longtask'] }); } catch (e) {} })()`);
       await b.send('Emulation.setCPUThrottlingRate', { rate: 4 });
       const n0 = (await samples(b)).length;
@@ -826,18 +826,6 @@ async function phasen() {
       const bildBei = S.filter((x) => T(x) <= PH.BILD0 - 40).map((x) => x.bb);
       check(`phasen ${name}: Gemälde und Schafe bleiben weiche Farbflecken (${Math.min(...bildBei).toFixed(1)}–${Math.max(...bildBei).toFixed(1)} px), bis der Titel (fast) oben angekommen ist, tauchen dann auf (Unschärfe ${bb[0].toFixed(0)} → ${bild0 ? bild0.bb.toFixed(2) : '–'} px, beginnt bei ${Math.round(bildStart)} ms, Soll ab ${PH.BILD0}), nie wieder unschärfer`,
         bbAuf === 0 && bildBei.every((v) => v >= PH.BLUR_BILD - 0.8) && bildStart >= PH.BILD0 - 60 && bild0 && bild0.bb <= 0.3, JSON.stringify({ bbAuf, bildStart }));
-      // Flasche: steht während des Auslaufens still (gleiche Lage, volle Größe, Deckkraft 1), fliegt mit dem Titel nach oben, wird dabei kleiner und blendet aus, danach unsichtbar
-      const FB = alleS.filter((x) => x.ft != null && x.fw != null), f0 = FB[0], T0 = (x) => T(x);
-      const still = FB.filter((x) => T0(x) < PH.FLY0 - 40);
-      const stehtDa = still.length > 20 && still.every((x) => Math.abs(x.ft - f0.ft) <= 1.5 && Math.abs(x.fw - f0.fw) <= 0.5 && x.fop === 1 && x.fv === 'visible');
-      const fl = FB.filter((x) => T0(x) > PH.FLY0 + 80 && T0(x) < PH.FLY1 - 80);
-      let waechst = 0, hellerW = 0; for (let i = 1; i < fl.length; i++) { if (fl[i].fw > fl[i - 1].fw + 0.5) waechst++; if (fl[i].fop > fl[i - 1].fop + 0.01) hellerW++; }
-      const mitte = FB.find((x) => T0(x) >= (PH.FLY0 + PH.FLY1) / 2), ende = FB.find((x) => T0(x) >= PH.FLY1 + 20);
-      const klein = mitte && mitte.fw < f0.fw * 0.75 && mitte.fw > f0.fw * 0.1;
-      const weg = ende && ende.fv === 'hidden' && FB.filter((x) => T0(x) >= PH.FLY1 + 20).every((x) => x.fv === 'hidden');
-      const fo = alleS.map((x) => x.fop).filter((o) => o != null);
-      check(`phasen ${name}: die Flasche steht bis zum Titelflug still (${still.length} Bilder, Höhe ${f0.fw.toFixed(0)} px, Deckkraft 1), wird beim Flug kleiner (Mitte ${mitte ? mitte.fw.toFixed(0) : '–'} px hoch, nie wieder größer: ${waechst}×) und blendet aus (nie wieder heller: ${hellerW}×), ist nach ${PH.FLY1} ms weg (${ende ? ende.fv : '–'}), liegt hinter dem Titel (z-index ${await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).zIndex`)})`,
-        stehtDa && waechst === 0 && hellerW === 0 && klein && weg && Math.min(...fo) === 0, JSON.stringify({ stehtDa, waechst, hellerW, klein, weg }));
       // Die Seite steht still: Deckkraft 1, keine Verschiebung
       const Io = alleS.every((x) => x.ops.lead === 1 && x.ops.art === 1 && (breit || x.ops.herd === 1)), Ity = alleS.every((x) => x.tys.lead === 0 && x.tys.art === 0 && x.tys.herd === 0);
       check(`phasen ${name}: Einleitung, Gemälde${breit ? '' : ' und Herde'} bewegen sich nie und blenden nicht ein (Deckkraft 1, keine Verschiebung); es ändert sich nur die Unschärfe`, Io && Ity, JSON.stringify({ Io, Ity }));
@@ -1009,54 +997,22 @@ async function sprung() {
   }
 }
 
-// 22. Flasche über dem Titel (Start mit Bier): steht mittig über dem Titel, wackelt nach 3 s und danach alle 5 s, fällt beim Loslassen nach unten aus dem Bild, in C weg;
-//     ein Tipp oder Klick irgendwo auf die Seite lässt das Bier auslaufen (Bedienelemente behalten ihre eigene Wirkung)
-async function flasche() {
+// 22. Tipp oder Klick irgendwo auf die Seite lässt das Bier auslaufen (Bedienelemente behalten ihre eigene Wirkung)
+async function tippen() {
   const tipp = async (b, x, y) => {
     if (b.view.mobile) { await b.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] }); await sleep(60); await b.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
     else { await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }); await b.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 }); await b.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 }); }
   };
   for (const [name, view] of [['iphone15', DEVICES.iphone15], ['ipad-quer', DEVICES['ipad-air-quer']], ['desktop-1440', DEVICES['desktop-1440']]]) {
-    let b = await browser({ view });
-    try {
-      await start(b, view);
-      const g = JSON.parse(await b.js(`JSON.stringify((() => { const i = document.querySelector('.hero__flasche img'), r = i.getBoundingClientRect(), t = document.querySelector('.hero__title').getBoundingClientRect(), h = document.querySelector('.site-header__brand').getBoundingClientRect();
-        return { l: r.left, ri: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height, tt: t.top, hb: h.bottom, vw: innerWidth, ok: i.complete && i.naturalWidth > 0, alt: i.alt.length > 20, sh: getComputedStyle(i).filter }; })())`));
-      check(`flasche ${name}: mittig über dem Titel (Unterkante ${Math.round(g.b)} ≤ Titel ${Math.round(g.tt)}), Oberkante ${Math.round(g.t)} unter „Hofer Bräu“ (${Math.round(g.hb)}), ${Math.round(g.w)}×${Math.round(g.h)} px, geladen (Dekoration, Beschreibung steht bei den Zutaten)`,
-        g.ok && Math.abs((g.l + g.ri) / 2 - g.vw / 2) <= 2 && g.b <= g.tt + 1 && g.t >= g.hb && Math.abs(g.w / g.h - 293 / 954) < 0.01, JSON.stringify(g));
-      // Wackeln: Beginn nach 3 s, dann alle 5 s, dazwischen Ruhe (Animationsuhr des Browsers)
-      const w = JSON.parse(await b.js(`(async () => { const i = document.querySelector('.hero__flasche img'), a = i.getAnimations()[0], t0 = a.startTime, on = []; let last = -1e9, ruhe = 0;
-        await new Promise((ok) => { (function f() { const t = document.timeline.currentTime - t0, m = getComputedStyle(i).transform, an = m !== 'none' && m !== 'matrix(1, 0, 0, 1, 0, 0)';
-          if (an) { if (t - last > 1500) on.push(Math.round(t)); last = t; } else if (t > 1200 && t < 2800) ruhe++;
-          if (t > 13400) ok(); else requestAnimationFrame(f); })(); });
-        const tm = a.effect.getTiming(); return JSON.stringify({ on, ruhe, d: tm.delay, du: tm.duration, it: String(tm.iterations) }); })()`));
-      check(`flasche ${name}: wackelt nach 3 s (Beginn ${w.on[0]} ms) und danach alle 5 s (${w.on.slice(1).join(', ')} ms), vorher Ruhe (${w.ruhe} Bilder), Zeiten ${w.d}/${w.du} ms, unbegrenzt (${w.it})`,
-        w.on.length >= 3 && w.on[0] >= 2950 && w.on[0] <= 3300 && Math.abs(w.on[1] - w.on[0] - 5000) <= 250 && Math.abs(w.on[2] - w.on[1] - 5000) <= 250 && w.d === 3000 && w.du === 5000 && w.it === 'Infinity', JSON.stringify(w));
-      check(`flasche ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
-    } finally { b.close(); }
-    // Die Flasche steht, bis der Titel hochfliegt, schrumpft dann mit ihm und verschwindet; in C ist sie weg
-    b = await browser({ view });
-    try {
-      await start(b, view);
-      const g = () => b.js(`JSON.stringify((() => { const f = document.querySelector('.hero__flasche'), r = f.getBoundingClientRect(); return { t: r.top, w: r.height, v: getComputedStyle(f).visibility, o: +getComputedStyle(f).opacity }; })())`).then(JSON.parse);
-      const y0 = await g();
-      await keyPress(b, 'ArrowDown'); await sleep(1500);
-      const mitten = await g();                       // 1,5 s: Bier läuft, Titel noch unten
-      await sleep(1500);                              // 3,0 s: Titel im Flug
-      const flug = await g();
-      await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(400);
-      const anz = await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).display`);
-      check(`flasche ${name}: steht vor der Geste (Oberkante ${Math.round(y0.t)} px) und noch beim Auslaufen an derselben Stelle (nach 1,5 s ${Math.round(mitten.t)} px, Höhe ${Math.round(mitten.w)} px, Deckkraft ${mitten.o}), schrumpft im Titelflug (nach 3 s Höhe ${Math.round(flug.w)} px, Deckkraft ${flug.o}), in C nicht mehr da (${anz})`,
-        Math.abs(mitten.t - y0.t) <= 2 && Math.abs(mitten.w - y0.w) <= 1 && mitten.o === 1 && mitten.v === 'visible' && flug.w < y0.w * 0.8 && flug.o < 1 && anz === 'none', JSON.stringify({ y0, mitten, flug }));
-    } finally { b.close(); }
+    let b;
     // Tipp oder Klick irgendwo löst das Auslaufen aus
-    for (const [wo, fx, fy] of [['in der Mitte oben', 0.5, 0.2], ['auf die Flasche', 0.5, 0.35], ['links am Rand', 0.08, 0.6], ['auf den Titel', 0.5, 0.78]]) {
+    for (const [wo, fx, fy] of [['in der Mitte oben', 0.5, 0.2], ['in der Bildmitte', 0.5, 0.35], ['links am Rand', 0.08, 0.6], ['auf den Titel', 0.5, 0.78]]) {
       b = await browser({ view });
       try {
         await start(b, view);
         await tipp(b, Math.round(view.w * fx), Math.round(view.h * fy));
         const ok = await waitZustand(b, 'C', 12000) && await idle(b, 12000);
-        check(`flasche ${name}: ${view.mobile ? 'Tippen' : 'Klicken'} ${wo} lässt das Bier auslaufen (ein Übergang, endet in C)`, ok && (await starts(b)) === 1 && b.errors.length === 0, `${await starts(b)} Übergänge ${b.errors[0] || ''}`);
+        check(`tippen ${name}: ${view.mobile ? 'Tippen' : 'Klicken'} ${wo} lässt das Bier auslaufen (ein Übergang, endet in C)`, ok && (await starts(b)) === 1 && b.errors.length === 0, `${await starts(b)} Übergänge ${b.errors[0] || ''}`);
       } finally { b.close(); }
     }
     b = await browser({ view });
@@ -1066,13 +1022,13 @@ async function flasche() {
       await tipp(b, c.x, c.y);
       await waitZustand(b, 'C', 12000); await idle(b, 12000);
       const log2 = await log(b);
-      check(`flasche ${name}: Tipp auf den Pfeil startet genau einmal (${await starts(b)} Übergang, ${log2.filter((e) => e.art === 'ignoriert').length} ignoriert)`, (await starts(b)) === 1 && log2.filter((e) => e.art === 'ignoriert').length === 0);
+      check(`tippen ${name}: Tipp auf den Pfeil startet genau einmal (${await starts(b)} Übergang, ${log2.filter((e) => e.art === 'ignoriert').length} ignoriert)`, (await starts(b)) === 1 && log2.filter((e) => e.art === 'ignoriert').length === 0);
     } finally { b.close(); }
   }
 }
 
 const RUNS = [['gesten', gesten], ['flick', flickTest], ['sperre', sperre], ['laden', laden], ['zustandB', zustandB], ['geste2', geste2], ['titel', titel], ['herde', herde], ['pfeil', pfeil], ['timeline', timeline], ['einmalig', einmalig], ['replay', replay], ['neuladen', neuladen],
-  ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['phasen', phasen], ['alter', alter], ['reste', reste], ['sprung', sprung], ['flasche', flasche]];
+  ['drehen', drehen], ['tasten', tasten], ['skip', skip], ['reduziert', reduziert], ['extern', extern], ['leisten', leisten], ['rahmen', rahmen], ['phasen', phasen], ['alter', alter], ['reste', reste], ['sprung', sprung], ['tippen', tippen]];
 for (const [name, fn] of RUNS) {
   if (!run(name)) continue;
   console.log(`\n── ${name}`);
