@@ -125,7 +125,7 @@ main { position: relative; z-index: 2; }
 .hero__text { position: relative; }
 /* Flasche über dem Titel (nur im Bier-Start B): sie steht auf dem Titel; nach 3 s wackelt sie, danach alle 5 s (die Uhr startet, sobald die Altersabfrage weg ist);
    bei der Geste lässt jemand sie los: sie fällt nach unten aus dem Bild (js/sequenz.js), das Wackeln hält dabei an, in C ist sie weg. Höhe aus dem Platz über dem Titel (kein Neumessen, kein Springen). */
-.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none; z-index: -1;      /* hinter dem Titel */
+.hero__flasche { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 14px; display: flex; justify-content: center; pointer-events: none; z-index: -1; transform-origin: 50% 100%;      /* hinter dem Titel; schrumpft beim Titelflug zum Titel hin */
   --flasche-h: clamp(140px, calc(100svh - var(--b-pad) - var(--text-h) - 96px), 560px); }
 .hero__flasche img { display: block; height: var(--flasche-h); width: auto; max-width: none; aspect-ratio: 293 / 954; transform-origin: 50% 100%; filter: drop-shadow(0 10px 12px rgba(50, 36, 0, .3)); }
 html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infinite; }
@@ -133,7 +133,6 @@ html:not(.age-gate) .hero__flasche img { animation: flasche-wackeln 5s 3s infini
   15% { transform: rotate(-1.5deg); } 18% { transform: rotate(.8deg); } 21%, 100% { transform: rotate(0); } }
 html:not(.seq) .hero__flasche, .frei .hero__flasche { display: none; }
 @media (max-height: 520px) { .hero__flasche { display: none; } }
-.anim .hero__flasche img { animation-play-state: paused; }                    /* losgelassen: das Wackeln hält an, die Flasche fällt mit ihrer Neigung */
 @media (prefers-reduced-motion: reduce) { .hero__flasche img { animation: none; } }
 .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
 .anim .hero__text, .anim .beer__liquid { will-change: transform, opacity; }

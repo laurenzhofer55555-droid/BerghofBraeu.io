@@ -2,7 +2,7 @@
 
 Markenwebseite für das Berghof Hell aus Agatharied. Der Einstieg ist eine einzige Geste (ohne Bibliothek, ohne 3D-Flasche): Die Seite beginnt voll Bier
 (Bläschen, Titel „Berghof Hell“, Pfeil). Die Seite liegt unverändert dahinter, verschwommen; das Bier deckt sie zu. Eine Geste (Scrollen, Wischen, Pfeiltaste, Tipp oder Klick irgendwo) lässt in einer Fahrt von gut 4 s Folgendes ablaufen:
-Die wackelnde Flasche wird losgelassen und fällt (freier Fall, leicht geneigt, hinter dem Titel) nach unten aus dem Bild; gleichzeitig läuft das Bier von oben nach unten aus (Schaumkrone vorneweg) und gibt die
+Die wackelnde Flasche bleibt stehen, während das Bier an ihr vorbei ausläuft; sie fliegt erst mit dem Titel nach oben, wird dabei kleiner und verschwindet. Das Bier läuft von oben nach unten aus (Schaumkrone vorneweg) und gibt die
 verschwommene Seite frei (Gemälde und Schafe nur als weiche Farbflecken); dann fliegt der Titel (scharf, deutlich lesbar) nach oben an seinen Platz, dabei wird der Text klar, und zuletzt tauchen Gemälde und Schafe auf.
 Die Seite selbst bewegt sich nie, nichts blendet ein. Wie das Bier am Ende abgeht, ist bewusst offen (später evtl. eine eigene Animation).
 Das Intro läuft einmal: in Zustand C ist die Steuerung entfernt, die Seite ist eine ganz normale Webseite („Bier Animation erneut anzeigen“ im Fuß).
@@ -56,10 +56,9 @@ Dann http://localhost:5173 öffnen.
     Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
   Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen kurz nach dem Start und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
   der Fenstergröße kommt der Rest nach).
-- Die Geste in einer Fahrt (`T2`, `DRAIN`, `HOLD`, `G`, `TILT`, `FLY0`, `FLY1`, `KLAR0`, `KLAR1`, `BILD0`, `BILD1`, `BLUR`, `BLUR_BILD` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 4,25 s):
-  **Flasche** (`.hero__flasche`, absolut über dem Titelblock, `z-index: -1` also hinter dem Titel): bis `HOLD` (150 ms) steht sie wie gehalten, dann freier Fall `y = ½·G·t²` (G = 0,0026 px/ms², ca. 0,8 s über den
-  Bildschirm) mit bis zu 11° Neigung (das Wackeln hält an, `.anim .hero__flasche img`); der Fallweg `fallD` wird aus der Lage der Flasche gemessen; ist sie unten raus, bleibt sie `visibility: hidden` (sie hängt am Titel und
-  käme sonst beim Titelflug wieder ins Bild). **Auslaufen** (0 bis 2,4 s, `levelOf` = sinus-in-out): die Bieroberfläche (js/bier-leeren.js) sinkt von 16 px über dem oberen Rand bis mit Schaumkrone, Wellen und Schwappen
+- Die Geste in einer Fahrt (`T2`, `DRAIN`, `FLY0`, `FLY1`, `KLAR0`, `KLAR1`, `BILD0`, `BILD1`, `SCHRUMPF`, `BLUR`, `BLUR_BILD` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 4,25 s):
+  **Flasche** (`.hero__flasche`, absolut über dem Titelblock, `z-index: -1` also hinter dem Titel): steht sie still (das Wackeln läuft weiter, das Bier sinkt hinter dem Titel an ihr vorbei); beim Titelflug (`FLY0` bis `FLY1`) fliegt sie mit, wird dabei um `SCHRUMPF` (90 %) kleiner
+  (`transform: scale`, Fußpunkt `50% 100%` am Titel) und blendet ab 40 % des Fluges aus; danach bleibt sie `visibility: hidden` (sie hängt am Titel und käme sonst wieder ins Bild). **Auslaufen** (0 bis 2,4 s, `levelOf` = sinus-in-out): die Bieroberfläche (js/bier-leeren.js) sinkt von 16 px über dem oberen Rand bis mit Schaumkrone, Wellen und Schwappen
   (110 px Reserve) unter den unteren Rand; Start und Ende kommen aus der echten Höhe des Layers (100lvh, `beer.surfaceY`), der Pegel wird nur per `transform` verschoben. **Flug** (2,25 bis 3,45 s, cubic in-out): der Titel
   (`.hero__text`) fliegt von unten an seinen Platz (FLIP: der Weg `textDy` wird vorher gemessen, bewegt wird nur `translate3d`). **Klar**: der Text der Seite (`--blur`, 8 px, auf der Einleitung) wird von 2,3 bis 3,75 s scharf;
   Gemälde und Schafe (`--blur-bild`, 26 px, nur weiche Farbflecken) tauchen von 3,25 bis 4,2 s auf, also erst, wenn der Titel (fast) oben angekommen ist. Die Seite dahinter rührt sich nie: Einleitung, Gemälde, Schafe und der

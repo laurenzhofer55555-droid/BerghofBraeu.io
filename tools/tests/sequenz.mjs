@@ -162,7 +162,7 @@ async function zustandB() {
 
 // Die Geste (js/sequenz.js): 1. die Flasche wird losgelassen und fällt, das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, 2. der Titel fliegt nach oben an seinen Platz,
 // 3. dabei wird der Text klar, danach tauchen Gemälde und Schafe auf. Zustand B ist volle Bierfläche, die Seite steht von Anfang an still hinter dem Bier.
-const PH = { T2: 4250, DRAIN: 2400, HOLD: 150, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, G: 0.0026, TILT: 11, BLUR: 8, BLUR_BILD: 26 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
+const PH = { T2: 4250, DRAIN: 2400, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, SCHRUMPF: 0.9, BLUR: 8, BLUR_BILD: 26 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn der Geste
 const tOf = (P) => (P - 1) * PH.T2;
 const PAUSE_MESS = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; } .hero__flasche { visibility: hidden !important; }';
@@ -786,7 +786,7 @@ async function phasen() {
     try {
       await start(b, view);
       const pz = JSON.parse(await b.js('JSON.stringify(window.__sequenz.phasen)'));
-      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (gesamt ${pz.T2} ms, Fall ab ${pz.HOLD}, Auslaufen ${pz.DRAIN}, Flug ${pz.FLY0} bis ${pz.FLY1}, Text klar ${pz.KLAR0} bis ${pz.KLAR1}, Bild klar ${pz.BILD0} bis ${pz.BILD1}, Unschärfe ${pz.BLUR} / ${pz.BLUR_BILD} px)`, JSON.stringify(pz) === JSON.stringify(PH));
+      check(`phasen ${name}: Zahlen der Zeitleiste wie im Test (gesamt ${pz.T2} ms, Flasche steht bis ${pz.FLY0}, Auslaufen ${pz.DRAIN}, Flug ${pz.FLY0} bis ${pz.FLY1}, Text klar ${pz.KLAR0} bis ${pz.KLAR1}, Bild klar ${pz.BILD0} bis ${pz.BILD1}, Unschärfe ${pz.BLUR} / ${pz.BLUR_BILD} px)`, JSON.stringify(pz) === JSON.stringify(PH));
       const vor = JSON.parse(await b.js(`JSON.stringify({ blur: getComputedStyle(document.querySelector('.painting')).filter, lead: getComputedStyle(document.querySelector('.hero__lead')).filter, op: +getComputedStyle(document.querySelector('.painting')).opacity })`));
       check(`phasen ${name}: in B ist die Seite hinter dem Bier schon da: Einleitung leicht verschwommen („${vor.lead}“), Gemälde und Schafe stark (nur weiche Farbflecken, „${vor.blur}“), Deckkraft ${vor.op}`, /blur\(8px\)/.test(vor.lead) && /blur\(26px\)/.test(vor.blur) && vor.op === 1);
       await sleep(700);
@@ -826,19 +826,18 @@ async function phasen() {
       const bildBei = S.filter((x) => T(x) <= PH.BILD0 - 40).map((x) => x.bb);
       check(`phasen ${name}: Gemälde und Schafe bleiben weiche Farbflecken (${Math.min(...bildBei).toFixed(1)}–${Math.max(...bildBei).toFixed(1)} px), bis der Titel (fast) oben angekommen ist, tauchen dann auf (Unschärfe ${bb[0].toFixed(0)} → ${bild0 ? bild0.bb.toFixed(2) : '–'} px, beginnt bei ${Math.round(bildStart)} ms, Soll ab ${PH.BILD0}), nie wieder unschärfer`,
         bbAuf === 0 && bildBei.every((v) => v >= PH.BLUR_BILD - 0.8) && bildStart >= PH.BILD0 - 60 && bild0 && bild0.bb <= 0.3, JSON.stringify({ bbAuf, bildStart }));
-      // Flasche: gehalten, dann losgelassen: freier Fall (beschleunigt, ohne Ausblenden) mit Neigung, bis sie unten aus dem Bild ist, danach unsichtbar
-      const F = S.filter((x) => x.ft != null), f0 = F[0].ft, fl = F.filter((x) => T(x) >= PH.HOLD + 60 && T(x) <= 1000);
-      const raus0 = F.find((x) => x.ft >= view.h), fallZeit = raus0 ? T(raus0) : 1000;
-      let rueck2 = 0; for (let i = 1; i < F.length; i++) if (T(F[i]) < PH.FLY0 && F[i].ft < F[i - 1].ft - 0.5) rueck2++;
-      const fl2 = F.filter((x) => T(x) >= PH.HOLD + 60 && T(x) <= fallZeit - 20), v = []; for (let i = 1; i < fl2.length; i++) v.push((fl2[i].ft - fl2[i - 1].ft) / Math.max(1, fl2[i].t - fl2[i - 1].t));
-      const vA = v.slice(0, 4).reduce((a, x) => a + x, 0) / 4, vE = v.slice(-4).reduce((a, x) => a + x, 0) / 4;
-      const gehalten = F.filter((x) => T(x) < PH.HOLD - 40).every((x) => Math.abs(x.ft - f0) <= 1.5);
-      const raus = F.find((x) => x.ft >= view.h), vis = alleS.filter((x) => T(x) > PH.HOLD && x.fv != null);
-      check(`phasen ${name}: die Flasche wird gehalten (${PH.HOLD} ms) und dann losgelassen: sie fällt beschleunigt (Tempo am Anfang ${(vA * 1000).toFixed(0)}, am Ende ${(vE * 1000).toFixed(0)} px/s, Ende ≥ 3 × Anfang), nie wieder hoch, ist nach ${raus ? Math.round(T(raus)) : '–'} ms unten raus (Soll ${Math.round(PH.HOLD + Math.sqrt(2 * (view.h - f0) / PH.G))} ± 200)`,
-        gehalten && rueck2 === 0 && vE >= 3 * Math.max(vA, 0.05) && raus && Math.abs(T(raus) - (PH.HOLD + Math.sqrt(2 * (view.h - f0) / PH.G))) <= 200, JSON.stringify({ gehalten, rueck2, vA, vE }));
-      const fo = alleS.filter((x) => x.z === 'B' || x.z === undefined || true).map((x) => x.fop).filter((o) => o != null);
-      const erst = S.find((x) => x.ft >= view.h + 1), nach = erst ? S.filter((x) => T(x) >= T(erst) + 100).every((x) => x.fv === 'hidden') : false;
-      check(`phasen ${name}: die Flasche blendet nicht aus (Deckkraft immer ${Math.min(...fo)}–${Math.max(...fo)}), liegt hinter dem Titel (z-index ${await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).zIndex`)}) und ist nach dem Fall unsichtbar, kommt beim Titelflug nicht wieder`, Math.min(...fo) === 1 && nach, JSON.stringify({ erst: !!erst }));
+      // Flasche: steht während des Auslaufens still (gleiche Lage, volle Größe, Deckkraft 1), fliegt mit dem Titel nach oben, wird dabei kleiner und blendet aus, danach unsichtbar
+      const FB = alleS.filter((x) => x.ft != null && x.fw != null), f0 = FB[0], T0 = (x) => T(x);
+      const still = FB.filter((x) => T0(x) < PH.FLY0 - 40);
+      const stehtDa = still.length > 20 && still.every((x) => Math.abs(x.ft - f0.ft) <= 1.5 && Math.abs(x.fw - f0.fw) <= 0.5 && x.fop === 1 && x.fv === 'visible');
+      const fl = FB.filter((x) => T0(x) > PH.FLY0 + 80 && T0(x) < PH.FLY1 - 80);
+      let waechst = 0, hellerW = 0; for (let i = 1; i < fl.length; i++) { if (fl[i].fw > fl[i - 1].fw + 0.5) waechst++; if (fl[i].fop > fl[i - 1].fop + 0.01) hellerW++; }
+      const mitte = FB.find((x) => T0(x) >= (PH.FLY0 + PH.FLY1) / 2), ende = FB.find((x) => T0(x) >= PH.FLY1 + 20);
+      const klein = mitte && mitte.fw < f0.fw * 0.75 && mitte.fw > f0.fw * 0.1;
+      const weg = ende && ende.fv === 'hidden' && FB.filter((x) => T0(x) >= PH.FLY1 + 20).every((x) => x.fv === 'hidden');
+      const fo = alleS.map((x) => x.fop).filter((o) => o != null);
+      check(`phasen ${name}: die Flasche steht bis zum Titelflug still (${still.length} Bilder, Höhe ${f0.fw.toFixed(0)} px, Deckkraft 1), wird beim Flug kleiner (Mitte ${mitte ? mitte.fw.toFixed(0) : '–'} px hoch, nie wieder größer: ${waechst}×) und blendet aus (nie wieder heller: ${hellerW}×), ist nach ${PH.FLY1} ms weg (${ende ? ende.fv : '–'}), liegt hinter dem Titel (z-index ${await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).zIndex`)})`,
+        stehtDa && waechst === 0 && hellerW === 0 && klein && weg && Math.min(...fo) === 0, JSON.stringify({ stehtDa, waechst, hellerW, klein, weg }));
       // Die Seite steht still: Deckkraft 1, keine Verschiebung
       const Io = alleS.every((x) => x.ops.lead === 1 && x.ops.art === 1 && (breit || x.ops.herd === 1)), Ity = alleS.every((x) => x.tys.lead === 0 && x.tys.art === 0 && x.tys.herd === 0);
       check(`phasen ${name}: Einleitung, Gemälde${breit ? '' : ' und Herde'} bewegen sich nie und blenden nicht ein (Deckkraft 1, keine Verschiebung); es ändert sich nur die Unschärfe`, Io && Ity, JSON.stringify({ Io, Ity }));
@@ -1035,19 +1034,20 @@ async function flasche() {
         w.on.length >= 3 && w.on[0] >= 2950 && w.on[0] <= 3300 && Math.abs(w.on[1] - w.on[0] - 5000) <= 250 && Math.abs(w.on[2] - w.on[1] - 5000) <= 250 && w.d === 3000 && w.du === 5000 && w.it === 'Infinity', JSON.stringify(w));
       check(`flasche ${name}: keine Fehler, CLS 0`, b.errors.length === 0 && (await b.js('window.__cls')) === 0, b.errors[0] || String(await b.js('window.__cls')));
     } finally { b.close(); }
-    // Loslassen: die Flasche fällt nach unten aus dem Bild (nicht ausblenden), in C ist sie weg
+    // Die Flasche steht, bis der Titel hochfliegt, schrumpft dann mit ihm und verschwindet; in C ist sie weg
     b = await browser({ view });
     try {
       await start(b, view);
-      const y0 = await b.js(`document.querySelector('.hero__flasche img').getBoundingClientRect().top`);
-      const n0 = (await samples(b)).length;
+      const g = () => b.js(`JSON.stringify((() => { const f = document.querySelector('.hero__flasche'), r = f.getBoundingClientRect(); return { t: r.top, w: r.height, v: getComputedStyle(f).visibility, o: +getComputedStyle(f).opacity }; })())`).then(JSON.parse);
+      const y0 = await g();
       await keyPress(b, 'ArrowDown'); await sleep(1500);
-      const spaet = JSON.parse(await b.js(`JSON.stringify({ t: document.querySelector('.hero__flasche img').getBoundingClientRect().top, v: getComputedStyle(document.querySelector('.hero__flasche')).visibility, o: +getComputedStyle(document.querySelector('.hero__flasche')).opacity })`));
+      const mitten = await g();                       // 1,5 s: Bier läuft, Titel noch unten
+      await sleep(1500);                              // 3,0 s: Titel im Flug
+      const flug = await g();
       await waitZustand(b, 'C', 12000); await idle(b, 12000); await sleep(400);
       const anz = await b.js(`getComputedStyle(document.querySelector('.hero__flasche')).display`);
-      const Sm = (await samples(b)).slice(n0).filter((x) => x.P > 1 && x.z !== 'C' && x.ft != null);
-      check(`flasche ${name}: steht vor der Geste (Oberkante ${Math.round(y0)} px), fällt nach unten aus dem Bild (nach 1,5 s Oberkante ${Math.round(spaet.t)} px bei ${view.h} px Höhe, ${spaet.v}, Deckkraft ${spaet.o}), in C nicht mehr da (${anz})`,
-        spaet.t >= view.h && spaet.v === 'hidden' && spaet.o === 1 && Sm.length > 20 && anz === 'none', JSON.stringify({ n: Sm.length }));
+      check(`flasche ${name}: steht vor der Geste (Oberkante ${Math.round(y0.t)} px) und noch beim Auslaufen an derselben Stelle (nach 1,5 s ${Math.round(mitten.t)} px, Höhe ${Math.round(mitten.w)} px, Deckkraft ${mitten.o}), schrumpft im Titelflug (nach 3 s Höhe ${Math.round(flug.w)} px, Deckkraft ${flug.o}), in C nicht mehr da (${anz})`,
+        Math.abs(mitten.t - y0.t) <= 2 && Math.abs(mitten.w - y0.w) <= 1 && mitten.o === 1 && mitten.v === 'visible' && flug.w < y0.w * 0.8 && flug.o < 1 && anz === 'none', JSON.stringify({ y0, mitten, flug }));
     } finally { b.close(); }
     // Tipp oder Klick irgendwo löst das Auslaufen aus
     for (const [wo, fx, fy] of [['in der Mitte oben', 0.5, 0.2], ['auf die Flasche', 0.5, 0.35], ['links am Rand', 0.08, 0.6], ['auf den Titel', 0.5, 0.78]]) {
