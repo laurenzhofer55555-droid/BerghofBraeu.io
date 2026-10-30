@@ -29,7 +29,7 @@ Dann http://localhost:5173 öffnen.
   bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite (Zustand C)
 - `js/sequenz.js` – **Zustandsautomat mit zwei Zuständen und einem Übergang**, gleich auf Handy, iPad und Desktop:
   B Bier (der Start: ganzer Bildschirm Bier, Oberfläche knapp über dem Bildrand, kein Rahmen, Titel unten, Pfeil; die verschwommene Seite liegt dahinter)
-  → Geste (4,25 s: das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, der Titel fliegt nach oben, der Text wird klar, dann tauchen Gemälde und Schafe auf)
+  → Geste (4,25 s, auf dem Handy 3,75 s: das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, der Titel fliegt nach oben, der Text wird klar, dann tauchen Gemälde und Schafe auf)
   → C Inhalt (Titel, Einleitung; Tablet/Desktop: Schafe neben dem Titel und Gemälde neben dem Text, Handy: Herde unten; normal scrollbar). Einen Rückweg gibt es nicht.
   Alles hängt an einem Wert P (1 bis 2), der per Zeit animiert wird; jeder Zustand ist eine reine Funktion von P (`render`), am Ende
   der Animation wird der Zielzustand ausdrücklich gesetzt. Kein Einrasten, kein Scroll-Fortschritt, keine Bibliothek.
@@ -56,8 +56,8 @@ Dann http://localhost:5173 öffnen.
     Gemälde und fahren mit ihm. Keine Schafe mehr neben dem Titel.
   Die Bilder tragen `data-src` (und `data-nur="schmal|breit"`), `js/herde.js` setzt die Quellen kurz nach dem Start und lädt nur, was im aktuellen Layout sichtbar ist (beim Drehen oder Ändern
   der Fenstergröße kommt der Rest nach).
-- Die Geste in einer Fahrt (`T2`, `DRAIN`, `FLY0`, `FLY1`, `KLAR0`, `KLAR1`, `BILD0`, `BILD1`, `BLUR`, `BLUR_BILD` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 4,25 s):
-  **Auslaufen** (0 bis 2,4 s, `levelOf` = sinus-in-out): die Bieroberfläche (js/bier-leeren.js) sinkt von 16 px über dem oberen Rand bis mit Schaumkrone, Wellen und Schwappen
+- Die Geste in einer Fahrt (`T2`, `DRAIN`, `FLY0`, `FLY1`, `KLAR0`, `KLAR1`, `BILD0`, `BILD1`, `BLUR`, `BLUR_BILD` in `js/sequenz.js`; `P` läuft linear von 1 nach 2, `T = (P − 1) · T2`, insgesamt 4,25 s, auf dem Handy 3,75 s):
+  **Auslaufen** (0 bis 2,4 s, auf dem Handy unter 768 px Breite 1,9 s, die folgenden Phasen rücken dann um 0,5 s vor; `levelOf` = sinus-in-out): die Bieroberfläche (js/bier-leeren.js) sinkt von 16 px über dem oberen Rand bis mit Schaumkrone, Wellen und Schwappen
   (110 px Reserve) unter den unteren Rand; Start und Ende kommen aus der echten Höhe des Layers (100lvh, `beer.surfaceY`), der Pegel wird nur per `transform` verschoben. **Flug** (2,25 bis 3,45 s, cubic in-out): der Titel
   (`.hero__text`) fliegt von unten an seinen Platz (FLIP: der Weg `textDy` wird vorher gemessen, bewegt wird nur `translate3d`). **Klar**: der Text der Seite (`--blur`, 8 px, auf der Einleitung) wird von 2,3 bis 3,75 s scharf;
   Gemälde und Schafe (`--blur-bild`, 26 px, nur weiche Farbflecken) tauchen von 3,25 bis 4,2 s auf, also erst, wenn der Titel (fast) oben angekommen ist. Die Seite dahinter rührt sich nie: Einleitung, Gemälde, Schafe und der

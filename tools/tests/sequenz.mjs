@@ -20,6 +20,7 @@ const starts = async (b) => (await log(b)).filter((e) => e.art === 'start').leng
 
 // Seite öffnen, bis Zustand B steht (Bier, Titel, Pfeil)
 async function start(b, view, { throttled = false, path = '' } = {}) {
+  PH = view.w < 768 ? PH_HANDY : PH_GROSS;                            // Zeitleiste dieses Geräts
   await setView(b, view);
   if (throttled) await throttle(b);
   await b.send('Page.navigate', { url: BASE + path });
@@ -162,7 +163,9 @@ async function zustandB() {
 
 // Die Geste (js/sequenz.js): 1. das Bier läuft von oben nach unten aus und gibt die verschwommene Seite frei, 2. der Titel fliegt nach oben an seinen Platz,
 // 3. dabei wird der Text klar, danach tauchen Gemälde und Schafe auf. Zustand B ist volle Bierfläche, die Seite steht von Anfang an still hinter dem Bier.
-const PH = { T2: 4250, DRAIN: 2400, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, BLUR: 8, BLUR_BILD: 26 };      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
+const PH_GROSS = { T2: 4250, DRAIN: 2400, FLY0: 2250, FLY1: 3450, KLAR0: 2300, KLAR1: 3750, BILD0: 3250, BILD1: 4200, BLUR: 8, BLUR_BILD: 26 };
+const PH_HANDY = { T2: 3750, DRAIN: 1900, FLY0: 1750, FLY1: 2950, KLAR0: 1800, KLAR1: 3250, BILD0: 2750, BILD1: 3700, BLUR: 8, BLUR_BILD: 26 };   // Handy (< 768 px): Bier läuft schneller aus, der Rest rückt vor
+let PH = PH_GROSS;      // gleiche Zahlen wie in js/sequenz.js (window.__sequenz.phasen wird in „phasen“ gegengeprüft)
 const Pg2 = (T) => 1 + T / PH.T2;                                  // P zur Zeit T (ms) seit Beginn der Geste
 const tOf = (P) => (P - 1) * PH.T2;
 const PAUSE_MESS = '.scroll-cue svg, .beer__bubbles i { animation-play-state: paused !important; }';
@@ -193,7 +196,7 @@ async function geste2() {
       check(`geste2 ${name}: die Geste führt nach C`, await waitZustand(b2, 'C', 12000) && await idle(b2, 12000));
       const ev = (await log(b2)).slice(n0).filter((e) => e.art === 'start' || e.art === 'ende');
       const dauer = ev.find((e) => e.art === 'ende').t - ev.find((e) => e.art === 'start').t;
-      check(`geste2 ${name}: Dauer ≈ 4,25 s (${dauer} ms)`, dauer >= 4050 && dauer <= 4800);
+      check(`geste2 ${name}: Dauer ≈ ${(PH.T2 / 1000).toFixed(2).replace('.', ',')} s (${dauer} ms)`, dauer >= PH.T2 - 200 && dauer <= PH.T2 + 550);
       const alle = (await samples(b2)).slice(ns0).filter((x) => x.P != null), S = alle.filter((x) => x.P > 1 && x.z !== 'C' && tOf(x.P) <= PH.DRAIN);
       let rueck = 0, maxStep = 0;
       for (let i = 1; i < S.length; i++) { const d = S[i].level - S[i - 1].level; if (d < -0.5) rueck++; maxStep = Math.max(maxStep, d); }
@@ -204,7 +207,7 @@ async function geste2() {
       check(`geste2 ${name}: erste sichtbare Bewegung ${warte} ms nach der Geste (≤ 260, sinus-in-out läuft sanft an)`, warte != null && warte <= 260, JSON.stringify({ ein: ein && ein.t, bew: bew && bew.t }));
       // sinus-in-out: Tempo in der Mitte deutlich größer als am Anfang und am Ende
       const v = (a, b) => (S.find((x) => tOf(x.P) >= b).level - S.find((x) => tOf(x.P) >= a).level) / (S.find((x) => tOf(x.P) >= b).t - S.find((x) => tOf(x.P) >= a).t);
-      const vA = Math.abs(v(0, 300)), vM = Math.abs(v(1000, 1400)), vE = Math.abs(v(2100, 2390));
+      const D = PH.DRAIN, vA = Math.abs(v(0, 0.125 * D)), vM = Math.abs(v(0.417 * D, 0.583 * D)), vE = Math.abs(v(0.875 * D, 0.996 * D));   // Fenster wachsen mit der Auslaufzeit (Handy kürzer)
       check(`geste2 ${name}: weiches Anfahren und Ausklingen (Tempo Anfang ${(vA * 1000).toFixed(0)}, Mitte ${(vM * 1000).toFixed(0)}, Ende ${(vE * 1000).toFixed(0)} px/s; Mitte ≥ 2 × Anfang und Ende)`, vM >= 2 * vA && vM >= 2 * vE);
       check(`geste2 ${name}: keine Fehler`, b2.errors.length === 0, b2.errors[0] || '');
     } finally { b2.close(); }

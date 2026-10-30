@@ -20,8 +20,8 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=40660cc8';
-import { ladeHerde } from './herde.js?v=40660cc8';
+import { createBeer } from './bier-leeren.js?v=5df549b5';
+import { ladeHerde } from './herde.js?v=5df549b5';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
@@ -32,8 +32,12 @@ const hero = document.getElementById('start');
 //   FLY0 … FLY1      der Titel fliegt nach oben an seinen Platz (cubic in-out); er startet kurz bevor das Bier unten vorbei ist.
 //   KLAR0 … KLAR1    der Text der Seite wird klar: Unschärfe von BLUR px auf 0 (ease-out), beginnt mit dem Flug
 //   BILD0 … BILD1    Gemälde und Schafe tauchen auf: Unschärfe von BLUR_BILD px auf 0, beginnt erst, wenn der Titel (fast) oben angekommen ist
-const T2 = 4250;                                             // ms für die ganze Geste
-const DRAIN = 2400, FLY0 = 2250, FLY1 = 3450, KLAR0 = 2300, KLAR1 = 3750, BILD0 = 3250, BILD1 = 4200;
+// Auf dem Handy (schmaler als 768 px, wie das mobile Layout) läuft das Bier schneller aus (1,9 statt 2,4 s); alles danach rückt um die gewonnene Zeit vor,
+// die Dauer der übrigen Phasen bleibt gleich
+const PHONE = window.matchMedia('(max-width: 767px)').matches;
+const DRAIN = PHONE ? 1900 : 2400, SHIFT = DRAIN - 2400;
+const T2 = 4250 + SHIFT;                                     // ms für die ganze Geste (Desktop und Tablet 4250, Handy 3750)
+const FLY0 = 2250 + SHIFT, FLY1 = 3450 + SHIFT, KLAR0 = 2300 + SHIFT, KLAR1 = 3750 + SHIFT, BILD0 = 3250 + SHIFT, BILD1 = 4200 + SHIFT;
 const BLUR = 8, BLUR_BILD = 26;                              // px Unschärfe: Text der Seite hinter dem Bier (leicht) und Gemälde mit Schafen (stark)
 const FOAM_GAP = 12;                                         // px: Reserve zwischen Schaumkrone und Oberfläche für die Browserleisten
 const LOCK_AFTER = 400;       // ms Sperre nach der Animation
