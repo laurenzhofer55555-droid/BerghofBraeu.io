@@ -31,7 +31,7 @@ def render(loc, indent):
         lines.append(f'{pad}  <p>Ansprechpartner: {esc(loc["ansprechpartner"])}</p>')
     if loc.get('zeiten'):
         lines.append(f'{pad}  <p>{esc(loc["zeiten"])}</p>')
-    for key in ('telefon', 'festnetz'):   # Handy und Festnetz, je eine Zeile
+    for key in ('festnetz', 'telefon'):   # Festnetz und Handy, je eine Zeile
         if loc.get(key):
             tel = re.sub(r'[^\d+]', '', loc[key])
             if tel.startswith('0') and not tel.startswith('00'):
