@@ -31,11 +31,12 @@ def render(loc, indent):
         lines.append(f'{pad}  <p>Ansprechpartner: {esc(loc["ansprechpartner"])}</p>')
     if loc.get('zeiten'):
         lines.append(f'{pad}  <p>{esc(loc["zeiten"])}</p>')
-    if loc.get('telefon'):
-        tel = re.sub(r'[^\d+]', '', loc['telefon'])
-        if tel.startswith('0') and not tel.startswith('00'):
-            tel = '+49' + tel[1:]   # internationales Format für Handys
-        lines.append(f'{pad}  <p><a href="tel:{tel}">{esc(loc["telefon"])}</a></p>')
+    for key in ('telefon', 'festnetz'):   # Handy und Festnetz, je eine Zeile
+        if loc.get(key):
+            tel = re.sub(r'[^\d+]', '', loc[key])
+            if tel.startswith('0') and not tel.startswith('00'):
+                tel = '+49' + tel[1:]   # internationales Format für Handys
+            lines.append(f'{pad}  <p><a href="tel:{tel}">{esc(loc[key])}</a></p>')
     if loc.get('email'):
         lines.append(f'{pad}  <p><a href="mailto:{esc(loc["email"])}">{esc(loc["email"])}</a></p>')
     query = quote(f'{loc["strasse"]}, {re.sub(r"\s*\(.*?\)", "", loc["ort"])}')

@@ -480,6 +480,10 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 .legal h2::after { display: none; }
 .legal a { color: var(--green); }
 .legal .back { color: var(--green); text-decoration: none; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; }
+.legal--fein { font-size: 15px; line-height: 1.65; }      /* Datenschutzerklärung: Kleingedrucktes, deutlich ruhiger als das Impressum */
+.legal--fein h1 { font-size: clamp(30px, 4.2vw, 42px); margin: 1rem 0 1.4rem; }
+.legal--fein h2 { font-size: clamp(16px, 1.5vw, 18px); margin: 1.8rem 0 .4rem; }
+.legal--fein .back { font-size: 12px; }
 .small { font-size: 13px; color: var(--green-soft); }
 
 /* Platzhalter, die noch ausgefüllt werden müssen */
