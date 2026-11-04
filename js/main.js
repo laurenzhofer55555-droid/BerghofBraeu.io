@@ -3,10 +3,10 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=8bfb47ea';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=8bfb47ea';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=8bfb47ea';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=8bfb47ea';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import './altersabfrage.js?v=a1fb08de';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=a1fb08de';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=a1fb08de';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=a1fb08de';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -33,7 +33,7 @@ const unlock = () => { root.classList.remove('seq'); root.classList.add('frei');
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=8bfb47ea').catch((e) => {
+  import('./sequenz.js?v=a1fb08de').catch((e) => {
     console.warn('Start mit Bier konnte nicht geladen werden, die Seite wird freigegeben', e);
     unlock();
   });

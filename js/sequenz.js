@@ -20,8 +20,8 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=8bfb47ea';
-import { ladeHerde } from './herde.js?v=8bfb47ea';
+import { createBeer } from './bier-leeren.js?v=a1fb08de';
+import { ladeHerde } from './herde.js?v=a1fb08de';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
@@ -55,6 +55,8 @@ const el = {
   cue: hero.querySelector('.scroll-cue'),
   frame: hero.querySelector(':scope > .frame'),
   text: hero.querySelector('.hero__text'),
+  lead: hero.querySelector('.hero__lead'),
+  painting: hero.querySelector('.painting'),
   beer: hero.querySelector('.beer'),
   header: document.querySelector('.site-header'),
   skip: document.querySelector('[data-skip]'),
@@ -146,8 +148,11 @@ function render(pv) {
   put('textY', el.text, 'transform', `translate3d(0, ${(textDy * (1 - fly)).toFixed(1)}px, 0)`);
 
   // Die Seite hinter dem Bier (Einleitung, Schafe, Gemälde, Seitenrahmen) steht still an ihrem Platz, verschwommen; mit dem Titelflug wird der Text klar, danach tauchen Gemälde und Schafe auf
-  put('blur', root, '--blur', (BLUR * (1 - easeOut(ramp(T, KLAR0, KLAR1)))).toFixed(2) + 'px');
-  put('blurBild', root, '--blur-bild', (BLUR_BILD * (1 - easeOut(ramp(T, BILD0, BILD1)))).toFixed(2) + 'px');   // Gemälde und Schafe: erst weiche Farbflecken, tauchen auf, wenn der Titel oben ist
+  // Die Unschärfe steht als Variable direkt an den betroffenen Elementen (nicht an <html>): bei jeder Änderung rechnet der Browser nur deren Stile neu, nicht die ganze Seite
+  put('blur', el.lead, '--blur', (BLUR * (1 - easeOut(ramp(T, KLAR0, KLAR1)))).toFixed(2) + 'px');
+  const blurBild = (BLUR_BILD * (1 - easeOut(ramp(T, BILD0, BILD1)))).toFixed(2) + 'px';
+  put('blurBild', el.painting, '--blur-bild', blurBild);
+  put('blurHerde', el.herd ||= hero.querySelector('.herd'), '--blur-bild', blurBild);   // die Herde (Handy) baut js/herde.js erst bei Bedarf   // Gemälde und Schafe: erst weiche Farbflecken, tauchen auf, wenn der Titel oben ist
 
   // Der Startrahmen mit Eckverzierung ist nicht mehr da; „Hofer Bräu“ oben bleibt frei: die Creme-Fläche dahinter (unterbricht die Rahmenlinie des Seitenrahmens) kommt,
   // sobald die Schaumkrone unter dem oberen Rand ist (vorher steht dort Bier)
