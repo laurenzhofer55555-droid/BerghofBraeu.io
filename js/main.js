@@ -3,11 +3,11 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=4f9e7465';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=4f9e7465';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=4f9e7465';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=4f9e7465';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
-import { winterZeit } from './winter-zeit.js?v=4f9e7465';     // Wintersaison (1. Advent bis 6. Januar) oder ?winter=1
+import './altersabfrage.js?v=fc069a9e';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=fc069a9e';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=fc069a9e';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=fc069a9e';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import { winterZeit } from './winter-zeit.js?v=fc069a9e';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -29,21 +29,11 @@ if (css) {
   }
 }
 
-const root = document.documentElement;
-const unlock = () => { root.classList.remove('seq'); root.classList.add('frei'); ladeHerde(); };
-if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
-} else {
-  import('./sequenz.js?v=4f9e7465').catch((e) => {
-    console.warn('Start mit Bier konnte nicht geladen werden, die Seite wird freigegeben', e);
-    unlock();
-  });
-  const guard = () => setTimeout(() => { if (!window.__sequenz) unlock(); }, 8000);
-  if (document.readyState === 'complete') guard(); else window.addEventListener('load', guard, { once: true });
-}
+// Der Start mit dem auslaufenden Bier ist in dieser Ausgabe entfernt (js/sequenz.js wird nicht mehr geladen): die Seite steht sofort da, die Herde lädt nach dem Laden.
+if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 
-// Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts. Sie wartet selbst, bis das Bier ausgelaufen ist.
+// Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts.
 const winter = winterZeit();
 if (winter.saison) {
-  import('./winter.js?v=4f9e7465').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
+  import('./winter.js?v=fc069a9e').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
 }

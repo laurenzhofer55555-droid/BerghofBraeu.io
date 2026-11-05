@@ -24,6 +24,10 @@
   src: url('../vendor/fonts/source-serif-4-latin-wght-italic.woff2') format('woff2');
   font-weight: 200 900; font-style: italic; font-display: swap;
 }
+/* Oswald: die Schrift des Etiketts, jetzt für die ganze Seite (lokal, auf Latein beschnitten, SIL Open Font License) */
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: block; }
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
 /* Ersatzschrift, solange die Schriften laden: Georgia, auf Breite und Höhe der Webschriften gebracht
    (gemessen in Chrome) → Titel und Text springen beim Schriftwechsel nicht. Gleiche Werte im Start-CSS von index.html. */
 @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
@@ -31,16 +35,21 @@
 @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
 
 :root {
-  --cream: #F7F4EC;
-  --cream-deep: #EFEADD;
-  --green: #1F4D2B;
-  --green-soft: #1F4D2B;   /* Nebentext: dasselbe Tannengrün wie --green (eine Grünfarbe über die ganze Seite) */
+  /* DUNKLE AUSGABE: Hintergrund Tannengrün, alle Schrift und alle Linien weiß (Creme). Die Namen bleiben wie früher: --cream ist der Seitengrund, --green die Schrift- und Linienfarbe. */
+  --cream: #1F4D2B;        /* Seitenhintergrund: Tannengrün */
+  --cream-deep: #194424;   /* etwas tiefer (Kartengrund, Felder) */
+  --green: #F7F4EC;        /* Schrift, Überschriften, Linien: Weiß (Creme des Etiketts) */
+  --green-soft: #F7F4EC;
   --gold: #B8913A;         /* nur für Linien und Ornamente */
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
-  --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
-  --ink: #22301f;
-  --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
-  --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
+  --gold-text: #DDC27B;    /* Gold für kleine Schrift auf Grün */
+  --ink: #F2EFE5;
+  --rahmen-weiss: #F7F4EC; /* Rahmen wie das Etikett: außen Weiß, innen Hellblau */
+  --rahmen-blau: #86B4C6;
+  --font-display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-text: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-winter: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
   --frame-gap: calc(var(--frame-inset) + 18px);    /* Abschnitte und ihre Trennlinien: innerhalb des Seitenrahmens */
   --gutter: calc(var(--frame-inset) + 24px);       /* Inhalt des Starts: Abstand zum Bildrand, mindestens 24 px hinter dem Rahmen */
@@ -51,8 +60,9 @@
 html, body { margin: 0; background: var(--cream); color: var(--ink); }
 body {
   font-family: var(--font-text);
-  font-size: 18px;
-  line-height: 1.6;
+  font-size: 17.5px;
+  line-height: 1.65;
+  letter-spacing: .012em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -69,7 +79,7 @@ img { max-width: 100%; height: auto; }
 body::after {
   content: '';
   position: fixed; inset: 0; z-index: 50; pointer-events: none;
-  opacity: .5;
+  opacity: .16;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -99,21 +109,21 @@ main { position: relative; z-index: 2; }
 .site-header__brand span { margin-right: -.32em; }
 
 /* ── Start ───────────────────────────── */
-/* Doppelrahmen: kräftige grüne Linie außen, feine goldene innen – wie beim Etikett */
+/* Doppelrahmen wie beim Etikett: außen eine weiße Linie, innen eine hellblaue; vier Rauten (weiß, mit hellblauem Ring) in den Ecken */
 .frame {
   position: absolute; inset: var(--frame-inset);
-  border: 1.5px solid var(--green);
+  border: 1.5px solid var(--rahmen-weiss);
   pointer-events: none;
 }
 .frame::before {
   content: '';
   position: absolute; inset: 5px;
-  border: 1px solid var(--gold);
-  opacity: .8;
+  border: 1.5px solid var(--rahmen-blau);
 }
 .frame__corner {
   position: absolute; width: 9px; height: 9px;
-  background: var(--gold);
+  background: var(--rahmen-weiss);
+  box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--rahmen-blau);
   transform: rotate(45deg);
 }
 .frame__corner--tl { top: 1px; left: 1px; }
@@ -151,7 +161,7 @@ html:not(.seq) .skip, .frei .skip { display: none; }
   padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
   --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
   --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
-  --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
+  --dy-css: calc((100svh - var(--text-h)) / 2 - var(--hero-top));   /* Start: Titelblock mittig im Bild */
   --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
 }
 html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
@@ -159,7 +169,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
+.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel mittig auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
+.seq:not(.frei) .hero__text, .seq:not(.frei) .site-header__brand, .seq:not(.frei) .scroll-cue { text-shadow: 0 1px 16px rgba(18, 48, 28, .4); }   /* weiße Schrift auf Biergold: ein weicher grüner Schatten hält sie lesbar */
 .seq:not(.frei) .hero__lead { filter: blur(var(--blur, 8px)); }
 .seq:not(.frei) .painting, .seq:not(.frei) .herd .sheep { filter: blur(var(--blur-bild, 26px)); }                    /* Gemälde und Schafe sind zuerst nur weiche Farbflecken und tauchen erst auf, wenn der Titel oben angekommen ist; Handy: jedes Schaf einzeln weichgezeichnet, nicht der bildschirmgroße Herdenbehälter (der kostete beim Auslaufen den Großteil der Zeichenarbeit pro Bild) */
 /* Die Seite hinter dem Bier ist verschwommen und wird nach dem Titelflug klar (Filter nicht auf .hero__more: er würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt). */
@@ -178,8 +189,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   .hero { --g2: 28px; }
   .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
   .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
+  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: var(--cream-deep); border: 1px solid var(--gold); border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 18px 40px -18px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .25); }
   .painting__bild > img { border: 1px solid var(--green); }
 }
 @media (min-width: 768px) {
@@ -216,16 +227,16 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; z-index: 4;   /* über dem Bier */
   position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
-  color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
+  color: var(--green); opacity: .95; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
 }
 .seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
 .seq.frei .scroll-cue { display: none; }
-.scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
+.scroll-cue:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 8px; }
 .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-.scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.scroll-cue .cue-arrow path { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes cue { 50% { transform: translateY(8px); } }
 /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
-.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
+.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: var(--green); }
 .scroll-cue__mouse { display: none; }
 @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
 @media not all and (max-aspect-ratio: 4/5) {
@@ -280,19 +291,19 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: block;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: var(--title-f);
+  font-size: calc(var(--title-f) * 1.08);
   line-height: 1;
-  letter-spacing: -.005em;
+  letter-spacing: .08em; padding-left: .08em; text-transform: uppercase;
   color: var(--green);
   white-space: nowrap;
 }
-.hero__title em { font-style: italic; font-weight: 400; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
+.hero__title em { font-style: normal; font-weight: 500; line-height: 0; }   /* Titel in einer Zeile, ein Schriftschnitt */
 .hero__claim {
   display: block;
   font-family: var(--font-text);
   font-size: 14px;
   line-height: 1.4;
-  letter-spacing: .26em; text-transform: uppercase;
+  letter-spacing: .3em; text-transform: uppercase;
   color: var(--green-soft);
 }
 /* Rauten-Ornament zwischen Titel und Unterzeile */
@@ -324,7 +335,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 h2 {
   margin: 0;
   font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(36px, 4.6vw, 58px); line-height: 1.1;
+  font-size: clamp(32px, 4.2vw, 52px); line-height: 1.15; letter-spacing: .05em; text-transform: uppercase;
   color: var(--green);
 }
 h2::after {
@@ -337,7 +348,7 @@ h2::after {
 h3 {
   margin: 0 0 8px;
   font-family: var(--font-display); font-weight: 500;
-  font-size: 26px; line-height: 1.2;
+  font-size: 24px; line-height: 1.2; letter-spacing: .05em; text-transform: uppercase;
   color: var(--green);
 }
 .lead { margin: 24px 0 0; font-size: clamp(16.5px, 1.35vw, 18px); color: var(--ink); }
@@ -348,6 +359,8 @@ h3 {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px);
   text-align: center;
 }
+.ingredient__art { stroke: var(--green); }
+.ingredient__art [fill="#F7F4EC"] { fill: var(--cream); }          /* Symbole: weiße Linien, Füllung wie der Grund */
 .ingredient__art { display: block; width: 132px; height: 140px; margin: 0 auto 18px; }
 .ingredient p { margin: 0 auto; max-width: 26ch; color: var(--ink); }
 
@@ -400,11 +413,12 @@ h3 {
   content: ''; grid-row: 2; grid-column: 1; justify-self: start; box-sizing: border-box; width: 13px; height: 13px; border-radius: 50%;
   background: var(--cream); border: 1.5px solid var(--green);
 }
-.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
+.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); letter-spacing: .04em; font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
 .timeline li p { grid-row: 3; grid-column: 1; margin: 0; padding-right: clamp(14px, 2.4vw, 32px); }
 .timeline__hint { display: none; }
 @media (min-width: 769px) { .timeline { width: calc(100% - 80px); margin-inline: auto; transform: translateX(var(--tl-shift, 0px)); } }      /* js/timeline.js: der sichtbare Block (1556 … Heute) steht optisch genau mittig unter der Überschrift */
 
+.berghof__drawing { filter: brightness(0) invert(.96) sepia(.1); opacity: .92; }
 .berghof__drawing { display: block; width: min(760px, 100%); margin: clamp(56px, 9vh, 96px) auto 0; }
 
 /* Standort */
@@ -429,7 +443,7 @@ h3 {
   border: 1.5px solid var(--green);
   transition: opacity .3s ease;
 }
-.map img { display: block; width: 100%; height: auto; }
+.map img { display: block; width: 100%; height: auto; filter: grayscale(1) invert(1) contrast(1.15); mix-blend-mode: screen; }   /* Skizze: weiße Linien auf dem grünen Grund */
 .map:hover { opacity: .9; }
 .map:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 3px; }
 
@@ -441,7 +455,7 @@ h3 {
   font: 600 13px/1 var(--font-text); letter-spacing: .22em; text-transform: uppercase;
   cursor: pointer;
 }
-.button:hover { background: #173b21; }
+.button:hover { background: #E3DECF; }
 a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 3px; }
 
 /* ── Footer ─────────────────────────── */
@@ -545,3 +559,7 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
+
+/* Oswald hat keine Kursive: überall steil → gerade; „fett“ ist der Schnitt 600 */
+em, i, cite, address, figcaption, .painting figcaption, .brewer, .hero__title em, .location__item address, .timeline__year { font-style: normal; }
+strong, b { font-weight: 600; }

@@ -5,8 +5,8 @@
 // dann fahren die Äste ein und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
 // Im Fuß gibt es einen Schalter „Winterschmuck ausblenden“. Die Kugeln hängen still und schwingen nur, wenn Zeiger oder Finger sie berühren.
 // Bei „Bewegung reduzieren“ steht alles still (kein Schnee, kein Schwingen, kein Funkeln).
-import { schneeStart } from './winter-schnee.js?v=4f9e7465';
-import { gipfel } from './winter-gipfel.js?v=4f9e7465';
+import { schneeStart } from './winter-schnee.js?v=fc069a9e';
+import { gipfel } from './winter-gipfel.js?v=fc069a9e';
 
 const root = document.documentElement;
 const stillstand = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,7 +25,8 @@ function zufall(seed) {
 // ── Tannenzweig: Stamm als Kurve von der Ecke, Nadeln als kurze Striche in drei Grüntönen (je Farbe ein Pfad), goldene Lichter ──
 const NADELN = {
   hell: ['#173b21', '#1F4D2B', '#2f6b40', '#3f8052'],       // auf Creme
-  nacht: ['#1F4D2B', '#2f6b40', '#4a8a5c', '#6aa57a'],      // auf Tannengrün
+  nacht: ['#1F4D2B', '#2f6b40', '#4a8a5c', '#6aa57a'],      // auf dunklem Tannengrün (Nachtbild)
+  dunkel: ['#3A7F50', '#4F9462', '#6DB07E', '#8FC99C'],     // auf dem grünen Seitengrund der dunklen Ausgabe: heller als der Grund, sonst verschwinden die Nadeln
 };
 function zweig(breite, farben, seed) {
   const r = zufall(seed);
@@ -82,6 +83,8 @@ const GLAS = {
   gold: ['#f7e6ae', '#dcbc66', '#C5A149', '#7a5c1c'],
   creme: ['#ffffff', '#F7F4EC', '#ddd5bf', '#b3a47c'],
   nacht: ['#3f7c55', '#1d4a2c', '#12301c', '#06150b'],
+  blau: ['#ecf6f9', '#a9d0de', '#7FB2C6', '#3d7388'],        // hellblau wie der Rahmen und das Etikett
+  blau2: ['#b9d9e5', '#6fa3b8', '#3F7A90', '#1d4558'],
 };
 function defs() {
   const kugel = Object.entries(GLAS).map(([name, c]) =>
@@ -94,12 +97,16 @@ function defs() {
     <clipPath id="w-clip"><circle cx="50" cy="86" r="39.5"/></clipPath></defs></svg>`;
 }
 const SCHMUCK = {
+  blau: null,
+  blau2: null,
   creme: `<g clip-path="url(#w-clip)" fill="none" stroke="#B8913A" stroke-width="1.5"><path d="M8 76Q50 98 92 76"/><path d="M8 87Q50 109 92 87"/>
     <g fill="#B8913A" stroke="none"><path d="M50 87.5l4 5-4 5-4-5z"/><path d="M30 84.7l3.4 4.2-3.4 4.2-3.4-4.2z"/><path d="M70 84.7l3.4 4.2-3.4 4.2-3.4-4.2z"/><path d="M17 80.4l2.8 3.5-2.8 3.5-2.8-3.5z"/><path d="M83 80.4l2.8 3.5-2.8 3.5-2.8-3.5z"/></g></g>`,
   nacht: `<g fill="#E8CE86"><path d="M52 66l3.4 13.6 13.6 3.4-13.6 3.4L52 100l-3.4-13.6L35 83l13.6-3.4z"/></g><g fill="#C5A149"><circle cx="30" cy="104" r="1.3"/><circle cx="72" cy="102" r="1.3"/><circle cx="76" cy="70" r="1.1"/></g>`,
   gruen: `<g clip-path="url(#w-clip)" fill="#F7F4EC">${Array.from({ length: 13 }, (_, i) => { const x = 14 + i * 6, y = 80 + 17 * Math.sin((i / 12) * Math.PI); return `<circle cx="${x}" cy="${y.toFixed(1)}" r="1.5"/>`; }).join('')}</g>`,
   gold: `<g fill="none" stroke="#fff3c4" stroke-opacity=".28" stroke-width="1"><path d="M50 46Q18 86 50 126"/><path d="M50 46Q82 86 50 126"/></g>`,
 };
+SCHMUCK.blau = SCHMUCK.gruen;     // Perlenkette
+SCHMUCK.blau2 = SCHMUCK.nacht;    // goldener Stern
 function kugelSvg(finish) {
   return `<svg class="w-kugel__svg" viewBox="0 20 100 112" focusable="false" aria-hidden="true">`
     + `<circle cx="50" cy="27" r="6.5" fill="none" stroke="#B8913A" stroke-width="2"/>`
@@ -123,13 +130,26 @@ function kugel(eltern, { x, y, s, L, f, i = 0 }) {
   eltern.appendChild(wurzel);
   const k = { wurzel, th: 0, om: 0, w: 2.1 * Math.sqrt(120 / (L + s * .5)), sichtbar: true, io: null };
   if (!stillstand) {
-    wurzel.addEventListener('pointerenter', (e) => { if (performance.now() >= ruheBis) stossen(k, e, 1.1); });
-    wurzel.addEventListener('pointerdown', (e) => stossen(k, e, 2.4));
+    wurzel.addEventListener('pointerenter', (e) => { if (performance.now() >= ruheBis) stossen(k, e, .5); });
+    // Osterei: sechs Klicks oder Tipps hintereinander (jeweils höchstens 2 s Pause): die Kugel dreht sich zweimal um ihren Faden und hüpft dabei
+    let klicks = 0, letzter = 0;
+    wurzel.addEventListener('pointerdown', (e) => {
+      const jetzt = performance.now();
+      klicks = jetzt - letzter < 2000 ? klicks + 1 : 1; letzter = jetzt;
+      if (klicks >= 6) { klicks = 0; flip(k); return; }
+      stossen(k, e, .85);
+    });
     k.io = new IntersectionObserver(([e]) => { k.sichtbar = e.isIntersecting; });
     k.io.observe(wurzel);
     kugeln.add(k);
   }
   return k;
+}
+function flip(k) {
+  const sv = k.wurzel.querySelector('.w-kugel__svg');
+  if (k.wurzel.classList.contains('w-flip')) return;
+  k.wurzel.classList.add('w-flip');
+  sv.addEventListener('animationend', () => { k.wurzel.classList.remove('w-flip'); k.om += (Math.random() < .5 ? 1 : -1) * .5; anstossen(); }, { once: true });     // nach der Landung wippt sie kurz nach
 }
 function stossen(k, e, kraft) {
   const r = k.wurzel.getBoundingClientRect();
@@ -148,7 +168,7 @@ function schritt(jetzt) {
   if (!document.hidden && !(root.classList.contains('seq') && !root.classList.contains('frei'))) {
     for (const k of kugeln) {
       if (!k.th && !k.om) continue;
-      k.om += (-k.w * k.w * Math.sin(k.th) - 2 * .3 * k.w * k.om) * dt;
+      k.om += (-k.w * k.w * Math.sin(k.th) - 2 * .38 * k.w * k.om) * dt;
       k.th += k.om * dt;
       if (Math.abs(k.th) < .002 && Math.abs(k.om) < .01) { k.th = k.om = 0; k.wurzel.style.transform = ''; continue; }   // ausgependelt: wieder ganz ruhig
       k.wurzel.style.transform = `rotate(${(k.th * 57.2958).toFixed(2)}deg)`;
@@ -164,13 +184,13 @@ function pendelnEntfernen(eltern) {
 // ── Zweig mit Kugeln in beide Ecken eines Containers (Start-Bereich und Nachtbild) ──
 const PLAN = {
   breit: {
-    l: [{ t: .3, L: 52, s: 46, f: 'gold' }, { t: .58, L: 118, s: 64, f: 'gruen' }, { t: .86, L: 58, s: 48, f: 'creme' }],
-    r: [{ t: .27, L: 68, s: 50, f: 'creme' }, { t: .56, L: 132, s: 60, f: 'nacht' }, { t: .84, L: 54, s: 44, f: 'gold' }],
+    l: [{ t: .3, L: 52, s: 46, f: 'gold' }, { t: .58, L: 118, s: 64, f: 'blau' }, { t: .86, L: 58, s: 48, f: 'creme' }],
+    r: [{ t: .27, L: 68, s: 50, f: 'creme' }, { t: .56, L: 132, s: 60, f: 'blau2' }, { t: .84, L: 54, s: 44, f: 'gold' }],
   },
   // schmale Bilder (Handy, Tablet): der Titel steht dicht unter den Zweigen, die Kugeln hängen ganz außen und kurz
   schmal: {
-    l: [{ t: .24, L: 60, s: 32, f: 'gold' }, { t: .5, L: 22, s: 28, f: 'gruen' }],
-    r: [{ t: .24, L: 50, s: 30, f: 'creme' }, { t: .5, L: 20, s: 26, f: 'nacht' }],
+    l: [{ t: .24, L: 10, s: 26, f: 'gold' }, { t: .52, L: 4, s: 24, f: 'blau' }],       // kurze Fäden: der breite Titel (Oswald, Versalien) beginnt gleich darunter
+    r: [{ t: .24, L: 8, s: 25, f: 'creme' }, { t: .52, L: 4, s: 23, f: 'blau2' }],
   },
 };
 function ecken(behaelter, farben, anteil) {
@@ -227,7 +247,7 @@ function einschalten() {
     if (bild) { zeichnung = { bild, marke: document.createComment('winter') }; bild.replaceWith(zeichnung.marke); }
     schluss = gipfel(zeichnung ? zeichnung.marke : document.querySelector('#berghof .section__inner > :last-child'));
     const bauen = () => {
-      if (deko) { pendelnEntfernen(deko); deko.textContent = ''; ecken(deko, NADELN.hell, .22); }
+      if (deko) { pendelnEntfernen(deko); deko.textContent = ''; ecken(deko, NADELN.dunkel, .22); }
       gruppeBreite = innerWidth;
     };
     bauen();
@@ -270,7 +290,7 @@ function schalter() {
 }
 
 export function start({ an }) {
-  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=4f9e7465', import.meta.url).href;
+  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=fc069a9e', import.meta.url).href;
   const fertig = new Promise((res) => { css.onload = css.onerror = res; setTimeout(res, 3000); });
   document.head.appendChild(css);
   fertig.then(() => {

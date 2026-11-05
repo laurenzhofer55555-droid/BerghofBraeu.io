@@ -50,17 +50,22 @@ export function schneeStart() {
   canvas.setAttribute('aria-hidden', 'true');
   document.body.appendChild(canvas);
   const g = canvas.getContext('2d');
-  let w = 0, h = 0, dpr = 1, bilder = [], flocken = [], lauf = 0, zuletzt = 0, t = 0, los = false;
+  let w = 0, h = 0, dpr = 1, bilder = [], flocken = [], lauf = 0, zuletzt = 0, t = 0, los = false, leer = false;
+  const bild0 = document.querySelector('#start .painting');       // das Stallhofer-Bild: ab hier schneit es nicht mehr
+
+  // Oben schneit es dichter als unten: jede Flocke löst sich auf ihrem Weg in einer eigenen Höhe (zwischen 50 % und 110 % der Bildhöhe, ein Teil schneit also bis unten durch) langsam auf und fängt oben neu an;
+  // je tiefer, desto weniger Flocken sind noch da.
+  const ziel = () => .5 + Math.random() * .6;
 
   function messen() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     w = innerWidth; h = innerHeight;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     bilder = Array.from({ length: STUFEN }, (_, i) => [0, 1, 2].map((v) => flockenBild(i, v, dpr)));
-    const anzahl = Math.round(Math.min(120, Math.max(34, (w * h) / 15000)));
+    const anzahl = Math.round(Math.min(150, Math.max(44, (w * h) / 12000)));       // unten wird es dünn (siehe ende), darum etwas mehr Flocken
     flocken = Array.from({ length: anzahl }, () => {
       const s = Math.random() ** 1.6;                         // viele kleine, wenige große Flocken
-      return { x: Math.random() * w, y: Math.random() * h, s: Math.min(STUFEN - 1, Math.floor(s * STUFEN)), v: Math.floor(Math.random() * 3), ph: Math.random() * 6.28, fr: .4 + Math.random() * .7, amp: 8 + Math.random() * 16 };
+      return { x: Math.random() * w, y: Math.random() * h, s: Math.min(STUFEN - 1, Math.floor(s * STUFEN)), v: Math.floor(Math.random() * 3), ph: Math.random() * 6.28, fr: .4 + Math.random() * .7, amp: 8 + Math.random() * 16, ende: ziel() };
     });
   }
 
@@ -68,6 +73,10 @@ export function schneeStart() {
     lauf = requestAnimationFrame(bild);
     const dt = Math.min(.05, (jetzt - zuletzt) / 1000 || .016); zuletzt = jetzt; t += dt;
     if (document.hidden || (root.classList.contains('seq') && !root.classList.contains('frei') && !root.classList.contains('w-bier-weg'))) return;   // erst, wenn das Bier weg ist
+    // Schnee gibt es nur ganz oben auf der Seite: er blendet aus, sobald das Stallhofer-Bild nach oben ins Bild rückt (ab etwa 10 % der Bildhöhe ist er weg) und fällt beim Weiterscrollen gar nicht mehr
+    const sicht = bild0 ? Math.max(0, Math.min(1, (bild0.getBoundingClientRect().top - h * .1) / (h * .35))) : 1;
+    if (sicht <= 0) { if (!leer) { leer = true; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); } return; }
+    leer = false;
     if (!los) { los = true; for (const f of flocken) f.y = -Math.random() * h * 1.05; }          // der erste Schnee kommt von oben herein
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, canvas.width, canvas.height);
@@ -77,10 +86,10 @@ export function schneeStart() {
       const tief = (f.s + 1) / STUFEN;                         // große Flocken liegen näher: fallen schneller, wirken kräftiger
       f.y += (26 + tief * 54) * dt;
       f.x += (Math.sin(t * f.fr + f.ph) * f.amp * .35 + wind * tief) * dt;
-      if (f.y > h + 8) { f.y = -8; f.x = Math.random() * w; }
+      if (f.y > f.ende * h + 4) { f.y = -8; f.x = Math.random() * w; f.ende = ziel(); }
       if (f.x > w + 8) f.x = -8; else if (f.x < -8) f.x = w + 8;
       const b = bilder[f.s][f.v];
-      g.globalAlpha = .55 + tief * .45;
+      g.globalAlpha = (.55 + tief * .45) * Math.max(0, Math.min(1, (f.ende * h - f.y) / (h * .22))) * sicht;
       g.drawImage(b.c, f.x - b.rand, f.y - b.rand, b.rand * 2, b.rand * 2);
     }
   }
