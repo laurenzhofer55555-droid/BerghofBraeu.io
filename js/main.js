@@ -3,11 +3,11 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=4f9e7465';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=4f9e7465';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=4f9e7465';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=4f9e7465';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
-import { winterZeit } from './winter-zeit.js?v=4f9e7465';     // Wintersaison (1. Advent bis 6. Januar) oder ?winter=1
+import './altersabfrage.js?v=6fe9269f';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=6fe9269f';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=6fe9269f';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=6fe9269f';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import { winterZeit } from './winter-zeit.js?v=6fe9269f';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -34,7 +34,7 @@ const unlock = () => { root.classList.remove('seq'); root.classList.add('frei');
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   if (document.readyState === 'complete') ladeHerde(); else window.addEventListener('load', ladeHerde, { once: true });
 } else {
-  import('./sequenz.js?v=4f9e7465').catch((e) => {
+  import('./sequenz.js?v=6fe9269f').catch((e) => {
     console.warn('Start mit Bier konnte nicht geladen werden, die Seite wird freigegeben', e);
     unlock();
   });
@@ -45,5 +45,5 @@ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 // Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts. Sie wartet selbst, bis das Bier ausgelaufen ist.
 const winter = winterZeit();
 if (winter.saison) {
-  import('./winter.js?v=4f9e7465').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
+  import('./winter.js?v=6fe9269f').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
 }

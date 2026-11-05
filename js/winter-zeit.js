@@ -1,16 +1,12 @@
-// Wintersaison: vom 1. Advent bis einschließlich 6. Januar (Dreikönig). Außerhalb lädt js/main.js nichts davon.
+// Wintersaison: vom 1. November bis einschließlich 6. Januar (Dreikönig). Außerhalb lädt js/main.js nichts davon.
 // Test und Vorschau: ?winter=1 erzwingt die Winterausgabe (auch außerhalb der Saison), ?winter=0 schaltet sie ab.
 // Besucher können den Schmuck im Fuß aus- und einblenden, das merkt sich der Browser (localStorage, nur lokal).
 
-export function ersterAdvent(jahr) {
-  // 4. Advent = letzter Sonntag am oder vor dem 24. Dezember, der 1. Advent liegt 21 Tage davor
-  const sonntag = 24 - new Date(jahr, 11, 24).getDay();
-  return new Date(jahr, 11, sonntag - 21);
-}
+export const SAISON_START = { monat: 10, tag: 1 };    // 1. November (Monate zählen ab 0)
 
 export function inSaison(jetzt = new Date()) {
   const jahr = jetzt.getFullYear();
-  return jetzt >= ersterAdvent(jahr) || jetzt < new Date(jahr, 0, 7);
+  return jetzt >= new Date(jahr, SAISON_START.monat, SAISON_START.tag) || jetzt < new Date(jahr, 0, 7);
 }
 
 // saison: Winterausgabe vorgesehen (Schalter im Fuß), an: Schmuck wird gezeigt
