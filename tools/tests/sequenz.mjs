@@ -740,7 +740,7 @@ async function rahmen() {
         const f = document.querySelector('.frame--page'), main = document.querySelector('main'), foot = document.querySelector('.site-footer'), F = R(f), M = R(main), T = R(foot), vw = document.documentElement.clientWidth;
         const gold = F.l + 1.5 + 5 + 1, goldR = F.r - 1.5 - 5 - 1, bad = [];
         for (const e of main.querySelectorAll('*')) {
-          if (e.closest('.frame--page, .beer, .site-header, svg:not(:scope)') || (e.matches('.sheep') && e.closest('.herd')) || e.tagName === 'SECTION' || e.classList.contains('hero') || (${phone} && e.closest('.timeline') && !e.matches('.timeline'))) continue;
+          if (e.closest('.frame--page, .beer, .site-header, .w-deko, svg:not(:scope)') || (e.matches('.sheep') && e.closest('.herd')) || e.tagName === 'SECTION' || e.classList.contains('hero') || (${phone} && e.closest('.timeline') && !e.matches('.timeline'))) continue;
           if (e.ownerSVGElement) continue;
           const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
           const r = R(e); if (r.w < 2 || r.h < 2) continue;
