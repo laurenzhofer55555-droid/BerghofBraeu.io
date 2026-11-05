@@ -1,0 +1,58 @@
+/* ─────────────────────────────────────────────────────────────
+   Winterausgabe „Volle Stube“ – lädt nur in der Saison (js/winter.js, js/winter-zeit.js).
+   Palette wie die Seite: Tannengrün als Nacht, Biergold als Licht, Creme als Schnee.
+   ───────────────────────────────────────────────────────────── */
+
+/* Oswald: die Schrift auf dem Etikett, für alles Winterliche (lokal, kein Abruf bei Google; SIL Open Font License) */
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-500.ttf') format('truetype'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-600.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap; }
+:root { --font-winter: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; }
+
+/* solange das Bier im Bild ist, bleibt alles verborgen (die Sequenz bleibt unberührt); sobald es ausgelaufen ist (html.w-bier-weg, js/winter.js), kommen Äste und Schnee */
+html.seq:not(.frei):not(.w-bier-weg) .w-deko, html.seq:not(.frei):not(.w-bier-weg) .w-schnee { visibility: hidden; }
+html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !important; }
+
+.w-defs-halter { position: absolute; width: 0; height: 0; overflow: hidden; }
+.w-schnee { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+
+/* ── Zweige und Kugeln in den Ecken ── */
+.w-deko { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: 5; pointer-events: none; overflow-x: clip; }   /* die Äste ragen über den Rand: waagerecht abschneiden, sonst wird die Seite am Handy breiter als der Bildschirm */
+.w-ast { position: absolute; top: 0; pointer-events: none; }
+.w-ast--l { left: 0; }
+.w-ast--r { right: 0; }
+.w-zweig { display: block; position: relative; left: calc(var(--pad) * -1); top: calc(var(--pad) * -1); overflow: visible; animation: ast-ein .95s cubic-bezier(.22, .8, .24, 1) both; will-change: transform, opacity; }
+.w-ast--r .w-zweig { left: auto; right: calc(var(--pad) * -1); transform: scaleX(-1); animation-name: ast-ein-r; }
+/* Einflug: nur Verschiebung und Einblenden, keine Drehung. Der Zweig gleitet aus seiner Ecke (links nach rechts, rechts gespiegelt nach links), die Kugeln senken sich danach an den Fäden. */
+@keyframes ast-ein { from { opacity: 0; transform: translate(-26%, -34%); } }
+@keyframes ast-ein-r { from { opacity: 0; transform: scaleX(-1) translate(-26%, -34%); } }
+.w-licht { animation: funkeln 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes funkeln { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+.w-kugel__in { animation: kugel-ein .85s cubic-bezier(.22, .9, .3, 1) both; animation-delay: calc(.3s + var(--i) * .1s); }
+@keyframes kugel-ein { from { opacity: 0; transform: translateY(-70px); } }
+.w-kugel { position: absolute; width: var(--s); margin-left: calc(var(--s) / -2); transform-origin: 50% 0; pointer-events: auto; cursor: grab; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.w-faden { display: block; width: 1px; margin: 0 auto; background: linear-gradient(#B8913A, #7A5C1C); opacity: .9; }
+.w-kugel__svg { display: block; width: var(--s); height: auto; margin-top: -1px; overflow: visible; filter: drop-shadow(0 6px 5px rgba(31, 77, 43, .22)); }
+
+/* ── Schluss-Szene: Spachtel-Gemälde mit Schafen am Lagerfeuer (js/winter-gipfel.js) ── */
+.w-gipfel { margin: clamp(56px, 9vh, 96px) auto 0; }
+.w-gipfel__bild { position: relative; margin: 0; overflow: hidden; border: 1.5px solid var(--green); background: var(--cream); }
+.w-gipfel__flaeche { position: relative; aspect-ratio: 1344 / 799; overflow: hidden; background: #d8d7d2; }
+.w-gipfel__flaeche img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+/* Schein des Lagerfeuers: weiches orangefarbenes Licht über dem gemalten Feuer, atmet langsam (nur Deckkraft, nur im Bild) */
+.w-gipfel__glut { position: absolute; left: 63.6%; top: 86%; width: 15%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; mix-blend-mode: soft-light; background: radial-gradient(closest-side, rgba(255, 160, 60, .85), rgba(255, 150, 50, .3) 55%, rgba(255, 150, 50, 0)); animation: glut 2.2s ease-in-out infinite alternate; }
+.w-gipfel:not(.w-aktiv) .w-gipfel__glut { animation-play-state: paused; }
+@keyframes glut { from { opacity: .55; } to { opacity: 1; } }
+
+/* ── Schalter im Fuß ── */
+.w-schalter { margin: 0; }
+
+@media (max-width: 767px) {
+  .w-gipfel__flaeche { aspect-ratio: 3 / 4; }
+  .w-gipfel__flaeche img { object-position: 70% 50%; }            /* Ausschnitt um Lagerfeuer und Schafe */
+  .w-gipfel__glut { left: 55.8%; width: 34%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .w-zweig, .w-kugel__in, .w-licht, .w-gipfel__glut { animation: none !important; }
+}

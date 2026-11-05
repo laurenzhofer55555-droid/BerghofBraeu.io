@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Schafe – Varianten</title>
+<style>
+  body { margin: 0; background: #F7F4EC; font: 14px/1.4 Georgia, serif; color: #22301f; }
+  .raster { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 18px; }
+  .karte { background: #fbf9f3; border: 1px solid #d8cfb8; padding: 6px 10px 10px; }
+  .karte.dunkel { background: #e7e5df; }
+  .karte b { display: block; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #7A5C1C; }
+  svg { width: 100%; height: auto; display: block; }
+</style></head><body>
+<div class="raster" id="raster"></div>
+<script type="module">
+import { schaf, schafDefs } from '../js/winter-schafe.js';
+import { tanne, tannenDefs } from '../js/winter-tannen.js';
+const liste = [
+  ['1 · Bommelmütze, Rucksack', { pose: 'geht', outfit: 'bommel', laune: 'froh', phase: .6, rucksackFarbe: '#D1A445' }],
+  ['2 · Zipfelmütze', { pose: 'geht', outfit: 'zipfel', laune: 'lacht', phase: -.6, fell: 'grau' }],
+  ['3 · Ohrenklappen, Kakao', { pose: 'sitzt', outfit: 'klappen', laune: 'lacht', tasseFarbe: '#C2452D' }],
+  ['4 · Gamsbart-Hut, Kakao', { pose: 'sitzt', outfit: 'gams', laune: 'froh', tasseFarbe: '#E0A93A', fell: 'braun' }],
+  ['5 · Skibrille', { pose: 'ski', outfit: 'brille', laune: 'lacht' }],
+  ['6 · Ohrenwärmer', { pose: 'geht', outfit: 'muff', laune: 'froh', phase: .2 }],
+];
+const r = document.getElementById('raster');
+for (const [name, opt] of liste) {
+  const k = document.createElement('div'); k.className = 'karte';
+  k.innerHTML = `<b>${name}</b><svg viewBox="-62 -100 132 118"><defs>${schafDefs()}</defs><path d="M-60 0H70" stroke="#cfd6d6"/>${schaf(opt)}</svg>`;
+  r.appendChild(k);
+}
+const baeume = [['Tanne', { h: 220, stufen: 4 }, false], ['Christbaum', { h: 220, stufen: 4, schmuck: true }, false], ['Nacht', { h: 220, stufen: 5, schmuck: true, nacht: true }, true]];
+for (const [name, opt, dunkel] of baeume) {
+  const k = document.createElement('div'); k.className = 'karte' + (dunkel ? ' dunkel' : '');
+  if (dunkel) k.style.background = '#143019';
+  k.innerHTML = `<b>${name}</b><svg viewBox="-90 -250 180 262"><defs>${tannenDefs()}</defs>${tanne({ x: 0, y: 0, ...opt })}</svg>`;
+  r.appendChild(k);
+}
+</script></body></html>

@@ -1,0 +1,4 @@
+Oswald (oswald-500.ttf, oswald-600.ttf)
+Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)
+Lizenz: SIL Open Font License, Version 1.1 (https://openfontlicense.org). Die Schrift darf frei verwendet, eingebettet und weitergegeben werden.
+Hier lokal ausgeliefert: kein Abruf bei Google.

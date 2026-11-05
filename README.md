@@ -87,6 +87,12 @@ Dann http://localhost:5173 öffnen.
   Altersabfrage (z-index 70) liegen darüber. `theme-color` folgt der oberen Farbe stufenlos (Chrome Android, iOS bis 25). Desktop und Android Chrome bekommen keine Streifen.
 - Geschichte: `.timeline` ist auf Tablet und Desktop eine waagerechte Timeline über die ganze Inhaltsbreite (goldene Linie, Punkte, Jahreszahl
   darüber, Text darunter); am Handy seitlich wischbar mit Peek der nächsten Karte, Punkten, Hinweis „Wischen“ und einmaligem Anstupsen (`js/timeline.js`)
+- Winterausgabe „Volle Stube“ (`js/winter-zeit.js`, `js/winter.js`, `js/winter-schnee.js`, `css/winter.css`): läuft vom 1. Advent bis 6. Januar. `js/main.js` lädt nur das kleine `winter-zeit.js`;
+  alles andere kommt erst in der Saison. Zum Ansehen außerhalb der Saison `?winter=1` an die Adresse hängen, `?winter=0` schaltet ab. Im Fuß steht „Winterschmuck ausblenden“ (merkt sich der Browser).
+  Sie entsteht erst, wenn das Bier ausgelaufen ist (`html.frei`), und liegt in eigenen Ebenen: Schneefall (Canvas, fixiert, z-index 40), Tannenzweige mit Christbaumkugeln in den oberen Ecken
+  (sie gleiten beim Auslaufen des Biers aus der Ecke herein, die Kugeln senken sich an den Fäden; danach hängen die Kugeln still und schwingen als Pendel nur, wenn Zeiger oder Fingertipp sie anstößt) und im Abschnitt „Der Berghof“ das Spachtel-Gemälde statt der Zeichnung.
+  Dazu: Auf Impressum und Datenschutz steht, immer und ohne Schrift, ein Nachtbild (Berghof-Zeichnung in Creme auf Tannengrün mit Mond, Sternen und leuchtenden Fenstern; reines CSS in `css/nacht.css`, weil die Rechtsseiten keine Skripte erlauben). Schluss-Szene mit einem Spachtel-Gemälde (Schafe am Lagerfeuer, `js/winter-gipfel.js`, Bild `assets/img/winter-szene-*.webp`) und Oswald (lokal in `vendor/fonts`, nur für die Winterteile) als Schrift. Die gezeichneten Schafe und Tannen als Vektorgrafik (`js/winter-schafe.js`, `js/winter-tannen.js`, Vergleichsbogen `tools/schafe.html`) werden derzeit nicht eingebunden.
+  Bei „Bewegung reduzieren“ steht alles still. Die Fensterpositionen der Zeichnung stehen in `FENSTER` (`js/winter.js`, Koordinaten der 1400 × 333 Punkte großen Zeichnung).
 - `tools/tests/` – automatische Tests des Starts (siehe unten), werden nicht ausgeliefert
 
 ## Start testen

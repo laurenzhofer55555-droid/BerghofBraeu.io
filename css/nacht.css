@@ -1,0 +1,87 @@
+/* Nachtbild auf Impressum und Datenschutz: die Berghof-Zeichnung in Creme auf Tannengrün, Mond, Sterne, Licht in den Fenstern. Ganz ohne Schrift und ohne Skript
+   (die Rechtsseiten erlauben laut Content-Security-Policy keine Skripte). Die Fensterpositionen gelten für die Zeichnung (1400 × 333 Punkte), die Häuser stehen darin bei 56,3 % der Breite. */
+.nacht {
+  position: relative; isolation: isolate; overflow: hidden; margin: clamp(48px, 8vh, 80px) 0 0; aspect-ratio: 2.1 / 1;
+  border: 1.5px solid var(--gold);
+  background: radial-gradient(90% 55% at 50% 112%, rgba(197, 161, 73, .3), rgba(197, 161, 73, 0) 70%), linear-gradient(#0c2314, #143019 55%, #1F4D2B);
+}
+.nacht::before { content: ''; position: absolute; inset: 6px; z-index: 4; border: 1px solid rgba(197, 161, 73, .55); pointer-events: none; }
+.nacht__sterne {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; animation: nacht-stern 5s ease-in-out infinite alternate;
+  background:
+    radial-gradient(circle at 62.3% 44.5%, #F5E7B8 0 1.9px, transparent 2.5px),
+    radial-gradient(circle at 94.2% 44.4%, #F5E7B8 0 2.0px, transparent 2.6px),
+    radial-gradient(circle at 2.9% 27.9%, #F5E7B8 0 2.0px, transparent 2.6px),
+    radial-gradient(circle at 64.9% 54.1%, #F5E7B8 0 1.1px, transparent 1.7px),
+    radial-gradient(circle at 46.9% 14.8%, #F5E7B8 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at 57.4% 0.8%, #F5E7B8 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 27.9% 55.0%, #F5E7B8 0 1.8px, transparent 2.4px),
+    radial-gradient(circle at 16.0% 47.8%, #F5E7B8 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 61.7% 7.6%, #F5E7B8 0 1.0px, transparent 1.6px),
+    radial-gradient(circle at 87.1% 12.6%, #F5E7B8 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 98.2% 52.3%, #F5E7B8 0 1.3px, transparent 1.9px),
+    radial-gradient(circle at 96.1% 32.4%, #F5E7B8 0 1.7px, transparent 2.3px),
+    radial-gradient(circle at 20.5% 56.5%, #F5E7B8 0 1.8px, transparent 2.4px);
+}
+.nacht__sterne--b {
+  animation-delay: -2.5s; animation-duration: 6.5s;
+  background:
+    radial-gradient(circle at 52.2% 48.4%, #F5E7B8 0 2.1px, transparent 2.7px),
+    radial-gradient(circle at 29.0% 46.0%, #F5E7B8 0 1.8px, transparent 2.4px),
+    radial-gradient(circle at 66.1% 6.6%, #F5E7B8 0 1.0px, transparent 1.6px),
+    radial-gradient(circle at 38.4% 44.8%, #F5E7B8 0 1.3px, transparent 1.9px),
+    radial-gradient(circle at 50.2% 19.0%, #F5E7B8 0 1.9px, transparent 2.5px),
+    radial-gradient(circle at 94.5% 24.1%, #F5E7B8 0 2.1px, transparent 2.7px),
+    radial-gradient(circle at 6.2% 48.8%, #F5E7B8 0 2.0px, transparent 2.6px),
+    radial-gradient(circle at 15.1% 42.3%, #F5E7B8 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at 95.5% 12.6%, #F5E7B8 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at 88.2% 38.3%, #F5E7B8 0 1.3px, transparent 1.9px),
+    radial-gradient(circle at 8.2% 56.4%, #F5E7B8 0 1.5px, transparent 2.1px),
+    radial-gradient(circle at 99.6% 8.5%, #F5E7B8 0 1.9px, transparent 2.5px),
+    radial-gradient(circle at 81.3% 55.2%, #F5E7B8 0 1.0px, transparent 1.6px);
+}
+@keyframes nacht-stern { from { opacity: .35; } to { opacity: .95; } }
+.nacht__mond {
+  position: absolute; z-index: 1; right: 14%; top: 14%; width: clamp(34px, 7%, 56px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 34% 32%, #fffbea, #f1e8c6 58%, #d8cea4);
+  box-shadow: 0 0 36px 10px rgba(247, 244, 236, .16), 0 0 90px 30px rgba(247, 244, 236, .08);
+}
+/* die Häuser liegen in der Zeichnung bei 56,3 % der Breite: so stehen sie genau in der Mitte des Bildes */
+.nacht__haus { position: absolute; z-index: 2; left: -6.3%; bottom: 0; width: 100%; }
+.nacht__haus img { display: block; width: 100%; height: auto; margin: 0; filter: brightness(0) invert(.96) sepia(.22); opacity: .9; }
+.nacht__haus i {
+  position: absolute; background: linear-gradient(#ffeeb8, #f3c964);
+  box-shadow: 0 0 10px 2px rgba(245, 205, 110, .75), 0 0 34px 10px rgba(245, 205, 110, .3);
+  animation: nacht-glimmen 6s ease-in-out infinite; animation-delay: calc(var(--i) * -.7s);
+}
+.nacht__haus i.b { border-radius: 999px 999px 0 0; }
+.nacht__haus i.k { background-image: linear-gradient(90deg, transparent calc(50% - .6px), rgba(70, 46, 8, .55) calc(50% - .6px) calc(50% + .6px), transparent calc(50% + .6px)), linear-gradient(transparent calc(50% - .6px), rgba(70, 46, 8, .55) calc(50% - .6px) calc(50% + .6px), transparent calc(50% + .6px)), linear-gradient(#ffeeb8, #f3c964); }
+.nacht__haus i:nth-of-type(1) { left: 32.86%; top: 60.36%; width: 1.29%; height: 6.91%; --i: 1; }
+.nacht__haus i:nth-of-type(2) { left: 45.86%; top: 66.07%; width: 1.79%; height: 3.30%; --i: 2; }
+.nacht__haus i:nth-of-type(3) { left: 52.21%; top: 54.05%; width: 0.71%; height: 6.31%; --i: 3; }
+.nacht__haus i:nth-of-type(4) { left: 57.21%; top: 67.57%; width: 1.86%; height: 7.21%; --i: 4; }
+.nacht__haus i:nth-of-type(5) { left: 57.43%; top: 43.84%; width: 1.43%; height: 9.01%; --i: 5; }
+.nacht__haus i:nth-of-type(6) { left: 62.07%; top: 67.57%; width: 1.86%; height: 7.21%; --i: 6; }
+.nacht__haus i:nth-of-type(7) { left: 69.21%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 7; }
+.nacht__haus i:nth-of-type(8) { left: 70.93%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 8; }
+.nacht__haus i:nth-of-type(9) { left: 72.57%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 9; }
+.nacht__haus i:nth-of-type(10) { left: 77.93%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 10; }
+.nacht__haus i:nth-of-type(11) { left: 79.64%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 11; }
+.nacht__haus i:nth-of-type(12) { left: 81.29%; top: 64.26%; width: 1.29%; height: 4.50%; --i: 12; }
+@keyframes nacht-glimmen { 0%, 100% { opacity: 1; } 50% { opacity: .84; } }
+
+/* „Das Licht geht an“: wo der Browser scrollgesteuerte Animationen kann (Chrome, Edge), gehen die Fenster nacheinander an, wenn das Bild ins Blickfeld kommt;
+   sonst brennen sie von Anfang an */
+@supports (animation-timeline: view()) {
+  .nacht__haus i { animation: nacht-an linear both; animation-timeline: view(); animation-range: entry calc(40% + var(--i) * 4%) entry calc(65% + var(--i) * 4%); }
+}
+@keyframes nacht-an { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 560px) {
+  .nacht { aspect-ratio: 1.25 / 1; }
+  .nacht__haus { left: -34.45%; width: 150%; }
+  .nacht__mond { right: 12%; top: 12%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nacht__sterne, .nacht__haus i { animation: none !important; }
+}

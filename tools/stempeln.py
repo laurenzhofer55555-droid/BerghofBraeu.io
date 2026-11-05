@@ -15,7 +15,7 @@ def sha(parts):
     for p in parts: h.update(p)
     return h.hexdigest()[:8]
 
-code = [ROOT / 'css/style.css'] + sorted((ROOT / 'js').glob('*.js'))
+code = [ROOT / 'css/style.css', ROOT / 'css/winter.css'] + sorted((ROOT / 'js').glob('*.js'))
 H = sha(V.sub('', f.read_text(encoding='utf-8')).encode() for f in code)
 
 changed = []
@@ -30,9 +30,10 @@ t = V.sub('', t)
 t = t.replace('href="css/style.css"', f'href="css/style.css?v={H}"').replace('src="js/main.js"', f'src="js/main.js?v={H}"')
 write(p, t)
 # Importe in js/main.js und js/sequenz.js
-for name in ('main.js', 'sequenz.js'):
+for name in ('main.js', 'sequenz.js', 'winter.js'):
     p = ROOT / 'js' / name; t = p.read_text(encoding='utf-8')
     t = re.sub(r"(['\"])(\./[a-z-]+\.js)(?:\?v=[0-9a-f]{8})?\1", lambda m: f"{m.group(1)}{m.group(2)}?v={H}{m.group(1)}", t)
+    if name == 'winter.js': t = re.sub(r"(css/winter\.css)(?:\?v=[0-9a-f]{8})?", lambda m: f"{m.group(1)}?v={H}", t)
     write(p, t)
 print(f'Code-Version {H}; geändert: {", ".join(changed) or "nichts (alles aktuell)"}')
 sys.exit(1 if changed and '--pruefen' in sys.argv else 0)
