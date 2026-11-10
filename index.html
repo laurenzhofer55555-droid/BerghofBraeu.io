@@ -304,12 +304,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=4a58a341" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=4a58a341" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=4a58a341" /></noscript>
+  <link rel="preload" href="css/style.css?v=b4e7c3af" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=b4e7c3af" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=b4e7c3af" /></noscript>
 
   <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=4a58a341"></script>
+  <script type="module" src="js/main.js?v=b4e7c3af"></script>
 </head>
 <body>
 
@@ -427,17 +427,18 @@
     <!-- ── Zutaten ───────────────────────────── -->
     <section class="section" id="zutaten" aria-labelledby="zutaten-title">
       <div class="section__inner">
-        <div class="section__head">
-          <p class="eyebrow">Das Bier</p>
-          <h2 id="zutaten-title">Hopfen, Malz, Wasser</h2>
-          <p class="lead">
-            Berghof Hell ist ein bayerisches Vollbier Hell: goldgelb, mild und süffig,
-            gebraut aus nur drei Zutaten.
-          </p>
-        </div>
 
         <!-- Zutaten um die Flasche: Hopfen und Wasser links, Malz rechts, goldene Linien führen zur Flasche (Desktop ab 1100 px, js/etikett.js zeichnet sie beim ersten Erscheinen); schmal: Flasche mittig, darunter die drei Zutaten -->
         <div class="zutaten-buehne" data-etikett>
+          <!-- Überschrift: schmal über dem Schnee, ab 1100 px im Schnee unter der Flasche, über den Eckdaten (css/style.css) -->
+          <div class="section__head">
+            <p class="eyebrow">Das Bier</p>
+            <h2 id="zutaten-title">Hopfen, Malz, Wasser</h2>
+            <p class="lead">
+              Berghof Hell ist ein bayerisches Vollbier Hell: goldgelb, mild und süffig,
+              gebraut aus nur drei Zutaten.
+            </p>
+          </div>
           <!-- Produktbild: die Flasche im Schnee; der Schnee reicht über die ganze Seitenbreite (css/style.css, .zutaten__schnee) -->
           <div class="zutaten__schnee"><img src="assets/img/produkt-schnee-2240.webp?v=5" srcset="assets/img/produkt-schnee-1120.webp?v=5 1120w, assets/img/produkt-schnee-2240.webp?v=5 2240w" sizes="(min-width: 1100px) 1620px, (min-width: 600px) 100vw, 234vw" width="2240" height="1792" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell steckt halb im Schnee" /></div>
           <svg class="etikett__linie zutaten__linien" viewBox="0 0 100 90" aria-hidden="true" focusable="false">
