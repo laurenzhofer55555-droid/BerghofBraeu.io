@@ -212,6 +212,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett-an .ist-da .etikett__pfad { stroke-dashoffset: 0; transition: stroke-dashoffset .8s cubic-bezier(.45, .05, .25, 1); }
 .etikett-an .ist-da .etikett__raute { opacity: 1; transition: opacity .35s ease .65s; }
 
+#zutaten { z-index: 4; }      /* der Abschnitt liegt über dem Seitenrahmen (z-index 3): der weiß-hellblaue Rahmen läuft unter dem Schnee durch */
 /* Produktbild: Flasche im Schnee (Higgsfield: dein Bild mit dem richtigen Etikett, Hintergrund freigestellt). Ein Schneeband mit rauer, klumpiger Kante und Krümeln oben und unten, die Flasche steckt rundum im Schnee.
    Das Seitengrün scheint durch die freien Ränder, darum braucht es keine Maske und keinen Hintergrund. Am Desktop ist das Bild 150 cqw breit und 120 cqw hoch, die Flasche steht in der Bühnenmitte;
    die goldenen Pfeile enden am Halsschild und am Vorderetikett. Handy: Ausschnitt um die Flasche, beide rauen Kanten bleiben im Bild. */
@@ -220,12 +221,16 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .zutaten__schnee img { position: absolute; left: 50%; top: 49%; display: block; height: 124.6%; width: auto; max-width: none; transform: translate(-49.2%, -49%); }
 @media (min-width: 600px) { .zutaten__schnee { aspect-ratio: 5 / 4; } .zutaten__schnee img { left: 0; top: 0; width: 100%; height: 100%; transform: none; object-fit: cover; object-position: 49.2% 50%; } }
 @media (min-width: 1100px) {
-  .zutaten-buehne { --zf: #1F4D2B; }                                                    /* Schriftfarbe auf dem Schnee: Tannengrün (auf Weiß wäre Weiß unlesbar) */
+  .zutaten-buehne { --zf: #14341D; }                                                    /* Schriftfarbe auf dem Schnee: sehr dunkles Tannengrün (auf Weiß wäre Weiß unlesbar) */
   .zutaten__schnee { position: absolute; z-index: 0; left: 50%; width: 100vw; margin: 0 0 0 -50vw; top: -13.6cqw; height: 120cqw; aspect-ratio: auto; }
   .zutaten__schnee img { width: 150cqw; height: auto; left: calc(50% - 73.8cqw); top: 0; object-fit: fill; transform: none; }
-  .zutaten-buehne .ingredient h3, .zutaten-buehne .ingredient p { color: var(--zf); }
-  .zutaten-buehne .ingredient__art { stroke: var(--zf); }
-  .zutaten-buehne .ingredient__art [fill="#F7F4EC"] { fill: #EEF3F5; }
+  /* Lesbarkeit auf dem Schnee: dunklere, kräftigere Schrift, dahinter ein weicher heller Hof (beruhigt das Schneemuster ohne sichtbaren Kasten), Überschriften mit feiner heller Kante wie in den Schnee gedrückt, Symbole mit dickerem Strich und hellem Schein */
+  .zutaten-buehne .ingredient { isolation: isolate; }
+  .zutaten-buehne .ingredient::before { content: ''; position: absolute; z-index: -1; inset: -7% -16% -5%; background: radial-gradient(closest-side, rgba(246, 249, 250, .86), rgba(246, 249, 250, .6) 58%, rgba(246, 249, 250, 0)); filter: blur(5px); pointer-events: none; }
+  .zutaten-buehne .ingredient h3 { color: var(--zf); font-weight: 600; text-shadow: 0 1px 0 rgba(255, 255, 255, .95), 0 0 10px rgba(255, 255, 255, .9), 0 0 22px rgba(255, 255, 255, .7); }
+  .zutaten-buehne .ingredient p { color: var(--zf); font-weight: 500; text-shadow: 0 0 3px rgba(255, 255, 255, .95), 0 0 9px rgba(255, 255, 255, .9), 0 0 20px rgba(255, 255, 255, .7); }
+  .zutaten-buehne .ingredient__art { stroke: var(--zf); stroke-width: 2.1; filter: drop-shadow(0 0 5px rgba(255, 255, 255, .95)) drop-shadow(0 0 12px rgba(255, 255, 255, .8)); }
+  .zutaten-buehne .ingredient__art [fill="#F7F4EC"] { fill: #F3F7F8; }
 }
 @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
 /* Desktop: ruhiger, breiterer Leadtext (66 Zeichen, 1,2 rem) */

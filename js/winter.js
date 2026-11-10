@@ -5,8 +5,8 @@
 // dann senken sich die Kugeln und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
 // Im Fuß gibt es einen Schalter „Winterschmuck ausblenden“. Die Kugeln hängen still und schwingen nur, wenn Zeiger oder Finger sie berühren.
 // Bei „Bewegung reduzieren“ steht alles still (kein Schnee, kein Schwingen, kein Funkeln).
-import { schneeStart } from './winter-schnee.js?v=4be74cf6';
-import { gipfel } from './winter-gipfel.js?v=4be74cf6';
+import { schneeStart } from './winter-schnee.js?v=03b8b6fc';
+import { gipfel } from './winter-gipfel.js?v=03b8b6fc';
 
 const root = document.documentElement;
 const stillstand = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -191,7 +191,7 @@ function schalter() {
 }
 
 export function start({ an }) {
-  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=4be74cf6', import.meta.url).href;
+  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=03b8b6fc', import.meta.url).href;
   const fertig = new Promise((res) => { css.onload = css.onerror = res; setTimeout(res, 3000); });
   document.head.appendChild(css);
   fertig.then(() => {
