@@ -3,34 +3,27 @@
    Palette wie die Seite: Tannengrün als Nacht, Biergold als Licht, Creme als Schnee.
    ───────────────────────────────────────────────────────────── */
 
-/* solange das Bier im Bild ist, bleibt alles verborgen (die Sequenz bleibt unberührt); sobald es ausgelaufen ist (html.w-bier-weg, js/winter.js), kommen Äste und Schnee */
+/* solange das Bier im Bild ist, bleibt alles verborgen (die Sequenz bleibt unberührt); sobald es ausgelaufen ist (html.w-bier-weg, js/winter.js), kommen Kugeln und Schnee */
 html.seq:not(.frei):not(.w-bier-weg) .w-deko, html.seq:not(.frei):not(.w-bier-weg) .w-schnee { visibility: hidden; }
 html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !important; }
 
-.w-defs-halter { position: absolute; width: 0; height: 0; overflow: hidden; }
-.w-schnee { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+/* Schneefeld am oberen Seitenrand: so hoch wie der erste Bildschirm (Höhe setzt js/winter-schnee.js), scrollt mit der Seite weg */
+.w-schnee { position: absolute; top: 0; left: 0; width: 100%; z-index: 40; pointer-events: none; }
 
-/* ── Zweige und Kugeln in den Ecken ── */
-.w-deko { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: 5; pointer-events: none; overflow-x: clip; }   /* die Äste ragen über den Rand: waagerecht abschneiden, sonst wird die Seite am Handy breiter als der Bildschirm */
-.w-ast { position: absolute; top: 0; pointer-events: none; }
-.w-ast--l { left: 0; }
-.w-ast--r { right: 0; }
-.w-zweig { display: block; position: relative; left: calc(var(--pad) * -1); top: calc(var(--pad) * -1); overflow: visible; animation: ast-ein .95s cubic-bezier(.22, .8, .24, 1) both; will-change: transform, opacity; }
-.w-ast--r .w-zweig { left: auto; right: calc(var(--pad) * -1); transform: scaleX(-1); animation-name: ast-ein-r; }
-/* Einflug: nur Verschiebung und Einblenden, keine Drehung. Der Zweig gleitet aus seiner Ecke (links nach rechts, rechts gespiegelt nach links), die Kugeln senken sich danach an den Fäden. */
-@keyframes ast-ein { from { opacity: 0; transform: translate(-26%, -34%); } }
-@keyframes ast-ein-r { from { opacity: 0; transform: scaleX(-1) translate(-26%, -34%); } }
+/* ── Kugeln in den Ecken (ohne Äste) ── */
+.w-deko { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: 5; pointer-events: none; overflow-x: clip; }   /* waagerecht abschneiden: eine Kugel nahe am Rand darf die Seite am Handy nicht breiter als den Bildschirm machen */
 .w-licht { animation: funkeln 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
 @keyframes funkeln { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
 .w-kugel__in { animation: kugel-ein .85s cubic-bezier(.22, .9, .3, 1) both; animation-delay: calc(.3s + var(--i) * .1s); }
 @keyframes kugel-ein { from { opacity: 0; transform: translateY(-70px); } }
+.w-kugel--r { margin-left: 0 !important; margin-right: calc(var(--s) / -2); }
 .w-kugel { position: absolute; width: var(--s); margin-left: calc(var(--s) / -2); transform-origin: 50% 0; pointer-events: auto; cursor: grab; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .w-kugel.w-flip .w-kugel__svg { animation: kugel-flip 1.1s cubic-bezier(.45, .05, .35, 1); }
 /* Osterei: zweimal ganz um den Faden gedreht (Faden und Aufhänger liegen auf der Drehachse, die Kugel bleibt also angehängt), dabei hüpft sie ein Stück hoch */
 @keyframes kugel-flip { 0% { transform: perspective(520px) translateY(0) rotateY(0); } 45% { transform: perspective(520px) translateY(-14px) rotateY(400deg); } 100% { transform: perspective(520px) translateY(0) rotateY(720deg); } }
 .w-faden { display: block; width: 1px; margin: 0 auto; background: linear-gradient(#B8913A, #7A5C1C); opacity: .9; }
-.w-kugel__svg { display: block; width: var(--s); height: auto; margin-top: -1px; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .35)); }
+.w-kugel__svg { display: block; width: var(--s); height: auto; margin: -1px auto 0; max-width: none; filter: drop-shadow(0 5px 5px rgba(0, 10, 4, .5)); }
 
 /* ── Schluss-Szene: Spachtel-Gemälde mit Schafen am Lagerfeuer (js/winter-gipfel.js) ── */
 .w-gipfel { margin: clamp(56px, 9vh, 96px) auto 0; }
@@ -46,11 +39,11 @@ html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !i
 .w-schalter { margin: 0; }
 
 @media (max-width: 767px) {
-  .w-gipfel__flaeche { aspect-ratio: 3 / 4; }
-  .w-gipfel__flaeche img { object-position: 70% 50%; }            /* Ausschnitt um Lagerfeuer und Schafe */
-  .w-gipfel__glut { left: 55.8%; width: 34%; }
+  .w-gipfel__flaeche { aspect-ratio: 4 / 5; }
+  .w-gipfel__flaeche img { object-position: 86% 50%; }            /* Ausschnitt 45–93 % der Bildbreite: Lagerfeuer (64 %), die Schafe (52–78 %) und der Skifahrer (83 %) */
+  .w-gipfel__glut { left: 40.6%; width: 31.5%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .w-zweig, .w-kugel__in, .w-licht, .w-gipfel__glut, .w-kugel.w-flip .w-kugel__svg { animation: none !important; }
+    .w-kugel__in, .w-licht, .w-gipfel__glut, .w-kugel.w-flip .w-kugel__svg { animation: none !important; }
 }

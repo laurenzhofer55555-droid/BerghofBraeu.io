@@ -51,16 +51,16 @@ export function schneeStart() {
   document.body.appendChild(canvas);
   const g = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1, bilder = [], flocken = [], lauf = 0, zuletzt = 0, t = 0, los = false, leer = false;
-  const bild0 = document.querySelector('#start .painting');       // das Stallhofer-Bild: ab hier schneit es nicht mehr
 
-  // Oben schneit es dichter als unten: jede Flocke löst sich auf ihrem Weg in einer eigenen Höhe (zwischen 50 % und 110 % der Bildhöhe, ein Teil schneit also bis unten durch) langsam auf und fängt oben neu an;
+  // Oben schneit es dichter als unten: jede Flocke löst sich auf ihrem Weg in einer eigenen Höhe (zwischen 50 % und 100 % der Feldhöhe; am unteren Feldrand ist jede Flocke schon verblasst, es gibt dort keine harte Kante) langsam auf und fängt oben neu an;
   // je tiefer, desto weniger Flocken sind noch da.
-  const ziel = () => .5 + Math.random() * .6;
+  const ziel = () => .5 + Math.random() * .5;
 
   function messen() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     w = innerWidth; h = innerHeight;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    canvas.style.height = h + 'px';
     bilder = Array.from({ length: STUFEN }, (_, i) => [0, 1, 2].map((v) => flockenBild(i, v, dpr)));
     const anzahl = Math.round(Math.min(150, Math.max(44, (w * h) / 12000)));       // unten wird es dünn (siehe ende), darum etwas mehr Flocken
     flocken = Array.from({ length: anzahl }, () => {
@@ -73,9 +73,9 @@ export function schneeStart() {
     lauf = requestAnimationFrame(bild);
     const dt = Math.min(.05, (jetzt - zuletzt) / 1000 || .016); zuletzt = jetzt; t += dt;
     if (document.hidden || (root.classList.contains('seq') && !root.classList.contains('frei') && !root.classList.contains('w-bier-weg'))) return;   // erst, wenn das Bier weg ist
-    // Schnee gibt es nur ganz oben auf der Seite: er blendet aus, sobald das Stallhofer-Bild nach oben ins Bild rückt (ab etwa 10 % der Bildhöhe ist er weg) und fällt beim Weiterscrollen gar nicht mehr
-    const sicht = bild0 ? Math.max(0, Math.min(1, (bild0.getBoundingClientRect().top - h * .1) / (h * .35))) : 1;
-    if (sicht <= 0) { if (!leer) { leer = true; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); } return; }
+    // Das Schneefeld hängt am oberen Seitenrand (absolut, nicht am Bildschirm): es ist so hoch wie der erste Bildschirm und scrollt mit der Seite nach oben weg, als schneite es dort
+    // weiter. Ist es ganz aus dem Bild, wird nichts mehr gezeichnet (kostet nichts); beim Zurückscrollen schneit es einfach weiter.
+    if (scrollY > h + 24) { if (!leer) { leer = true; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); } return; }
     leer = false;
     if (!los) { los = true; for (const f of flocken) f.y = -Math.random() * h * 1.05; }          // der erste Schnee kommt von oben herein
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -89,7 +89,7 @@ export function schneeStart() {
       if (f.y > f.ende * h + 4) { f.y = -8; f.x = Math.random() * w; f.ende = ziel(); }
       if (f.x > w + 8) f.x = -8; else if (f.x < -8) f.x = w + 8;
       const b = bilder[f.s][f.v];
-      g.globalAlpha = (.55 + tief * .45) * Math.max(0, Math.min(1, (f.ende * h - f.y) / (h * .22))) * sicht;
+      g.globalAlpha = (.55 + tief * .45) * Math.max(0, Math.min(1, (f.ende * h - f.y) / (h * .22)));
       g.drawImage(b.c, f.x - b.rand, f.y - b.rand, b.rand * 2, b.rand * 2);
     }
   }

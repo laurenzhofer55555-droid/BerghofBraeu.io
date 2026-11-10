@@ -1,131 +1,32 @@
-// Winterausgabe „Volle Stube“ (nur in der Saison, js/winter-zeit.js): Tannenzweige mit Christbaumkugeln in den oberen Ecken, Schneefall, im Abschnitt „Der Berghof“
+// Winterausgabe „Volle Stube“ (nur in der Saison, js/winter-zeit.js): Christbaumkugeln, die in den oberen Ecken von der Oberkante hängen (keine Äste), Schneefall, im Abschnitt „Der Berghof“
 // das Spachtel-Gemälde (statt der Zeichnung des Berghofs).
 // (Die Berghof-Zeichnung als Nachtbild mit leuchtenden Fenstern steht jetzt auf Impressum und Datenschutz: css/nacht.css, ohne Skript.)
 // Aufgebaut wird im Leerlauf, noch während das Bier auf die Geste wartet; sichtbar wird es, sobald das Bier ausgelaufen ist (Klasse w-bier-weg, bierWegMelden):
-// dann fahren die Äste ein und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
+// dann senken sich die Kugeln und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
 // Im Fuß gibt es einen Schalter „Winterschmuck ausblenden“. Die Kugeln hängen still und schwingen nur, wenn Zeiger oder Finger sie berühren.
 // Bei „Bewegung reduzieren“ steht alles still (kein Schnee, kein Schwingen, kein Funkeln).
-import { schneeStart } from './winter-schnee.js?v=fc069a9e';
-import { gipfel } from './winter-gipfel.js?v=fc069a9e';
+import { schneeStart } from './winter-schnee.js?v=5ec8b712';
+import { gipfel } from './winter-gipfel.js?v=5ec8b712';
 
 const root = document.documentElement;
 const stillstand = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const el = (tag, klasse, html) => { const e = document.createElement(tag); if (klasse) e.className = klasse; if (html) e.innerHTML = html; return e; };
 
-// ── Zufall mit festem Startwert: der Zweig sieht bei jedem Besuch gleich aus ──
-function zufall(seed) {
-  return () => {
-    seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// ── Tannenzweig: Stamm als Kurve von der Ecke, Nadeln als kurze Striche in drei Grüntönen (je Farbe ein Pfad), goldene Lichter ──
-const NADELN = {
-  hell: ['#173b21', '#1F4D2B', '#2f6b40', '#3f8052'],       // auf Creme
-  nacht: ['#1F4D2B', '#2f6b40', '#4a8a5c', '#6aa57a'],      // auf dunklem Tannengrün (Nachtbild)
-  dunkel: ['#3A7F50', '#4F9462', '#6DB07E', '#8FC99C'],     // auf dem grünen Seitengrund der dunklen Ausgabe: heller als der Grund, sonst verschwinden die Nadeln
-};
-function zweig(breite, farben, seed) {
-  const r = zufall(seed);
-  const W = breite, H = breite * .5;
-  const lang = Math.max(14, Math.min(34, W * .085));
-  const p = [[-8, 4], [W * .32, -4], [W * .68, H * .1], [W, H * .6]];
-  const punkt = (t) => {
-    const u = 1 - t;
-    return [0, 1].map((k) => u * u * u * p[0][k] + 3 * u * u * t * p[1][k] + 3 * u * t * t * p[2][k] + t * t * t * p[3][k]);
-  };
-  const richtung = (t) => {
-    const u = 1 - t;
-    const d = [0, 1].map((k) => 3 * u * u * (p[1][k] - p[0][k]) + 6 * u * t * (p[2][k] - p[1][k]) + 3 * t * t * (p[3][k] - p[2][k]));
-    return Math.atan2(d[1], d[0]);
-  };
-  const N = 64;
-  const pfade = [[], [], [], []];
-  const breiten = [2.9, 2.4, 1.9, 1.5];
-  for (let ebene = 0; ebene < 4; ebene++) {
-    for (let i = 0; i <= N; i++) {
-      const t = i / N, [x, y] = punkt(t), a = richtung(t);
-      for (const seite of [-1, 1]) {
-        const winkel = a + seite * (ebene === 3 ? .25 + r() * .35 : .6 + r() * .7) + (r() - .5) * .3;
-        let dx = Math.cos(winkel), dy = Math.sin(winkel) + .38;        // die Schwerkraft zieht die Nadeln nach unten
-        const n = Math.hypot(dx, dy); dx /= n; dy /= n;
-        const l = lang * (1 - t * .6) * (.55 + r() * .7) * (ebene === 3 ? .75 : 1 - ebene * .08);
-        pfade[ebene].push(`M${x.toFixed(1)} ${y.toFixed(1)}l${(dx * l).toFixed(1)} ${(dy * l).toFixed(1)}`);
-      }
-    }
-    const [ex, ey] = punkt(1);                                           // Spitze: kleiner Fächer
-    for (let k = -2; k <= 2; k++) {
-      const winkel = richtung(1) + k * .38;
-      pfade[ebene].push(`M${ex.toFixed(1)} ${ey.toFixed(1)}l${(Math.cos(winkel) * lang * .5).toFixed(1)} ${(Math.sin(winkel) * lang * .5 + 2).toFixed(1)}`);
-    }
-  }
-  let lichter = '';
-  for (let k = 0; k < 5; k++) {
-    const [x, y] = punkt(.14 + k * .17);
-    lichter += `<g class="w-licht" style="--d:${(r() * 2.6).toFixed(2)}s"><circle cx="${x.toFixed(1)}" cy="${(y + 5).toFixed(1)}" r="8" fill="url(#w-halo)"/><circle cx="${x.toFixed(1)}" cy="${(y + 5).toFixed(1)}" r="2.3" fill="#F5DE96"/></g>`;
-  }
-  const pad = Math.ceil(lang + 6);
-  const hoehe = Math.ceil(H + lang * 1.5 + 12);
-  const stamm = Array.from({ length: 21 }, (_, i) => punkt(i / 20).map((v) => v.toFixed(1)).join(' ')).join('L');
-  const svg = `<svg class="w-zweig" viewBox="${-pad} ${-pad} ${W + 2 * pad} ${hoehe + pad}" width="${W + 2 * pad}" height="${hoehe + pad}" style="--pad:${pad}px" focusable="false" aria-hidden="true">`
-    + `<path d="M${stamm}" fill="none" stroke="#0f2a18" stroke-width="3.4" stroke-linecap="round"/>`
-    + pfade.map((d, i) => `<path d="${d.join('')}" fill="none" stroke="${farben[i]}" stroke-width="${breiten[i]}" stroke-linecap="round"/>`).join('')
-    + lichter + '</svg>';
-  return { svg, punkt, pad };
-}
-
-// ── Christbaumkugel: Glas mit Fensterspiegelung, Goldkappe, Aufhänger. Farbverläufe stehen einmal im Dokument (defs) ──
-const GLAS = {
-  gruen: ['#6aa57a', '#2a6a3d', '#1F4D2B', '#0b2415'],
-  gold: ['#f7e6ae', '#dcbc66', '#C5A149', '#7a5c1c'],
-  creme: ['#ffffff', '#F7F4EC', '#ddd5bf', '#b3a47c'],
-  nacht: ['#3f7c55', '#1d4a2c', '#12301c', '#06150b'],
-  blau: ['#ecf6f9', '#a9d0de', '#7FB2C6', '#3d7388'],        // hellblau wie der Rahmen und das Etikett
-  blau2: ['#b9d9e5', '#6fa3b8', '#3F7A90', '#1d4558'],
-};
-function defs() {
-  const kugel = Object.entries(GLAS).map(([name, c]) =>
-    `<radialGradient id="w-g-${name}" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="${c[0]}"/><stop offset=".32" stop-color="${c[1]}"/><stop offset=".72" stop-color="${c[2]}"/><stop offset="1" stop-color="${c[3]}"/></radialGradient>`).join('');
-  return `<svg class="w-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>${kugel}
-    <radialGradient id="w-rim" cx=".7" cy=".86" r=".42"><stop offset="0" stop-color="#ffe7a3" stop-opacity=".6"/><stop offset="1" stop-color="#ffe7a3" stop-opacity="0"/></radialGradient>
-    <radialGradient id="w-halo"><stop offset="0" stop-color="#F5DE96" stop-opacity=".95"/><stop offset=".4" stop-color="#E3BE5E" stop-opacity=".35"/><stop offset="1" stop-color="#C5A149" stop-opacity="0"/></radialGradient>
-    <linearGradient id="w-kappe" x1="0" x2="1"><stop offset="0" stop-color="#8a6a22"/><stop offset=".3" stop-color="#E8CE86"/><stop offset=".55" stop-color="#B8913A"/><stop offset="1" stop-color="#6e5219"/></linearGradient>
-    <radialGradient id="w-glanz"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    <clipPath id="w-clip"><circle cx="50" cy="86" r="39.5"/></clipPath></defs></svg>`;
-}
-const SCHMUCK = {
-  blau: null,
-  blau2: null,
-  creme: `<g clip-path="url(#w-clip)" fill="none" stroke="#B8913A" stroke-width="1.5"><path d="M8 76Q50 98 92 76"/><path d="M8 87Q50 109 92 87"/>
-    <g fill="#B8913A" stroke="none"><path d="M50 87.5l4 5-4 5-4-5z"/><path d="M30 84.7l3.4 4.2-3.4 4.2-3.4-4.2z"/><path d="M70 84.7l3.4 4.2-3.4 4.2-3.4-4.2z"/><path d="M17 80.4l2.8 3.5-2.8 3.5-2.8-3.5z"/><path d="M83 80.4l2.8 3.5-2.8 3.5-2.8-3.5z"/></g></g>`,
-  nacht: `<g fill="#E8CE86"><path d="M52 66l3.4 13.6 13.6 3.4-13.6 3.4L52 100l-3.4-13.6L35 83l13.6-3.4z"/></g><g fill="#C5A149"><circle cx="30" cy="104" r="1.3"/><circle cx="72" cy="102" r="1.3"/><circle cx="76" cy="70" r="1.1"/></g>`,
-  gruen: `<g clip-path="url(#w-clip)" fill="#F7F4EC">${Array.from({ length: 13 }, (_, i) => { const x = 14 + i * 6, y = 80 + 17 * Math.sin((i / 12) * Math.PI); return `<circle cx="${x}" cy="${y.toFixed(1)}" r="1.5"/>`; }).join('')}</g>`,
-  gold: `<g fill="none" stroke="#fff3c4" stroke-opacity=".28" stroke-width="1"><path d="M50 46Q18 86 50 126"/><path d="M50 46Q82 86 50 126"/></g>`,
-};
-SCHMUCK.blau = SCHMUCK.gruen;     // Perlenkette
-SCHMUCK.blau2 = SCHMUCK.nacht;    // goldener Stern
-function kugelSvg(finish) {
-  return `<svg class="w-kugel__svg" viewBox="0 20 100 112" focusable="false" aria-hidden="true">`
-    + `<circle cx="50" cy="27" r="6.5" fill="none" stroke="#B8913A" stroke-width="2"/>`
-    + `<circle cx="50" cy="86" r="40" fill="url(#w-g-${finish})"/>`
-    + SCHMUCK[finish]
-    + `<circle cx="50" cy="86" r="40" fill="url(#w-rim)"/>`
-    + `<g clip-path="url(#w-clip)"><ellipse cx="38" cy="68" rx="19" ry="17" fill="url(#w-glanz)"/>`          // Spiegelung eines Fensters mit vier Scheiben
-    + `<g fill="#fff" fill-opacity=".88" transform="rotate(-16 40 68)"><rect x="28.5" y="58" width="9" height="9.4" rx="1.4"/><rect x="39.5" y="58" width="9" height="9.4" rx="1.4"/><rect x="28.5" y="69.2" width="9" height="9.4" rx="1.4"/><rect x="39.5" y="69.2" width="9" height="9.4" rx="1.4"/></g></g>`
-    + `<path d="M17 80A34 34 0 0 1 36 54" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>`
-    + `<rect x="38.5" y="34" width="23" height="15" rx="2.6" fill="url(#w-kappe)"/><path d="M41.5 38.5h17M41.5 42h17M41.5 45.5h17" stroke="#5b4313" stroke-opacity=".38" stroke-width=".8"/>`
-    + `</svg>`;
+// ── Christbaumkugel: von Hand im Spachtelstil gemalt wie das Gemälde (dicke Farbstriche mit Lichtkante, Perlen, Flocke, Berge). Kleine WebP-Bilder in assets/img/kugel-*.webp,
+//    erzeugt von tools/kugeln/ (node tools/kugeln/bauen.mjs); KUGEL_MASS = Bildgröße in Pixeln, die Kugel ist 168 von 182 Pixeln breit ──
+const KUGEL_MASS = {'creme-flocke': [182, 234], 'eis-berge': [182, 236], 'eis-stern': [182, 233], 'gold-punkte': [180, 233], 'gold-wirbel': [182, 234], 'rot-streifen': [182, 234], 'tropfen-creme': [151, 276], 'tropfen-rot': [151, 275]};
+function kugelSvg(name) {
+  const [w, h] = KUGEL_MASS[name];
+  const url = new URL(`../assets/img/kugel-${name}.webp`, import.meta.url).href;
+  return `<img class="w-kugel__svg" src="${url}" width="${w}" height="${h}" style="width:calc(var(--s) * ${(w / 182).toFixed(3)})" alt="" decoding="async" draggable="false">`;
 }
 
 // ── Pendel: jede Kugel hängt still und schwingt nur, wenn Zeiger oder Finger sie anstoßen (Winkel θ, Dämpfung); danach kommt sie zur Ruhe ──
 const kugeln = new Set();
 let lauf = 0, zuletzt = 0, ruheBis = 0;      // ruheBis: kurz nach dem Einblenden schwingt nichts, auch wenn der Mauszeiger zufällig dort steht
-function kugel(eltern, { x, y, s, L, f, i = 0 }) {
-  const wurzel = el('div', 'w-kugel');
-  wurzel.style.cssText = `left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--s:${s}px;--i:${i}`;
+function kugel(eltern, { x, y, s, L, f, i = 0, rechts = false }) {
+  const wurzel = el('div', 'w-kugel' + (rechts ? ' w-kugel--r' : ''));
+  wurzel.style.cssText = `${rechts ? 'right' : 'left'}:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--s:${s}px;--i:${i}`;      // rechts: Abstand vom rechten Rand, damit Zweig und Kugeln auch bei anderer Breite zusammenbleiben
   wurzel.innerHTML = `<div class="w-kugel__in"><i class="w-faden" style="height:${L}px"></i>${kugelSvg(f)}</div>`;
   eltern.appendChild(wurzel);
   const k = { wurzel, th: 0, om: 0, w: 2.1 * Math.sqrt(120 / (L + s * .5)), sichtbar: true, io: null };
@@ -181,32 +82,34 @@ function pendelnEntfernen(eltern) {
   for (const k of [...kugeln]) if (eltern.contains(k.wurzel)) { k.io?.disconnect(); kugeln.delete(k); }
 }
 
-// ── Zweig mit Kugeln in beide Ecken eines Containers (Start-Bereich und Nachtbild) ──
+// ── Kugeln ohne Äste: sie hängen an ihren Fäden von der Oberkante, verteilt über die beiden oberen Ecken (t = Anteil der Eckenbreite, L = Fadenlänge, s = Breite der Kugel) ──
+// Die Fäden sind verschieden lang und die Abstände unregelmäßig, damit es nicht wie eine Reihe aussieht; in der Mitte (Schild „Hofer Bräu“, Titel) bleibt es frei.
+// Bewusst wenige und ruhige Farben: Gold, Weiß, Eisblau (wie der Rahmen), dazu ein tiefes Rot wie im Gemälde.
 const PLAN = {
   breit: {
-    l: [{ t: .3, L: 52, s: 46, f: 'gold' }, { t: .58, L: 118, s: 64, f: 'blau' }, { t: .86, L: 58, s: 48, f: 'creme' }],
-    r: [{ t: .27, L: 68, s: 50, f: 'creme' }, { t: .56, L: 132, s: 60, f: 'blau2' }, { t: .84, L: 54, s: 44, f: 'gold' }],
+    l: [{ t: .07, L: 58, s: 58, f: 'gold-punkte' }, { t: .3, L: 150, s: 68, f: 'tropfen-rot' }, { t: .55, L: 64, s: 62, f: 'eis-berge' }, { t: .82, L: 122, s: 56, f: 'creme-flocke' }],
+    r: [{ t: .07, L: 44, s: 56, f: 'eis-stern' }, { t: .3, L: 124, s: 66, f: 'rot-streifen' }, { t: .55, L: 66, s: 60, f: 'gold-wirbel' }, { t: .82, L: 154, s: 66, f: 'tropfen-creme' }],
   },
-  // schmale Bilder (Handy, Tablet): der Titel steht dicht unter den Zweigen, die Kugeln hängen ganz außen und kurz
+  // schmale Bilder (Handy, Tablet): der Titel steht dicht darunter, die Kugeln hängen ganz außen und kurz
   schmal: {
-    l: [{ t: .24, L: 10, s: 26, f: 'gold' }, { t: .52, L: 4, s: 24, f: 'blau' }],       // kurze Fäden: der breite Titel (Oswald, Versalien) beginnt gleich darunter
-    r: [{ t: .24, L: 8, s: 25, f: 'creme' }, { t: .52, L: 4, s: 23, f: 'blau2' }],
+    l: [{ t: .12, L: 18, s: 30, f: 'gold-punkte' }, { t: .5, L: 42, s: 32, f: 'eis-berge' }, { t: .88, L: 10, s: 26, f: 'creme-flocke' }],
+    r: [{ t: .12, L: 30, s: 30, f: 'rot-streifen' }, { t: .5, L: 8, s: 26, f: 'eis-stern' }, { t: .88, L: 36, s: 30, f: 'gold-wirbel' }],
   },
 };
-function ecken(behaelter, farben, anteil) {
+function ecken(behaelter, anteil) {
   const W = behaelter.clientWidth || innerWidth;
   const klein = W < 1000;
-  const bw = Math.round(klein ? Math.min(W * (W < 768 ? .36 : .2), 170) : Math.min(W * anteil, 400));
+  // Handy: links und rechts vom Schild „Hofer Bräu“ bleibt nur etwa ein Drittel der Breite; die Kugeln hängen davor
+  const marke = document.querySelector('.site-header__brand');
+  const frei = (W - (marke ? marke.offsetWidth : 140)) / 2 - 8;
+  const bw = Math.round(klein ? (W < 768 ? Math.max(70, Math.min(170, frei - 18)) : Math.min(W * .2, 170)) : Math.min(W * anteil, 400));
   const plan = klein ? PLAN.schmal : PLAN.breit;
   const mass = klein ? 1 : Math.max(.9, Math.min(1.3, W / 1280));
   let i = 0;
   for (const seite of ['l', 'r']) {
-    const z = zweig(bw, farben, seite === 'l' ? 7 : 19);
-    const kasten = el('div', 'w-ast w-ast--' + seite, z.svg);
-    behaelter.appendChild(kasten);
     for (const k of plan[seite]) {
-      const [px, py] = z.punkt(k.t);
-      kugel(behaelter, { x: seite === 'l' ? px : W - px, y: py + 3, s: Math.round(k.s * mass), L: Math.round(k.L * mass), f: k.f, i: i++ });
+      const s = Math.round(k.s * mass);
+      kugel(behaelter, { x: Math.max(s / 2 + 8, k.t * bw), rechts: seite === 'r', y: 0, s, L: Math.round(k.L * mass), f: k.f, i: i++ });
     }
   }
 }
@@ -239,7 +142,6 @@ function einschalten() {
   const los = () => {
     if (abgebrochen) return;
     root.classList.add('winter');
-    document.body.appendChild(el('div', 'w-defs-halter', defs()));
     stopSchnee = schneeStart();
     const hero = document.getElementById('start');
     if (hero) { deko = el('div', 'w-deko'); deko.setAttribute('aria-hidden', 'true'); hero.appendChild(deko); }
@@ -247,7 +149,7 @@ function einschalten() {
     if (bild) { zeichnung = { bild, marke: document.createComment('winter') }; bild.replaceWith(zeichnung.marke); }
     schluss = gipfel(zeichnung ? zeichnung.marke : document.querySelector('#berghof .section__inner > :last-child'));
     const bauen = () => {
-      if (deko) { pendelnEntfernen(deko); deko.textContent = ''; ecken(deko, NADELN.dunkel, .22); }
+      if (deko) { pendelnEntfernen(deko); deko.textContent = ''; ecken(deko, .22); }
       gruppeBreite = innerWidth;
     };
     bauen();
@@ -268,7 +170,6 @@ function einschalten() {
     if (deko) { pendelnEntfernen(deko); deko.remove(); }
     schluss?.();
     if (zeichnung) zeichnung.marke.replaceWith(zeichnung.bild);
-    document.querySelector('.w-defs-halter')?.remove();
     root.classList.remove('winter');
   };
 }
@@ -290,7 +191,7 @@ function schalter() {
 }
 
 export function start({ an }) {
-  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=fc069a9e', import.meta.url).href;
+  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=5ec8b712', import.meta.url).href;
   const fertig = new Promise((res) => { css.onload = css.onerror = res; setTimeout(res, 3000); });
   document.head.appendChild(css);
   fertig.then(() => {

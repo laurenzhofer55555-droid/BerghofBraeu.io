@@ -176,8 +176,7 @@
       .hero { --g2: 28px; }
       .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
       .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
-        box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
+      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); }      /* Handy: nur noch der Rahmen um das Bild selbst (kein zweiter Rahmen / Passepartout darum) */
       .painting__bild > img { border: 1px solid var(--green); }
     }
     @media (min-width: 768px) {
@@ -240,9 +239,9 @@
     .age__card { position: relative; width: min(100%, 544px); padding: 48px 48px 40px; border-radius: 6px; background: var(--cream); border: 1.5px solid var(--rahmen-weiss);
       box-shadow: 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
     .age__card::before { content: ''; position: absolute; inset: 5px; border: 1.5px solid var(--rahmen-blau); border-radius: 3px; pointer-events: none; }
-    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--rahmen-weiss); box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--rahmen-blau); transform: rotate(45deg); pointer-events: none; }
-    .age__corner:nth-of-type(1) { top: 1px; left: 1px; } .age__corner:nth-of-type(2) { top: 1px; right: 1px; }
-    .age__corner:nth-of-type(3) { bottom: 1px; left: 1px; } .age__corner:nth-of-type(4) { bottom: 1px; right: 1px; }
+    .age__corner { position: absolute; width: 5px; height: 5px; background: var(--rahmen-weiss); box-shadow: 0 0 0 1.5px var(--cream), 0 0 0 2.5px var(--rahmen-blau); transform: rotate(45deg); pointer-events: none; }
+    .age__corner:nth-of-type(1) { top: 0; left: 0; } .age__corner:nth-of-type(2) { top: 0; right: 0; }
+    .age__corner:nth-of-type(3) { bottom: 0; left: 0; } .age__corner:nth-of-type(4) { bottom: 0; right: 0; }
     .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 29px; line-height: 1.25; letter-spacing: .05em; text-transform: uppercase; color: var(--green); }
     .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 24px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
@@ -287,9 +286,9 @@
     .site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
     .frame { position: absolute; inset: var(--frame-inset); border: 1.5px solid var(--rahmen-weiss); pointer-events: none; }
     .frame::before { content: ''; position: absolute; inset: 5px; border: 1.5px solid var(--rahmen-blau); }
-    .frame__corner { position: absolute; width: 9px; height: 9px; background: var(--rahmen-weiss); box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--rahmen-blau); transform: rotate(45deg); }
-    .frame__corner--tl { top: 1px; left: 1px; } .frame__corner--tr { top: 1px; right: 1px; }
-    .frame__corner--bl { bottom: 1px; left: 1px; } .frame__corner--br { bottom: 1px; right: 1px; }
+    .frame__corner { position: absolute; width: 5px; height: 5px; background: var(--rahmen-weiss); box-shadow: 0 0 0 1.5px var(--cream), 0 0 0 2.5px var(--rahmen-blau); transform: rotate(45deg); }
+    .frame__corner--tl { top: 0; left: 0; } .frame__corner--tr { top: 0; right: 0; }
+    .frame__corner--bl { bottom: 0; left: 0; } .frame__corner--br { bottom: 0; right: 0; }
     .hero__text { position: relative; }
     .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
     .hero__heading { margin: 0; font-weight: 400; }
@@ -305,12 +304,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=fc069a9e" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=fc069a9e" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=fc069a9e" /></noscript>
+  <link rel="preload" href="css/style.css?v=5ec8b712" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=5ec8b712" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=5ec8b712" /></noscript>
 
   <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=fc069a9e"></script>
+  <script type="module" src="js/main.js?v=5ec8b712"></script>
 </head>
 <body>
 
@@ -439,9 +438,12 @@
 
         <!-- Zutaten um die Flasche: Hopfen und Wasser links, Malz rechts, goldene Linien führen zur Flasche (Desktop ab 1100 px, js/etikett.js zeichnet sie beim ersten Erscheinen); schmal: Flasche mittig, darunter die drei Zutaten -->
         <div class="zutaten-buehne" data-etikett>
+          <!-- Produktbild: die Flasche im Schnee; der Schnee reicht über die ganze Seitenbreite (css/style.css, .zutaten__schnee) -->
+          <div class="zutaten__schnee"><img src="assets/img/produkt-schnee-1584.webp" srcset="assets/img/produkt-schnee-900.webp 900w, assets/img/produkt-schnee-1584.webp 1584w" sizes="(min-width: 1100px) 1836px, 100vw" width="1584" height="672" loading="lazy" decoding="async" alt="Eine Flasche Berghof Hell steckt halb im Schnee" /></div>
           <svg class="etikett__linie zutaten__linien" viewBox="0 0 100 58" aria-hidden="true" focusable="false">
+            <!-- Pfeile (goldene Linien) auf die Füllhöhe des Bieres: Hopfen (unter 0,1 %) ganz oben am Hals, Wasser (ca. 90 %) in der Mitte des Körpers, Malz (ca. 10 %) unten am Boden -->
             <path class="etikett__pfad" pathLength="1" d="M32.5 9H38Q42 9 44.4 9.5T46.8 10.1"/>
-            <path class="etikett__pfad" pathLength="1" d="M67.5 24H63Q60.5 24 59 22.8T57.1 21.8"/>
+            <path class="etikett__pfad" pathLength="1" d="M67.5 31H63Q60.5 31 59 29.2T57.1 27.5"/>
             <path class="etikett__pfad" pathLength="1" d="M32.5 40H36Q40 40 41.2 44.2T42.7 47.7"/>
           </svg>
           <i class="etikett__raute zr1" aria-hidden="true"></i><i class="etikett__raute zr2" aria-hidden="true"></i><i class="etikett__raute zr3" aria-hidden="true"></i>

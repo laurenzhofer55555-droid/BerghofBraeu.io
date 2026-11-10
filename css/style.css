@@ -90,7 +90,7 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-main { position: relative; z-index: 2; }
+main { position: relative; z-index: 2; overflow-x: clip; }      /* das Schneebild der Zutaten ist 100vw breit und ragt aus dem Inhaltsbereich: nichts darf die Seite breiter machen (am iPhone würde sonst die ganze Seite herausgezoomt) */
 
 /* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie ── */
 .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
@@ -121,15 +121,15 @@ main { position: relative; z-index: 2; }
   border: 1.5px solid var(--rahmen-blau);
 }
 .frame__corner {
-  position: absolute; width: 9px; height: 9px;
+  position: absolute; width: 5px; height: 5px;
   background: var(--rahmen-weiss);
-  box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--rahmen-blau);
+  box-shadow: 0 0 0 1.5px var(--cream), 0 0 0 2.5px var(--rahmen-blau);
   transform: rotate(45deg);
 }
-.frame__corner--tl { top: 1px; left: 1px; }
-.frame__corner--tr { top: 1px; right: 1px; }
-.frame__corner--bl { bottom: 1px; left: 1px; }
-.frame__corner--br { bottom: 1px; right: 1px; }
+.frame__corner--tl { top: 0; left: 0; }
+.frame__corner--tr { top: 0; right: 0; }
+.frame__corner--bl { bottom: 0; left: 0; }
+.frame__corner--br { bottom: 0; right: 0; }
 
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { position: relative; }
@@ -189,8 +189,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   .hero { --g2: 28px; }
   .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
   .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: var(--cream-deep); border: 1px solid var(--gold); border-radius: 3px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 18px 40px -18px rgba(0, 0, 0, .5), 0 3px 10px rgba(0, 0, 0, .25); }
+  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); }      /* Handy: nur noch der Rahmen um das Bild selbst (kein zweiter Rahmen / Passepartout darum) */
   .painting__bild > img { border: 1px solid var(--green); }
 }
 @media (min-width: 768px) {
@@ -213,6 +212,21 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett-an .ist-da .etikett__pfad { stroke-dashoffset: 0; transition: stroke-dashoffset .8s cubic-bezier(.45, .05, .25, 1); }
 .etikett-an .ist-da .etikett__raute { opacity: 1; transition: opacity .35s ease .65s; }
 
+/* Produktbild: Flasche im Schnee. Der Schnee läuft über die ganze Seitenbreite (100vw) und löst sich oben und unten weich ins Grün auf. Am Desktop steht die Flasche genau dort, wo vorher das
+   Flaschenfoto stand (Bild 170 cqw breit, Flaschenmitte bei 49,2 % der Bildbreite), damit die goldenen Pfeile weiter auf die richtigen Stellen zeigen; schmale Bildschirme zeigen einen Ausschnitt um die Flasche. */
+.zutaten-buehne .zutaten__flasche { display: none; }
+.zutaten__schnee { position: relative; width: auto; justify-self: stretch; margin-inline: calc(50% - 50vw); aspect-ratio: 5 / 6; overflow: hidden; background: #E3E7EA; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); }      /* schmal: bis an die Bildschirmkanten; weicher Übergang: der Schnee löst sich oben und unten ins Grün auf */
+.zutaten__schnee img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 49% 50%; }
+@media (min-width: 1100px) {
+  .zutaten-buehne { --zf: #1F4D2B; }                                                    /* Schriftfarbe auf dem Schnee: Tannengrün (auf Weiß wäre Weiß unlesbar) */
+  .zutaten__schnee { position: absolute; z-index: 0; left: 50%; width: 100vw; margin: 0 0 0 -50vw; top: -3cqw; height: 64cqw; aspect-ratio: auto;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 5cqw, #000 calc(100% - 5cqw), transparent); mask-image: linear-gradient(to bottom, transparent, #000 5cqw, #000 calc(100% - 5cqw), transparent); }
+  .zutaten__schnee img { inset: auto; width: 170cqw; height: auto; left: calc(50% - 83.6cqw); top: -3.1cqw; object-fit: fill; -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent); }
+  .zutaten-buehne .ingredient h3, .zutaten-buehne .ingredient p { color: var(--zf); }
+  .zutaten-buehne .ingredient__art { stroke: var(--zf); }
+  .zutaten-buehne .ingredient__art [fill="#F7F4EC"] { fill: #EEF3F5; }
+}
 @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
 /* Desktop: ruhiger, breiterer Leadtext (66 Zeichen, 1,2 rem) */
 @media (min-width: 1024px) { .hero__lead { font-size: 1.1rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
@@ -363,6 +377,7 @@ h3 {
 .ingredient__art [fill="#F7F4EC"] { fill: var(--cream); }          /* Symbole: weiße Linien, Füllung wie der Grund */
 .ingredient__art { display: block; width: 132px; height: 140px; margin: 0 auto 18px; }
 .ingredient p { margin: 0 auto; max-width: 26ch; color: var(--ink); }
+.ingredient:nth-child(3) .ingredient__art { transform: scale(.8); }      /* Wasser-Zeichen (Tropfen) etwas kleiner; es bleibt in seinem Platz, die Überschrift rutscht nicht */
 
 /* Zutaten um die Flasche. Schmal: Flasche mittig, darunter die drei Zutaten. Ab 1100 px eine Bühne (Verhältnis 100 : 58, alles in cqw): Flasche groß in der Mitte,
    Hopfen (zielt auf den Hals) und Wasser (zielt auf den Boden) links, Malz (zielt auf den Bauch) rechts; die goldenen Linien zeichnen sich beim ersten Erscheinen (js/etikett.js). */
@@ -378,11 +393,12 @@ h3 {
   .zutaten-buehne .etikett__raute { display: block; }
   .zutaten-buehne .ingredients { position: absolute; inset: 0; display: block; }
   .zutaten-buehne .ingredient { position: absolute; width: 30cqw; }
+  /* von oben nach unten: Hopfen (links oben), Wasser (rechts, Mitte), Malz (links unten); die Pfeile zeigen auf die entsprechende Höhe der Flasche */
   .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 1cqw; }
-  .zutaten-buehne .ingredient:nth-child(2) { left: 68cqw; top: 14cqw; }
-  .zutaten-buehne .ingredient:nth-child(3) { left: 2cqw; top: 31cqw; }
+  .zutaten-buehne .ingredient:nth-child(2) { left: 2cqw; top: 31cqw; }
+  .zutaten-buehne .ingredient:nth-child(3) { left: 68cqw; top: 14cqw; }
   .zutaten-buehne .zr1 { left: 46.8cqw; top: 10.1cqw; }
-  .zutaten-buehne .zr2 { left: 57.1cqw; top: 21.8cqw; }
+  .zutaten-buehne .zr2 { left: 57.1cqw; top: 27.5cqw; }
   .zutaten-buehne .zr3 { left: 42.7cqw; top: 47.7cqw; }
 }
 
@@ -514,7 +530,7 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
   body { font-size: 15.5px; }
   .site-header__brand { font-size: 11px; padding: 0 12px; }
   .hero__claim { font-size: 12px; letter-spacing: .2em; }
-  .frame__corner { width: 7px; height: 7px; }
+  .frame__corner { width: 4px; height: 4px; }
   .ingredients { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }          /* mit der Flasche mittig darüber: drei Zutaten nebeneinander */
   .ingredient__art { width: min(100px, 26vw); height: auto; aspect-ratio: 160 / 170; }
 }
