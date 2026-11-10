@@ -212,17 +212,17 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett-an .ist-da .etikett__pfad { stroke-dashoffset: 0; transition: stroke-dashoffset .8s cubic-bezier(.45, .05, .25, 1); }
 .etikett-an .ist-da .etikett__raute { opacity: 1; transition: opacity .35s ease .65s; }
 
-/* Produktbild: Flasche im Schnee. Der Schnee läuft über die ganze Seitenbreite (100vw) und löst sich oben und unten weich ins Grün auf. Am Desktop steht die Flasche genau dort, wo vorher das
-   Flaschenfoto stand (Bild 170 cqw breit, Flaschenmitte bei 49,2 % der Bildbreite), damit die goldenen Pfeile weiter auf die richtigen Stellen zeigen; schmale Bildschirme zeigen einen Ausschnitt um die Flasche. */
+/* Produktbild: Flasche im Schnee (Higgsfield: dein Bild mit dem richtigen Etikett, Hintergrund freigestellt). Ein Schneeband mit rauer, klumpiger Kante und Krümeln oben und unten, die Flasche steckt rundum im Schnee.
+   Das Seitengrün scheint durch die freien Ränder, darum braucht es keine Maske und keinen Hintergrund. Am Desktop ist das Bild 150 cqw breit und 120 cqw hoch, die Flasche steht in der Bühnenmitte;
+   die goldenen Pfeile enden am Halsschild und am Vorderetikett. Handy: Ausschnitt um die Flasche, beide rauen Kanten bleiben im Bild. */
 .zutaten-buehne .zutaten__flasche { display: none; }
-.zutaten__schnee { position: relative; width: auto; justify-self: stretch; margin-inline: calc(50% - 50vw); aspect-ratio: 5 / 6; overflow: hidden; background: #E3E7EA; pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent); }      /* schmal: bis an die Bildschirmkanten; weicher Übergang: der Schnee löst sich oben und unten ins Grün auf */
-.zutaten__schnee img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 49% 50%; }
+.zutaten__schnee { position: relative; width: auto; justify-self: stretch; margin-inline: calc(50% - 50vw); aspect-ratio: 2 / 3; overflow: hidden; pointer-events: none; }      /* schmal: bis an die Bildschirmkanten */
+.zutaten__schnee img { position: absolute; left: 50%; top: 49%; display: block; height: 124.6%; width: auto; max-width: none; transform: translate(-49.2%, -49%); }
+@media (min-width: 600px) { .zutaten__schnee { aspect-ratio: 5 / 4; } .zutaten__schnee img { left: 0; top: 0; width: 100%; height: 100%; transform: none; object-fit: cover; object-position: 49.2% 50%; } }
 @media (min-width: 1100px) {
   .zutaten-buehne { --zf: #1F4D2B; }                                                    /* Schriftfarbe auf dem Schnee: Tannengrün (auf Weiß wäre Weiß unlesbar) */
-  .zutaten__schnee { position: absolute; z-index: 0; left: 50%; width: 100vw; margin: 0 0 0 -50vw; top: -3cqw; height: 64cqw; aspect-ratio: auto;
-    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 5cqw, #000 calc(100% - 5cqw), transparent); mask-image: linear-gradient(to bottom, transparent, #000 5cqw, #000 calc(100% - 5cqw), transparent); }
-  .zutaten__schnee img { inset: auto; width: 170cqw; height: auto; left: calc(50% - 83.6cqw); top: -3.1cqw; object-fit: fill; -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent); }
+  .zutaten__schnee { position: absolute; z-index: 0; left: 50%; width: 100vw; margin: 0 0 0 -50vw; top: -13.6cqw; height: 120cqw; aspect-ratio: auto; }
+  .zutaten__schnee img { width: 150cqw; height: auto; left: calc(50% - 73.8cqw); top: 0; object-fit: fill; transform: none; }
   .zutaten-buehne .ingredient h3, .zutaten-buehne .ingredient p { color: var(--zf); }
   .zutaten-buehne .ingredient__art { stroke: var(--zf); }
   .zutaten-buehne .ingredient__art [fill="#F7F4EC"] { fill: #EEF3F5; }
@@ -387,19 +387,19 @@ h3 {
 .zf__schatten { position: absolute; z-index: 0; display: block; width: 245%; max-width: none; height: auto; left: -72.5%; top: 88%; }
 .zutaten__linien, .zutaten-buehne .etikett__raute { display: none; }
 @media (min-width: 1100px) {
-  .zutaten-buehne { display: block; max-width: 1080px; margin-inline: auto; aspect-ratio: 100 / 58; }
+  .zutaten-buehne { display: block; max-width: 1080px; margin-inline: auto; aspect-ratio: 100 / 90; }
   .zutaten__flasche { position: absolute; left: 42.5cqw; top: 2cqw; width: 15cqw; }
   .zutaten__linien { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .zutaten-buehne .etikett__raute { display: block; }
   .zutaten-buehne .ingredients { position: absolute; inset: 0; display: block; }
   .zutaten-buehne .ingredient { position: absolute; width: 30cqw; }
   /* von oben nach unten: Hopfen (links oben), Wasser (rechts, Mitte), Malz (links unten); die Pfeile zeigen auf die entsprechende Höhe der Flasche */
-  .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 1cqw; }
-  .zutaten-buehne .ingredient:nth-child(2) { left: 2cqw; top: 31cqw; }
-  .zutaten-buehne .ingredient:nth-child(3) { left: 68cqw; top: 14cqw; }
-  .zutaten-buehne .zr1 { left: 46.8cqw; top: 10.1cqw; }
-  .zutaten-buehne .zr2 { left: 57.1cqw; top: 27.5cqw; }
-  .zutaten-buehne .zr3 { left: 42.7cqw; top: 47.7cqw; }
+  .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 14cqw; }
+  .zutaten-buehne .ingredient:nth-child(2) { left: 2cqw; top: 48cqw; }
+  .zutaten-buehne .ingredient:nth-child(3) { left: 68cqw; top: 30cqw; }
+  .zutaten-buehne .zr1 { left: 45.4cqw; top: 33.3cqw; }
+  .zutaten-buehne .zr2 { left: 56cqw; top: 45.8cqw; }
+  .zutaten-buehne .zr3 { left: 44.2cqw; top: 57.5cqw; }
 }
 
 .facts {

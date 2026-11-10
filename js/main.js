@@ -3,11 +3,11 @@
 // Bei „Bewegung reduzieren“ (und ohne JavaScript) gibt es weder Sperre noch Animation: die normale Seite.
 // Notausgang: kommt die Steuerung nicht in Gang, wird die Sperre aufgehoben, damit die Seite nie blockiert bleibt.
 
-import './altersabfrage.js?v=602a8b7b';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=602a8b7b';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=602a8b7b';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=602a8b7b';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
-import { winterZeit } from './winter-zeit.js?v=602a8b7b';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
+import './altersabfrage.js?v=4be74cf6';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=4be74cf6';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=4be74cf6';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=4be74cf6';             // Schafe der Herde laden (ohne Sequenz nach dem Laden der Seite)
+import { winterZeit } from './winter-zeit.js?v=4be74cf6';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -36,5 +36,5 @@ if (document.readyState === 'complete') ladeHerde(); else window.addEventListene
 // Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts.
 const winter = winterZeit();
 if (winter.saison) {
-  import('./winter.js?v=602a8b7b').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
+  import('./winter.js?v=4be74cf6').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
 }
