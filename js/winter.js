@@ -5,16 +5,16 @@
 // dann senken sich die Kugeln und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
 // Im Fuß gibt es einen Schalter „Winterschmuck ausblenden“. Die Kugeln hängen still und schwingen nur, wenn Zeiger oder Finger sie berühren.
 // Bei „Bewegung reduzieren“ steht alles still (kein Schnee, kein Schwingen, kein Funkeln).
-import { schneeStart } from './winter-schnee.js?v=5ec8b712';
-import { gipfel } from './winter-gipfel.js?v=5ec8b712';
+import { schneeStart } from './winter-schnee.js?v=602a8b7b';
+import { gipfel } from './winter-gipfel.js?v=602a8b7b';
 
 const root = document.documentElement;
 const stillstand = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const el = (tag, klasse, html) => { const e = document.createElement(tag); if (klasse) e.className = klasse; if (html) e.innerHTML = html; return e; };
 
 // ── Christbaumkugel: von Hand im Spachtelstil gemalt wie das Gemälde (dicke Farbstriche mit Lichtkante, Perlen, Flocke, Berge). Kleine WebP-Bilder in assets/img/kugel-*.webp,
-//    erzeugt von tools/kugeln/ (node tools/kugeln/bauen.mjs); KUGEL_MASS = Bildgröße in Pixeln, die Kugel ist 168 von 182 Pixeln breit ──
-const KUGEL_MASS = {'creme-flocke': [182, 234], 'eis-berge': [182, 236], 'eis-stern': [182, 233], 'gold-punkte': [180, 233], 'gold-wirbel': [182, 234], 'rot-streifen': [182, 234], 'tropfen-creme': [151, 276], 'tropfen-rot': [151, 275]};
+//    erzeugt von tools/kugeln/ (node tools/kugeln/bauen.mjs); KUGEL_MASS = Bildgröße in Pixeln (mit gebackenem Schatten); Bezugsbreite 182 = Kugel samt Rand, daher Breite = s * w / 182 ──
+const KUGEL_MASS = {'creme-flocke': [200, 243], 'eis-berge': [200, 245], 'eis-stern': [200, 242], 'gold-punkte': [198, 242], 'gold-wirbel': [200, 243], 'rot-streifen': [200, 243], 'tropfen-creme': [169, 285], 'tropfen-rot': [169, 284]};
 function kugelSvg(name) {
   const [w, h] = KUGEL_MASS[name];
   const url = new URL(`../assets/img/kugel-${name}.webp`, import.meta.url).href;
@@ -191,7 +191,7 @@ function schalter() {
 }
 
 export function start({ an }) {
-  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=5ec8b712', import.meta.url).href;
+  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=602a8b7b', import.meta.url).href;
   const fertig = new Promise((res) => { css.onload = css.onerror = res; setTimeout(res, 3000); });
   document.head.appendChild(css);
   fertig.then(() => {

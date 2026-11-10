@@ -11,11 +11,11 @@ html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !i
 .w-schnee { position: absolute; top: 0; left: 0; width: 100%; z-index: 40; pointer-events: none; }
 
 /* ── Kugeln in den Ecken (ohne Äste) ── */
-.w-deko { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: 5; pointer-events: none; overflow-x: clip; }   /* waagerecht abschneiden: eine Kugel nahe am Rand darf die Seite am Handy nicht breiter als den Bildschirm machen */
+.w-deko { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: 5; pointer-events: none; }   /* kein overflow-x: clip und keine Filter an den Kugeln: beides ließ sie in Safari nach dem Anstoßen verschwinden; die Kugeln hängen ohnehin ganz im Bild (x >= halbe Breite + 8 px) */
 .w-licht { animation: funkeln 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
 @keyframes funkeln { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
-.w-kugel__in { animation: kugel-ein .85s cubic-bezier(.22, .9, .3, 1) both; animation-delay: calc(.3s + var(--i) * .1s); }
+.w-kugel__in { animation: kugel-ein .85s cubic-bezier(.22, .9, .3, 1) backwards; animation-delay: calc(.3s + var(--i) * .1s); }
 @keyframes kugel-ein { from { opacity: 0; transform: translateY(-70px); } }
 .w-kugel--r { margin-left: 0 !important; margin-right: calc(var(--s) / -2); }
 .w-kugel { position: absolute; width: var(--s); margin-left: calc(var(--s) / -2); transform-origin: 50% 0; pointer-events: auto; cursor: grab; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -23,7 +23,7 @@ html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !i
 /* Osterei: zweimal ganz um den Faden gedreht (Faden und Aufhänger liegen auf der Drehachse, die Kugel bleibt also angehängt), dabei hüpft sie ein Stück hoch */
 @keyframes kugel-flip { 0% { transform: perspective(520px) translateY(0) rotateY(0); } 45% { transform: perspective(520px) translateY(-14px) rotateY(400deg); } 100% { transform: perspective(520px) translateY(0) rotateY(720deg); } }
 .w-faden { display: block; width: 1px; margin: 0 auto; background: linear-gradient(#B8913A, #7A5C1C); opacity: .9; }
-.w-kugel__svg { display: block; width: var(--s); height: auto; margin: -1px auto 0; max-width: none; filter: drop-shadow(0 5px 5px rgba(0, 10, 4, .5)); }
+.w-kugel__svg { display: block; width: var(--s); height: auto; margin: -1px auto 0; max-width: none; }
 
 /* ── Schluss-Szene: Spachtel-Gemälde mit Schafen am Lagerfeuer (js/winter-gipfel.js) ── */
 .w-gipfel { margin: clamp(56px, 9vh, 96px) auto 0; }
