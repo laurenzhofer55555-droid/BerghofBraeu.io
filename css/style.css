@@ -24,10 +24,6 @@
   src: url('../vendor/fonts/source-serif-4-latin-wght-italic.woff2') format('woff2');
   font-weight: 200 900; font-style: italic; font-display: swap;
 }
-/* Oswald: die Schrift des Etiketts, jetzt für die ganze Seite (lokal, auf Latein beschnitten, SIL Open Font License) */
-@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
-@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: block; }
-@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
 /* Ersatzschrift, solange die Schriften laden: Georgia, auf Breite und Höhe der Webschriften gebracht
    (gemessen in Chrome) → Titel und Text springen beim Schriftwechsel nicht. Gleiche Werte im Start-CSS von index.html. */
 @font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
@@ -35,21 +31,16 @@
 @font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
 
 :root {
-  /* DUNKLE AUSGABE: Hintergrund Tannengrün, alle Schrift und alle Linien weiß (Creme). Die Namen bleiben wie früher: --cream ist der Seitengrund, --green die Schrift- und Linienfarbe. */
-  --cream: #1F4D2B;        /* Seitenhintergrund: Tannengrün */
-  --cream-deep: #194424;   /* etwas tiefer (Kartengrund, Felder) */
-  --green: #F7F4EC;        /* Schrift, Überschriften, Linien: Weiß (Creme des Etiketts) */
-  --green-soft: #F7F4EC;
+  --cream: #F7F4EC;
+  --cream-deep: #EFEADD;
+  --green: #1F4D2B;
+  --green-soft: #1F4D2B;   /* Nebentext: dasselbe Tannengrün wie --green (eine Grünfarbe über die ganze Seite) */
   --gold: #B8913A;         /* nur für Linien und Ornamente */
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
-  --gold-text: #DDC27B;    /* Gold für kleine Schrift auf Grün */
-  --ink: #F2EFE5;
-  --rahmen-weiss: #F7F4EC; /* Rahmen wie das Etikett: außen Weiß, innen Hellblau */
-  --rahmen-blau: #86B4C6;
-  --font-display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
-  --font-text: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
-  --font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
-  --font-winter: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
+  --ink: #22301f;
+  --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
+  --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
   --frame-gap: calc(var(--frame-inset) + 18px);    /* Abschnitte und ihre Trennlinien: innerhalb des Seitenrahmens */
   --gutter: calc(var(--frame-inset) + 24px);       /* Inhalt des Starts: Abstand zum Bildrand, mindestens 24 px hinter dem Rahmen */
@@ -60,9 +51,8 @@
 html, body { margin: 0; background: var(--cream); color: var(--ink); }
 body {
   font-family: var(--font-text);
-  font-size: 17.5px;
-  line-height: 1.65;
-  letter-spacing: .012em;
+  font-size: 18px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -79,7 +69,7 @@ img { max-width: 100%; height: auto; }
 body::after {
   content: '';
   position: fixed; inset: 0; z-index: 50; pointer-events: none;
-  opacity: .16;
+  opacity: .5;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -90,7 +80,7 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-main { position: relative; z-index: 2; overflow-x: clip; }      /* das Schneebild der Zutaten ist 100vw breit und ragt aus dem Inhaltsbereich: nichts darf die Seite breiter machen (am iPhone würde sonst die ganze Seite herausgezoomt) */
+main { position: relative; z-index: 2; }
 
 /* ── Kopf: Markenname sitzt auf der oberen Rahmenlinie ── */
 .site-header { position: absolute; top: 0; left: 0; right: 0; height: 100svh; pointer-events: none; }   /* kein eigener Stapel: nur die Beschriftung liegt (z-index 61) über den Farbstreifen der Browserleisten (z-index 60), die Fläche nicht */
@@ -109,27 +99,27 @@ main { position: relative; z-index: 2; overflow-x: clip; }      /* das Schneebil
 .site-header__brand span { margin-right: -.32em; }
 
 /* ── Start ───────────────────────────── */
-/* Doppelrahmen wie beim Etikett: außen eine weiße Linie, innen eine hellblaue; vier Rauten (weiß, mit hellblauem Ring) in den Ecken */
+/* Doppelrahmen: kräftige grüne Linie außen, feine goldene innen – wie beim Etikett */
 .frame {
   position: absolute; inset: var(--frame-inset);
-  border: 1.5px solid var(--rahmen-weiss);
+  border: 1.5px solid var(--green);
   pointer-events: none;
 }
 .frame::before {
   content: '';
   position: absolute; inset: 5px;
-  border: 1.5px solid var(--rahmen-blau);
+  border: 1px solid var(--gold);
+  opacity: .8;
 }
 .frame__corner {
-  position: absolute; width: 5px; height: 5px;
-  background: var(--rahmen-weiss);
-  box-shadow: 0 0 0 1.5px var(--cream), 0 0 0 2.5px var(--rahmen-blau);
+  position: absolute; width: 9px; height: 9px;
+  background: var(--gold);
   transform: rotate(45deg);
 }
-.frame__corner--tl { top: 0; left: 0; }
-.frame__corner--tr { top: 0; right: 0; }
-.frame__corner--bl { bottom: 0; left: 0; }
-.frame__corner--br { bottom: 0; right: 0; }
+.frame__corner--tl { top: 1px; left: 1px; }
+.frame__corner--tr { top: 1px; right: 1px; }
+.frame__corner--bl { bottom: 1px; left: 1px; }
+.frame__corner--br { bottom: 1px; right: 1px; }
 
 .hero__heading { margin: 0; font-weight: 400; }
 .hero__text { position: relative; }
@@ -161,7 +151,7 @@ html:not(.seq) .skip, .frei .skip { display: none; }
   padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
   --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
   --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
-  --dy-css: calc((100svh - var(--text-h)) / 2 - var(--hero-top));   /* Start: Titelblock mittig im Bild */
+  --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
   --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
 }
 html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
@@ -169,8 +159,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
 .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
 .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel mittig auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
-.seq:not(.frei) .hero__text, .seq:not(.frei) .site-header__brand, .seq:not(.frei) .scroll-cue { text-shadow: 0 1px 16px rgba(18, 48, 28, .4); }   /* weiße Schrift auf Biergold: ein weicher grüner Schatten hält sie lesbar */
+.seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
 .seq:not(.frei) .hero__lead { filter: blur(var(--blur, 8px)); }
 .seq:not(.frei) .painting, .seq:not(.frei) .herd .sheep { filter: blur(var(--blur-bild, 26px)); }                    /* Gemälde und Schafe sind zuerst nur weiche Farbflecken und tauchen erst auf, wenn der Titel oben angekommen ist; Handy: jedes Schaf einzeln weichgezeichnet, nicht der bildschirmgroße Herdenbehälter (der kostete beim Auslaufen den Großteil der Zeichenarbeit pro Bild) */
 /* Die Seite hinter dem Bier ist verschwommen und wird nach dem Titelflug klar (Filter nicht auf .hero__more: er würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt). */
@@ -189,7 +178,8 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   .hero { --g2: 28px; }
   .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
   .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); }      /* Handy: nur noch der Rahmen um das Bild selbst (kein zweiter Rahmen / Passepartout darum) */
+  .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
   .painting__bild > img { border: 1px solid var(--green); }
 }
 @media (min-width: 768px) {
@@ -212,31 +202,6 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 .etikett-an .ist-da .etikett__pfad { stroke-dashoffset: 0; transition: stroke-dashoffset .8s cubic-bezier(.45, .05, .25, 1); }
 .etikett-an .ist-da .etikett__raute { opacity: 1; transition: opacity .35s ease .65s; }
 
-#zutaten { z-index: 4; }      /* der Abschnitt liegt über dem Seitenrahmen (z-index 3): der weiß-hellblaue Rahmen läuft unter dem Schnee durch */
-/* Produktbild: Flasche im Schnee (Higgsfield: dein Bild mit dem richtigen Etikett, Hintergrund freigestellt). Ein Schneeband mit rauer, klumpiger Kante und Krümeln oben und unten, die Flasche steckt rundum im Schnee.
-   Das Seitengrün scheint durch die freien Ränder, darum braucht es keine Maske und keinen Hintergrund. Am Desktop ist das Bild 150 cqw breit und 120 cqw hoch, die Flasche steht in der Bühnenmitte;
-   die goldenen Pfeile enden am Halsschild und am Vorderetikett. Handy: Ausschnitt um die Flasche, beide rauen Kanten bleiben im Bild. */
-.zutaten-buehne .zutaten__flasche { display: none; }
-.zutaten__schnee { position: relative; width: auto; justify-self: stretch; margin-inline: calc(50% - 50vw); aspect-ratio: 2 / 3; overflow: hidden; pointer-events: none; }      /* schmal: bis an die Bildschirmkanten */
-.zutaten__schnee img { position: absolute; left: 50%; top: 49%; display: block; height: 124.6%; width: auto; max-width: none; transform: translate(-49.2%, -49%); }
-@media (min-width: 600px) { .zutaten__schnee { aspect-ratio: 5 / 4; } .zutaten__schnee img { left: 0; top: 0; width: 100%; height: 100%; transform: none; object-fit: cover; object-position: 49.2% 50%; } }
-@media (min-width: 1100px) {
-  .zutaten-buehne { margin-top: -6cqw; --zf: #14341D; }                                                    /* Schriftfarbe auf dem Schnee: sehr dunkles Tannengrün (auf Weiß wäre Weiß unlesbar) */
-  .zutaten__schnee { position: absolute; z-index: 0; left: 50%; width: 100vw; margin: 0 0 0 -50vw; top: -13.6cqw; height: 120cqw; aspect-ratio: auto; }
-  .zutaten__schnee img { width: 150cqw; height: auto; left: calc(50% - 73.8cqw); top: 0; object-fit: fill; transform: none; }
-  /* Lesbarkeit auf dem Schnee: dunklere, kräftigere Schrift, dahinter ein weicher heller Hof (beruhigt das Schneemuster ohne sichtbaren Kasten), Überschriften mit feiner heller Kante wie in den Schnee gedrückt, Symbole mit dickerem Strich und hellem Schein */
-  /* Überschrift unter dem Schneeband, auf dem Grün, direkt über den Eckdaten (weiße Schrift wie überall); der Platz dafür ist unter der Bühne freigehalten */
-  .zutaten-buehne { margin-bottom: 23cqw; }
-  .zutaten-buehne .section__head { position: absolute; left: 50%; top: 99cqw; transform: translateX(-50%); width: 66cqw; max-width: none; margin: 0; z-index: 2; }
-  .zutaten-buehne .section__head h2 { font-size: clamp(1.6rem, 3.1cqw, 2.3rem); margin-bottom: 6px; }
-  .zutaten-buehne .section__head .lead { font-size: clamp(.95rem, 1.45cqw, 1.1rem); margin-top: 6px; }
-  .zutaten-buehne .ingredient { isolation: isolate; z-index: 3; }
-  .zutaten-buehne .ingredient::before { content: ''; position: absolute; z-index: -1; inset: -7% -16% -5%; background: radial-gradient(closest-side, rgba(246, 249, 250, .86), rgba(246, 249, 250, .6) 58%, rgba(246, 249, 250, 0)); filter: blur(5px); pointer-events: none; }
-  .zutaten-buehne .ingredient h3 { color: var(--zf); font-weight: 600; text-shadow: 0 1px 0 rgba(255, 255, 255, .95), 0 0 10px rgba(255, 255, 255, .9), 0 0 22px rgba(255, 255, 255, .7); }
-  .zutaten-buehne .ingredient p { color: var(--zf); font-weight: 500; text-shadow: 0 0 3px rgba(255, 255, 255, .95), 0 0 9px rgba(255, 255, 255, .9), 0 0 20px rgba(255, 255, 255, .7); }
-  .zutaten-buehne .ingredient__art { stroke: var(--zf); stroke-width: 2.1; filter: drop-shadow(0 0 5px rgba(255, 255, 255, .95)) drop-shadow(0 0 12px rgba(255, 255, 255, .8)); }
-  .zutaten-buehne .ingredient__art [fill="#F7F4EC"] { fill: #F3F7F8; }
-}
 @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
 /* Desktop: ruhiger, breiterer Leadtext (66 Zeichen, 1,2 rem) */
 @media (min-width: 1024px) { .hero__lead { font-size: 1.1rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
@@ -251,16 +216,16 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; z-index: 4;   /* über dem Bier */
   position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
-  color: var(--green); opacity: .95; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
+  color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
 }
 .seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
 .seq.frei .scroll-cue { display: none; }
-.scroll-cue:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 8px; }
+.scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
 .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-.scroll-cue .cue-arrow path { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes cue { 50% { transform: translateY(8px); } }
 /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
-.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: var(--green); }
+.scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
 .scroll-cue__mouse { display: none; }
 @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
 @media not all and (max-aspect-ratio: 4/5) {
@@ -315,19 +280,19 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: block;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: calc(var(--title-f) * 1.08);
+  font-size: var(--title-f);
   line-height: 1;
-  letter-spacing: .08em; padding-left: .08em; text-transform: uppercase;
+  letter-spacing: -.005em;
   color: var(--green);
   white-space: nowrap;
 }
-.hero__title em { font-style: normal; font-weight: 500; line-height: 0; }   /* Titel in einer Zeile, ein Schriftschnitt */
+.hero__title em { font-style: italic; font-weight: 400; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
 .hero__claim {
   display: block;
   font-family: var(--font-text);
   font-size: 14px;
   line-height: 1.4;
-  letter-spacing: .3em; text-transform: uppercase;
+  letter-spacing: .26em; text-transform: uppercase;
   color: var(--green-soft);
 }
 /* Rauten-Ornament zwischen Titel und Unterzeile */
@@ -359,7 +324,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 h2 {
   margin: 0;
   font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(32px, 4.2vw, 52px); line-height: 1.15; letter-spacing: .05em; text-transform: uppercase;
+  font-size: clamp(36px, 4.6vw, 58px); line-height: 1.1;
   color: var(--green);
 }
 h2::after {
@@ -372,7 +337,7 @@ h2::after {
 h3 {
   margin: 0 0 8px;
   font-family: var(--font-display); font-weight: 500;
-  font-size: 24px; line-height: 1.2; letter-spacing: .05em; text-transform: uppercase;
+  font-size: 26px; line-height: 1.2;
   color: var(--green);
 }
 .lead { margin: 24px 0 0; font-size: clamp(16.5px, 1.35vw, 18px); color: var(--ink); }
@@ -383,11 +348,8 @@ h3 {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px);
   text-align: center;
 }
-.ingredient__art { stroke: var(--green); }
-.ingredient__art [fill="#F7F4EC"] { fill: var(--cream); }          /* Symbole: weiße Linien, Füllung wie der Grund */
 .ingredient__art { display: block; width: 132px; height: 140px; margin: 0 auto 18px; }
 .ingredient p { margin: 0 auto; max-width: 26ch; color: var(--ink); }
-.ingredient:nth-child(3) .ingredient__art { transform: scale(.8); }      /* Wasser-Zeichen (Tropfen) etwas kleiner; es bleibt in seinem Platz, die Überschrift rutscht nicht */
 
 /* Zutaten um die Flasche. Schmal: Flasche mittig, darunter die drei Zutaten. Ab 1100 px eine Bühne (Verhältnis 100 : 58, alles in cqw): Flasche groß in der Mitte,
    Hopfen (zielt auf den Hals) und Wasser (zielt auf den Boden) links, Malz (zielt auf den Bauch) rechts; die goldenen Linien zeichnen sich beim ersten Erscheinen (js/etikett.js). */
@@ -397,19 +359,18 @@ h3 {
 .zf__schatten { position: absolute; z-index: 0; display: block; width: 245%; max-width: none; height: auto; left: -72.5%; top: 88%; }
 .zutaten__linien, .zutaten-buehne .etikett__raute { display: none; }
 @media (min-width: 1100px) {
-  .zutaten-buehne { display: block; max-width: 1080px; margin-inline: auto; aspect-ratio: 100 / 90; }
+  .zutaten-buehne { display: block; max-width: 1080px; margin-inline: auto; aspect-ratio: 100 / 58; }
   .zutaten__flasche { position: absolute; left: 42.5cqw; top: 2cqw; width: 15cqw; }
   .zutaten__linien { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .zutaten-buehne .etikett__raute { display: block; }
   .zutaten-buehne .ingredients { position: absolute; inset: 0; display: block; }
   .zutaten-buehne .ingredient { position: absolute; width: 30cqw; }
-  /* von oben nach unten: Hopfen (links oben), Wasser (rechts, Mitte), Malz (links unten); die Pfeile zeigen auf die entsprechende Höhe der Flasche */
-  .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 14cqw; }
-  .zutaten-buehne .ingredient:nth-child(2) { left: 2cqw; top: 48cqw; }
-  .zutaten-buehne .ingredient:nth-child(3) { left: 68cqw; top: 30cqw; }
-  .zutaten-buehne .zr1 { left: 45.4cqw; top: 33.3cqw; }
-  .zutaten-buehne .zr2 { left: 56cqw; top: 45.8cqw; }
-  .zutaten-buehne .zr3 { left: 44.2cqw; top: 57.5cqw; }
+  .zutaten-buehne .ingredient:nth-child(1) { left: 2cqw; top: 1cqw; }
+  .zutaten-buehne .ingredient:nth-child(2) { left: 68cqw; top: 14cqw; }
+  .zutaten-buehne .ingredient:nth-child(3) { left: 2cqw; top: 31cqw; }
+  .zutaten-buehne .zr1 { left: 46.8cqw; top: 10.1cqw; }
+  .zutaten-buehne .zr2 { left: 57.1cqw; top: 21.8cqw; }
+  .zutaten-buehne .zr3 { left: 42.7cqw; top: 47.7cqw; }
 }
 
 .facts {
@@ -439,12 +400,11 @@ h3 {
   content: ''; grid-row: 2; grid-column: 1; justify-self: start; box-sizing: border-box; width: 13px; height: 13px; border-radius: 50%;
   background: var(--cream); border: 1.5px solid var(--green);
 }
-.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); letter-spacing: .04em; font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
+.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
 .timeline li p { grid-row: 3; grid-column: 1; margin: 0; padding-right: clamp(14px, 2.4vw, 32px); }
 .timeline__hint { display: none; }
 @media (min-width: 769px) { .timeline { width: calc(100% - 80px); margin-inline: auto; transform: translateX(var(--tl-shift, 0px)); } }      /* js/timeline.js: der sichtbare Block (1556 … Heute) steht optisch genau mittig unter der Überschrift */
 
-.berghof__drawing { filter: brightness(0) invert(.96) sepia(.1); opacity: .92; }
 .berghof__drawing { display: block; width: min(760px, 100%); margin: clamp(56px, 9vh, 96px) auto 0; }
 
 /* Standort */
@@ -469,7 +429,7 @@ h3 {
   border: 1.5px solid var(--green);
   transition: opacity .3s ease;
 }
-.map img { display: block; width: 100%; height: auto; filter: grayscale(1) invert(1) contrast(1.15); mix-blend-mode: screen; }   /* Skizze: weiße Linien auf dem grünen Grund */
+.map img { display: block; width: 100%; height: auto; }
 .map:hover { opacity: .9; }
 .map:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 3px; }
 
@@ -481,7 +441,7 @@ h3 {
   font: 600 13px/1 var(--font-text); letter-spacing: .22em; text-transform: uppercase;
   cursor: pointer;
 }
-.button:hover { background: #E3DECF; }
+.button:hover { background: #173b21; }
 a:focus-visible, .button:focus-visible { outline: 2px solid var(--gold-text); outline-offset: 3px; }
 
 /* ── Footer ─────────────────────────── */
@@ -540,7 +500,7 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
   body { font-size: 15.5px; }
   .site-header__brand { font-size: 11px; padding: 0 12px; }
   .hero__claim { font-size: 12px; letter-spacing: .2em; }
-  .frame__corner { width: 4px; height: 4px; }
+  .frame__corner { width: 7px; height: 7px; }
   .ingredients { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }          /* mit der Flasche mittig darüber: drei Zutaten nebeneinander */
   .ingredient__art { width: min(100px, 26vw); height: auto; aspect-ratio: 160 / 170; }
 }
@@ -585,7 +545,3 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
-
-/* Oswald hat keine Kursive: überall steil → gerade; „fett“ ist der Schnitt 600 */
-em, i, cite, address, figcaption, .painting figcaption, .brewer, .hero__title em, .location__item address, .timeline__year { font-style: normal; }
-strong, b { font-weight: 600; }

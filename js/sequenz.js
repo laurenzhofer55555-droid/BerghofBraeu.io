@@ -20,8 +20,8 @@
 //   · Eingabesperre: während der Animation und danach 400 ms werden Gesten ignoriert.
 //   · Neu laden mit Position über 0 und Direktlinks (#…) landen ohne Animation direkt in C.
 
-import { createBeer } from './bier-leeren.js?v=7c686182';
-import { ladeHerde } from './herde.js?v=7c686182';
+import { createBeer } from './bier-leeren.js?v=0f6f46ad';
+import { ladeHerde } from './herde.js?v=0f6f46ad';
 
 const root = document.documentElement;
 const hero = document.getElementById('start');
@@ -36,8 +36,8 @@ const hero = document.getElementById('start');
 // die Dauer der übrigen Phasen bleibt gleich
 const PHONE = window.matchMedia('(max-width: 767px)').matches;
 const DRAIN = PHONE ? 1900 : 2400, SHIFT = DRAIN - 2400;
-const T2 = 3750 + SHIFT;                                     // ms für die ganze Geste (Desktop und Tablet 4250, Handy 3750)
-const FLY0 = 1700 + SHIFT, FLY1 = 2900 + SHIFT, KLAR0 = 1750 + SHIFT, KLAR1 = 3250 + SHIFT, BILD0 = 2750 + SHIFT, BILD1 = 3700 + SHIFT;   // der Titel steht mittig und startet, sobald das Bier an ihm vorbei ist
+const T2 = 4250 + SHIFT;                                     // ms für die ganze Geste (Desktop und Tablet 4250, Handy 3750)
+const FLY0 = 2250 + SHIFT, FLY1 = 3450 + SHIFT, KLAR0 = 2300 + SHIFT, KLAR1 = 3750 + SHIFT, BILD0 = 3250 + SHIFT, BILD1 = 4200 + SHIFT;
 const BLUR = 8, BLUR_BILD = 26;                              // px Unschärfe: Text der Seite hinter dem Bier (leicht) und Gemälde mit Schafen (stark)
 const FOAM_GAP = 12;                                         // px: Reserve zwischen Schaumkrone und Oberfläche für die Browserleisten
 const LOCK_AFTER = 400;       // ms Sperre nach der Animation
@@ -65,7 +65,7 @@ const el = {
 const beer = createBeer(hero);
 const themeColor = document.querySelector('meta[name="theme-color"]');
 const CREAM = themeColor.content;
-const CREAM_RGB = [31, 77, 43], GOLD_RGB_N = [197, 161, 73];     // #1F4D2B (Seitengrund, Tannengrün) und #C5A149 (Bier), exakt wie --cream und --gold-beer
+const CREAM_RGB = [247, 244, 236], GOLD_RGB_N = [197, 161, 73];     // #F7F4EC (Papier) und #C5A149 (Bier), exakt wie --cream und --gold-beer
 
 // ── Zustand ─────────────────────────────────────
 let P = 1, state = 'B', busy = false, lockUntil = 0, animId = 0, stalls = 0;
@@ -125,7 +125,7 @@ function measureDy() {
   const fig = hero.querySelector('.painting'), top0 = el.text.offsetTop;
   const lift = fig && window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - (fig.offsetTop + fig.offsetHeight - top0)) / 2 - top0))) : 0;
   hero.style.setProperty('--lift', lift + 'px');
-  textDy = (H - el.text.offsetHeight) / 2 - el.text.offsetTop;      // Start: Titelblock mittig im Bild
+  textDy = H - bPad - el.text.offsetHeight - el.text.offsetTop;
   const lead = hero.querySelector('.hero__lead');   // Handy: Herde im Bereich unter der Einleitung (--zone, 16 px Abstand zum Text) und das Gemälde darunter, unter dem ersten Bildschirm (--fold)
   if (lead) {
     const bottom = lead.offsetTop + lead.offsetHeight;
