@@ -4,32 +4,12 @@
    ───────────────────────────────────────────────────────────── */
 
 /* Schriften lokal eingebunden (DSGVO: kein Abruf bei Google) */
-@font-face {
-  font-family: 'Playfair Display';
-  src: url('../vendor/fonts/playfair-display-latin-wght-normal.woff2') format('woff2');
-  font-weight: 400 900; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Playfair Display';
-  src: url('../vendor/fonts/playfair-display-latin-wght-italic.woff2') format('woff2');
-  font-weight: 400 900; font-style: italic; font-display: swap;
-}
-@font-face {
-  font-family: 'Source Serif 4';
-  src: url('../vendor/fonts/source-serif-4-latin-wght-normal.woff2') format('woff2');
-  font-weight: 200 900; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Source Serif 4';
-  src: url('../vendor/fonts/source-serif-4-latin-wght-italic.woff2') format('woff2');
-  font-weight: 200 900; font-style: italic; font-display: swap;
-}
 /* Ersatzschrift, solange die Schriften laden: Georgia, auf Breite und Höhe der Webschriften gebracht
    (gemessen in Chrome) → Titel und Text springen beim Schriftwechsel nicht. Gleiche Werte im Start-CSS von index.html. */
-@font-face { font-family: 'Playfair Ersatz'; src: local('Georgia'); size-adjust: 103.16%; ascent-override: 104.69%; descent-override: 24.23%; line-gap-override: 0%; }
-@font-face { font-family: 'Playfair Ersatz'; font-style: italic; src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 92.19%; ascent-override: 117.15%; descent-override: 27.12%; line-gap-override: 0%; }
-@font-face { font-family: 'Source Serif Ersatz'; src: local('Georgia'); size-adjust: 98.73%; ascent-override: 105.34%; descent-override: 34.44%; line-gap-override: 0%; }
 
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: block; }
+@font-face { font-family: 'Oswald'; src: url('../vendor/fonts/oswald-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
 :root {
   --cream: #F7F4EC;
   --cream-deep: #EFEADD;
@@ -39,8 +19,8 @@
   --gold-beer: #C5A149;    /* Bier: exakt das Gold des Kronkorkens (Sequenzbild) */
   --gold-text: #7A5C1C;    /* Gold für kleine Schrift – gut lesbar */
   --ink: #22301f;
-  --font-display: 'Playfair Display', 'Playfair Ersatz', Georgia, 'Times New Roman', serif;
-  --font-text: 'Source Serif 4', 'Source Serif Ersatz', Georgia, 'Times New Roman', serif;
+  --font-display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-text: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; --font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
   --frame-inset: clamp(10px, 1.6vw, 22px);
   --frame-gap: calc(var(--frame-inset) + 18px);    /* Abschnitte und ihre Trennlinien: innerhalb des Seitenrahmens */
   --gutter: calc(var(--frame-inset) + 24px);       /* Inhalt des Starts: Abstand zum Bildrand, mindestens 24 px hinter dem Rahmen */
@@ -51,7 +31,8 @@
 html, body { margin: 0; background: var(--cream); color: var(--ink); }
 body {
   font-family: var(--font-text);
-  font-size: 18px;
+  font-size: 17.5px;
+  letter-spacing: .012em;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -280,19 +261,19 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
   display: block;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: var(--title-f);
+  font-size: calc(var(--title-f) * 1.08);
   line-height: 1;
-  letter-spacing: -.005em;
+  letter-spacing: .08em; padding-left: .08em; text-transform: uppercase;
   color: var(--green);
   white-space: nowrap;
 }
-.hero__title em { font-style: italic; font-weight: 400; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
+.hero__title em { font-style: normal; font-weight: 500; line-height: 0; }   /* Zeilenhöhe allein aus der Grundschrift: kein Springen, solange die Kursive noch lädt */
 .hero__claim {
   display: block;
   font-family: var(--font-text);
   font-size: 14px;
   line-height: 1.4;
-  letter-spacing: .26em; text-transform: uppercase;
+  letter-spacing: .3em; text-transform: uppercase;
   color: var(--green-soft);
 }
 /* Rauten-Ornament zwischen Titel und Unterzeile */
@@ -324,7 +305,7 @@ html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          
 h2 {
   margin: 0;
   font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(36px, 4.6vw, 58px); line-height: 1.1;
+  font-size: clamp(32px, 4.2vw, 52px); line-height: 1.15; letter-spacing: .05em; text-transform: uppercase;
   color: var(--green);
 }
 h2::after {
@@ -337,7 +318,7 @@ h2::after {
 h3 {
   margin: 0 0 8px;
   font-family: var(--font-display); font-weight: 500;
-  font-size: 26px; line-height: 1.2;
+  font-size: 24px; line-height: 1.2; letter-spacing: .05em; text-transform: uppercase;
   color: var(--green);
 }
 .lead { margin: 24px 0 0; font-size: clamp(16.5px, 1.35vw, 18px); color: var(--ink); }
@@ -400,7 +381,7 @@ h3 {
   content: ''; grid-row: 2; grid-column: 1; justify-self: start; box-sizing: border-box; width: 13px; height: 13px; border-radius: 50%;
   background: var(--cream); border: 1.5px solid var(--green);
 }
-.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
+.timeline__year { grid-row: 1; grid-column: 1; padding-right: 16px; font-family: var(--font-display); letter-spacing: .04em; font-size: 34px; line-height: 1.1; font-weight: 500; color: var(--green); }
 .timeline li p { grid-row: 3; grid-column: 1; margin: 0; padding-right: clamp(14px, 2.4vw, 32px); }
 .timeline__hint { display: none; }
 @media (min-width: 769px) { .timeline { width: calc(100% - 80px); margin-inline: auto; transform: translateX(var(--tl-shift, 0px)); } }      /* js/timeline.js: der sichtbare Block (1556 … Heute) steht optisch genau mittig unter der Überschrift */
@@ -545,3 +526,6 @@ main:has(> .frame--page) + .site-footer { border-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
+
+em, i, cite, address, figcaption, .painting figcaption, .brewer, .hero__title em, .location__item address, .timeline__year { font-style: normal; }
+strong, b { font-weight: 600; }
