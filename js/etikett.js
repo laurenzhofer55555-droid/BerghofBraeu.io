@@ -1,5 +1,5 @@
 // Goldene Linien der Zutaten-Bühne (Hopfen, Malz, Wasser um die Flasche): sie zeichnen sich beim ersten Erscheinen (CSS stroke-dashoffset, .ist-da je Gruppe).
-// „Erscheinen“ heißt: das Intro ist vorbei (html.frei) und die Gruppe ist zu mindestens 35 % im Bild. Bei „Bewegung reduzieren“ (und ohne IntersectionObserver)
+// „Erscheinen“ heißt: die Gruppe ist zu mindestens 35 % im Bild. Bei „Bewegung reduzieren“ (und ohne IntersectionObserver)
 // bleibt alles ohne Animation sichtbar (das CSS versteckt erst, wenn html.etikett-an gesetzt ist).
 const gruppen = document.querySelectorAll('[data-etikett]');
 const root = document.documentElement;
@@ -17,12 +17,10 @@ if (gruppen.length && 'IntersectionObserver' in window && !window.matchMedia('(p
   root.classList.add('etikett-an');
   const io = new IntersectionObserver((eintraege) => {
     for (const e of eintraege) {
-      if (!e.isIntersecting || !root.classList.contains('frei')) continue;       // vor dem Ende des Intros bleibt die Linie ungezeichnet
+      if (!e.isIntersecting) continue;
       e.target.classList.add('ist-da');
       io.unobserve(e.target);
     }
   }, { threshold: 0.35 });
-  const beobachten = () => gruppen.forEach((g) => io.observe(g));
-  if (root.classList.contains('frei')) beobachten();
-  else new MutationObserver((_, mo) => { if (root.classList.contains('frei')) { mo.disconnect(); beobachten(); } }).observe(root, { attributes: true, attributeFilter: ['class'] });
+  gruppen.forEach((g) => io.observe(g));
 }

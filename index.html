@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <!-- Sicherheit: nur eigene Dateien laden/ausführen (Inline-Skript nur per Hash, .github/scripts/check-site.py prüft ihn).
        GitHub Pages erlaubt keine eigenen HTTP-Header, deshalb als Meta-Tag; frame-ancestors wirkt so nicht. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-4qsvbd/OCyG9j27ss+48mpesYpUxq31WTg2K0Rt2vfg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-yZ5haOn4tyITpULLhPJ/4VFtzDhne9VyO+YxiMLOO6A='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Berghof Hell | Bayerisches Helles vom Berghof Agatharied</title>
@@ -95,19 +95,8 @@
       var root = document.documentElement, ok = false;
       try { ok = Number(localStorage.getItem('berghof-ab16')) > Date.now(); } catch (e) {}
       if (!ok) root.classList.add('age-gate');
-      // Start mit Bier (nicht bei „Bewegung reduzieren“): die Seite ist ab dem ersten Pixel gesperrt (CSS .seq), bis das Bier
-      // ausgelaufen ist. js/sequenz.js hebt die Sperre mit .frei auf.
-      try { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('seq'); } catch (e) {}
-      // Direktlink (#…), Neuladen, Zurück: nicht gesperrt, js/sequenz.js entscheidet (Position über 0 oder Sprungmarke → Inhalt).
-      // Sprungmarke: Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
-      // Neuladen/Zurück: der Browser stellt die Position erst nach dem Laden wieder her. Gemerkt wird sie beim Verlassen der Seite;
-      // war sie oben (0), startet das Bier sofort (sonst blitzt bis zum Laden kurz das Endlayout auf).
-      var nav = ''; try { nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
-      var oben = false; try { oben = sessionStorage.getItem('berghof-y') === '0'; } catch (e) {}
-      try { addEventListener('pagehide', function () { try { sessionStorage.setItem('berghof-y', String(Math.round(scrollY))); } catch (e) {} }); } catch (e) {}
-      if (location.hash || ((nav === 'reload' || nav === 'back_forward') && !oben)) root.classList.add('frei');
+      // Sprungmarke (#…): Inhalt erst zeigen, wenn das ganze Stylesheet greift (sonst verrutscht die Stelle, js/main.js)
       if (location.hash) root.classList.add('css-wait');
-      if (root.classList.contains('seq') && !root.classList.contains('frei')) root.classList.add('gold-page');      // erster Bildaufbau: gleich bierfarben (Zustand B), js/sequenz.js übernimmt
     })();
   </script>
 
@@ -117,7 +106,7 @@
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: block; }
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
-    :root { --cream: #F7F4EC; --gold-beer: #C5A149; --green: #1F4D2B; --green-soft: #1F4D2B; --gold: #B8913A; --ink: #22301f;
+    :root { --cream: #F7F4EC; --green: #1F4D2B; --green-soft: #1F4D2B; --gold: #B8913A; --ink: #22301f;
       --font-display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; --font-text: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; --font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
@@ -125,43 +114,18 @@
     body { font-family: var(--font-text); font-size: 16.5px; line-height: 1.65; letter-spacing: .012em; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-    /* Farbstreifen für die Browserleisten (iOS Safari 26, js/sequenz.js erzeugt sie während der Sequenz): sichtbar, deckend und über allem (auch über dem Papierkorn, z-index 50) */
-    .edge { position: fixed; left: 0; right: 0; height: 6px; z-index: 60; }
-    .edge--top { top: 0; } .edge--bottom { bottom: 0; }
-    /* Bier (B): Seite gesperrt, ab dem ersten Pixel und ohne JavaScript-Wartezeit; .seq setzt das Head-Skript, .frei hebt die Sperre auf (Zustand C) */
-    .seq:not(.frei), .seq:not(.frei) body { overflow: hidden; overscroll-behavior: none; }
-    .seq:not(.frei) body { touch-action: none; }
-    /* Überspringen: nur mit Tastatur sichtbar (Fokus), springt direkt zum Inhalt */
-    .skip { position: absolute; left: 12px; top: 12px; z-index: 45; padding: 10px 16px; border: 0; border-radius: 3px; background: var(--green); color: var(--cream);
-      font: 600 13px/1 var(--font-text); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transform: translateY(-300%); }
-    .skip:focus-visible { transform: none; outline: 2px solid #7A5C1C; outline-offset: 3px; }
-    html:not(.seq) .skip, .frei .skip { display: none; }
-    /* Start: Zustand C (Inhalt) ist das Grundlayout: Titel oben, darunter Einleitung und Bild. In A und B (.seq ohne .frei) ist die Seite genau
-       einen Bildschirm hoch und gesperrt; der Titel sitzt dort unten im Bild (um --dy verschoben) und rutscht beim Leeren des Biers nach oben
-       (js/sequenz.js setzt dafür die genaue Verschiebung, --dy-css ist der Startwert bis dahin). */
+    /* Start: Titel oben, darunter Einleitung und Bild; die Seite steht sofort da (kein Intro). */
     .hero {
       position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
-      padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/sequenz.js) */
+      padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/main.js) */
       --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
-      --text-h: calc(var(--title-f) + 2 * clamp(14px, 2.2vh, 22px) + 14px + 20px);
-      --dy-css: calc(100svh - var(--b-pad) - var(--text-h) - var(--hero-top));
-      --b-pad: calc(var(--frame-inset) + 4.5vh + 96px + env(safe-area-inset-bottom));
     }
-    html:not(.seq) .hero > .frame, .frei .hero > .frame { display: none; }          /* ab C übernimmt der Seitenrahmen (.frame--page) */
     .frame--page { z-index: 3; }
-    .seq:not(.frei) .frame--page { z-index: 1; }                            /* in B unter dem Bier: die Kante gibt den Rahmen frei (js/sequenz.js) */
-    .seq:not(.frei) .hero { height: 100vh; height: 100svh; }
     .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
-    .seq:not(.frei) .hero__text { transform: translate3d(0, var(--dy-css), 0); z-index: 3; }   /* Titel unten auf dem Bier, über allem (js/sequenz.js setzt die genaue Verschiebung) */
-    .seq:not(.frei) .hero__lead { filter: blur(var(--blur, 8px)); }
-    .seq:not(.frei) .painting, .seq:not(.frei) .herd .sheep { filter: blur(var(--blur-bild, 26px)); }                    /* Gemälde und Schafe sind zuerst nur weiche Farbflecken und tauchen erst auf, wenn der Titel oben angekommen ist; Handy: jedes Schaf einzeln weichgezeichnet, nicht der bildschirmgroße Herdenbehälter (der kostete beim Auslaufen den Großteil der Zeichenarbeit pro Bild) */
-    /* Die Seite hinter dem Bier ist verschwommen und wird nach dem Titelflug klar (Filter nicht auf .hero__more: er würde die absolute Herde neu verankern; der Seitenrahmen ist über die ganze Seitenhöhe gezogen und bleibt scharf: ein Filter auf so großer Fläche ruckelt). */
-    .seq:not(.frei) .hero__more { z-index: 1; }                  /* Flex-Element des Hero: z-index wirkt ohne Positionierung (der Bezug der absoluten Herde bleibt der Hero, nichts verschiebt sich beim Ende); unter dem Bier (z-index 2): die Kante wischt den Inhalt frei */
-    .seq:not(.frei):not(.bier-an) .hero__more, .seq:not(.frei):not(.bier-an) .frame--page { visibility: hidden; }        /* bis alles gemessen ist (js/sequenz.js setzt .bier-an): kein Aufblitzen, kein Layoutsprung hinter dem Bier */
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
     .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
-    /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/sequenz.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
+    /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/main.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
     .painting__bild { position: relative; container-type: inline-size; aspect-ratio: 1030 / 687; }   /* Höhe steht schon vor dem Laden fest (WebKit misst ein Bild ohne Quelle nur mit der Alt-Text-Zeile, 18 px) */
@@ -186,42 +150,12 @@
     @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
     @media (min-width: 1024px) { .hero__lead { font-size: 1.1rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
     @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 22px; max-width: 1240px; } }
-    /* Schafe (Zustand C, Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
+    /* Schafe (Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
     img[data-src] { visibility: hidden; }          /* noch nicht geladene Bilder (Schafe, Gemälde) zeigen keinen leeren Platzhalter; js/herde.js entfernt data-src, sobald die Quelle gesetzt ist */
     @media (min-width: 768px) { .herd { display: none; } }
 
-    /* Weiter-Knopf: ein dunkelgrüner Linienpfeil (Schaft mit offener Spitze) mit dem Wort „Wischen“ bzw. „Scrollen“ rechts daneben, unten mittig; Tippen/Klick löst dieselbe Geste aus wie Wischen.
-       Nur im Bier (B) sichtbar; js/sequenz.js setzt .aus während einer Animation und in C (Ausblenden 200 ms).
-       Größe --cue-w des (quadratischen) Pfeils: Handy 40 px, Desktop bis 46 px (schrumpft mit niedrigen Fenstern). */
-    .seq { --cue-w: 40px; --cue-h: var(--cue-w); }
-    .scroll-cue { display: none; }
-    .seq .scroll-cue {
-      display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 14px; z-index: 4;   /* über dem Bier */
-      position: absolute; left: 50%; bottom: calc(var(--frame-inset) + 14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-      min-height: 44px; margin: 0; padding: 4px 18px; border: 0; background: none; font: inherit; cursor: pointer; white-space: nowrap;
-      color: #1F4D2B; opacity: .9; transition: opacity .2s ease, visibility 0s; -webkit-tap-highlight-color: transparent;
-    }
-    .seq .scroll-cue.aus { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
-    .seq.frei .scroll-cue { display: none; }
-    .scroll-cue:focus-visible { outline: 2px solid #1F4D2B; outline-offset: 2px; border-radius: 8px; }
-    .scroll-cue svg { display: block; width: var(--cue-w); height: var(--cue-h); overflow: visible; flex: none; animation: cue 1.6s ease-in-out infinite; }
-    .scroll-cue .cue-arrow path { fill: none; stroke: #1F4D2B; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-    @keyframes cue { 50% { transform: translateY(8px); } }
-    /* Wort: Versalien, weite Laufweite, dunkelgrün, mindestens 13 px; das Nachlaufen der letzten Laufweite ausgleichen */
-    .scroll-cue__text { font-family: var(--font-text); font-size: 13px; line-height: 1; font-weight: 600; letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: #1F4D2B; }
-    .scroll-cue__mouse { display: none; }
-    @media (hover: hover) and (pointer: fine) { .scroll-cue__touch { display: none; } .scroll-cue__mouse { display: inline; } }
-    @media not all and (max-aspect-ratio: 4/5) {
-      .seq { --cue-w: clamp(34px, 5vh, 46px); }
-      .scroll-cue__text { font-size: 14px; }
-      .hero { --b-pad: calc(var(--frame-inset) + 14px + 8px + var(--cue-h) + 18px + env(safe-area-inset-bottom)); }   /* Titel 18 px über dem Pfeil */
-    }
-        @media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
-    .beer { position: absolute; inset: 0; inset: 0 0 calc(100svh - 100lvh) 0; overflow: hidden; pointer-events: none; opacity: 0; }
-    .seq:not(.frei) .beer { z-index: 2; }                                       /* über dem Inhalt (wischt ihn frei), unter Titel und Pfeil */
-    .frei .beer { display: none; }                                           /* nach dem Intro ist kein Bier mehr auf der Seite (kein Rest, kein Zeichnen) */
     /* Altersabfrage (js/altersabfrage.js): nur hier im Start-CSS, weil sie beim ersten Besuch sofort sichtbar sein muss.
        Desktop/iPad: kleine Karte mittig; Handy: Bottom Sheet am unteren Rand (Safe Area beachtet). Dahinter bleibt die Seite sichtbar, abgedunkelt und weichgezeichnet (ohne backdrop-filter nur dunkler). */
     .age { display: none; position: fixed; inset: 0; z-index: 70; align-items: center; justify-content: center; padding: 20px; text-align: center;
@@ -286,7 +220,6 @@
     .frame__corner--tl { top: 1px; left: 1px; } .frame__corner--tr { top: 1px; right: 1px; }
     .frame__corner--bl { bottom: 1px; left: 1px; } .frame__corner--br { bottom: 1px; right: 1px; }
     .hero__text { position: relative; }
-    .seq:not(.frei) .hero { cursor: pointer; }                          /* ein Tipp oder Klick irgendwo lässt das Bier auslaufen (js/sequenz.js) */
     .hero__heading { margin: 0; font-weight: 400; }
     .hero__title { display: block; font-family: var(--font-display); font-weight: 500; font-size: var(--title-f);
       line-height: 1; letter-spacing: -.005em; color: var(--green); white-space: nowrap; }
@@ -300,12 +233,12 @@
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=9d6cb328" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=9d6cb328" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=9d6cb328" /></noscript>
+  <link rel="preload" href="css/style.css?v=df75f722" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=df75f722" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=df75f722" /></noscript>
 
-  <!-- Start mit dem auslaufenden Bier (js/sequenz.js) wird erst nach dem ersten Rendern geladen (js/main.js) -->
-  <script type="module" src="js/main.js?v=9d6cb328"></script>
+  <!-- Altersabfrage, Herde, Linien und Winterausgabe (js/main.js) laden nach dem ersten Rendern -->
+  <script type="module" src="js/main.js?v=df75f722"></script>
 </head>
 <body>
 
@@ -329,15 +262,12 @@
       <p class="age__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </div>
   </div>
-  <!-- Tastatur: springt ohne das Auslaufen des Biers direkt zum Inhalt (js/sequenz.js) -->
-  <button class="skip" type="button" data-skip>Überspringen</button>
-
   <header class="site-header">
     <p class="site-header__brand"><span>Hofer Bräu</span></p>
   </header>
 
   <main>
-    <!-- Seitenrahmen (Zustand C): derselbe feine Doppelrahmen wie im Startbild um den ganzen Hauptinhalt; scrollt mit, endet vor dem Fuß, blendet am Ende von Geste 2 ein (js/sequenz.js) -->
+    <!-- Seitenrahmen: feiner Doppelrahmen um den ganzen Hauptinhalt; scrollt mit und endet vor dem Fuß -->
     <div class="frame frame--page" aria-hidden="true">
       <i class="frame__corner frame__corner--tl"></i>
       <i class="frame__corner frame__corner--tr"></i>
@@ -346,28 +276,7 @@
     </div>
     <!-- ── Start ─────────────────────────────── -->
     <section class="hero" id="start" aria-labelledby="hero-title">
-      <!-- Bier (Zustand B): füllt den Bildschirm, leert sich mit der zweiten Geste (js/bier-leeren.js) – nur Dekoration -->
-      <div class="beer" aria-hidden="true">
-        <div class="beer__liquid">
-          <svg class="beer__svg" focusable="false">
-            <path class="beer__gold" />
-            <path class="beer__foam" />
-            <path class="beer__edge" />
-          </svg>
-          <div class="beer__bubbles"></div>   <!-- Bläschen erzeugt js/bier-leeren.js (Anzahl nach Fläche) -->
-        </div>
-      </div>
-
-      <!-- feiner Doppelrahmen wie beim Etikett -->
-      <div class="frame" aria-hidden="true">
-        <i class="frame__corner frame__corner--tl"></i>
-        <i class="frame__corner frame__corner--tr"></i>
-        <i class="frame__corner frame__corner--bl"></i>
-        <i class="frame__corner frame__corner--br"></i>
-      </div>
-
       <div class="hero__text">
-        <!-- Flasche über dem Titel (nur im Start mit Bier): wackelt nach 3 s und danach alle 5 s, blendet mit dem Auslaufen aus; dieselbe Aufnahme wie bei den Zutaten -->
         <h1 class="hero__heading" id="hero-title">
           <span class="hero__title">Berghof <em>Hell</em></span>
           <span class="visually-hidden">, </span>
@@ -376,7 +285,7 @@
       </div>
 
 
-      <!-- Einleitung und Bildgestaltung: erscheinen, während das Bier sich leert (Zustand C, js/sequenz.js) -->
+      <!-- Einleitung und Bildgestaltung -->
       <div class="hero__more">
         <div class="hero__cols">
           <p class="hero__lead">Hoch oben über dem bayerischen Oberland, wo die Uhren ein wenig langsamer gehen, liegt der historische Berghof von Agatharied. Ein Haus, das seit Generationen als Ort der Zuflucht, der Gemeinschaft und der echten Auszeit bekannt ist. Genau dieses Gefühl haben wir in unserem Berghof Hell.</p>
@@ -411,15 +320,6 @@
           <img class="sheep sheep--ruhend-hell" data-nur="schmal" data-src="assets/img/herde-ruhend-hell-2x.webp" data-srcset="assets/img/herde-ruhend-hell-1x.webp 84w, assets/img/herde-ruhend-hell-2x.webp 169w" sizes="(max-width: 767px) 120px, 190px" width="169" height="99" decoding="async" alt="" />
         </div>
       </div>
-
-      <!-- Weiter-Knopf (im Bier sichtbar, sonst aus; Klick = dieselbe Geste; js/sequenz.js) -->
-      <button class="scroll-cue aus" type="button" aria-label="Weiter" data-weiter>
-        <svg class="cue-arrow" viewBox="0 0 64 64" focusable="false" aria-hidden="true">
-          <path d="M32 7V55"/>
-          <path d="M10 33L32 55L54 33"/>
-        </svg>
-        <span class="scroll-cue__text" aria-hidden="true"><span class="scroll-cue__touch">Wischen</span><span class="scroll-cue__mouse">Scrollen</span></span>
-      </button>
 
     </section>
 
@@ -611,7 +511,6 @@
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
-    <p class="site-footer__intro"><a href="#start" data-intro>Bier Animation erneut anzeigen</a></p>
   </footer>
 
 </body>

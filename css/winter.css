@@ -3,10 +3,6 @@
    Palette wie die Seite: Tannengrün als Nacht, Biergold als Licht, Creme als Schnee.
    ───────────────────────────────────────────────────────────── */
 
-/* solange das Bier im Bild ist, bleibt alles verborgen (die Sequenz bleibt unberührt); sobald es ausgelaufen ist (html.w-bier-weg, js/winter.js), kommen Kugeln und Schnee */
-html.seq:not(.frei):not(.w-bier-weg) .w-deko, html.seq:not(.frei):not(.w-bier-weg) .w-schnee { visibility: hidden; }
-html.seq:not(.frei):not(.w-bier-weg) .w-deko * { animation-play-state: paused !important; }
-
 /* Schneefeld am oberen Seitenrand: so hoch wie der erste Bildschirm (Höhe setzt js/winter-schnee.js), scrollt mit der Seite weg */
 .w-schnee { position: absolute; top: 0; left: 0; width: 100%; z-index: 40; pointer-events: none; }
 

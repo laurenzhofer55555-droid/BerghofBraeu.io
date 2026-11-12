@@ -1,6 +1,6 @@
 // Schneefall: eine fixierte Zeichenfläche (Canvas) über der Seite, wenige Flocken, vorgerenderte Bildchen (drawImage) statt Verläufe pro Bild.
 // Jede Flocke hat einen hellen Kern und einen weichen dunkelgrünen Hof: auf der Cremeseite bleibt sie sichtbar, auf Tannengrün verschwindet der Hof.
-// Läuft nur, wenn der Tab sichtbar ist und kein Bier läuft (html.seq ohne .frei); bei „Bewegung reduzieren“ gibt es keinen Schnee.
+// Läuft nur, wenn der Tab sichtbar ist; bei „Bewegung reduzieren“ gibt es keinen Schnee.
 
 const STUFEN = 6;
 const KRISTALL = 4;                                  // ab dieser Stufe sechsarmige Kristalle, darunter weiche Punkte
@@ -67,7 +67,7 @@ export function schneeStart() {
   function bild(jetzt) {
     lauf = requestAnimationFrame(bild);
     const dt = Math.min(.05, (jetzt - zuletzt) / 1000 || .016); zuletzt = jetzt; t += dt;
-    if (document.hidden || (root.classList.contains('seq') && !root.classList.contains('frei') && !root.classList.contains('w-bier-weg'))) return;   // erst, wenn das Bier weg ist
+    if (document.hidden) return;
     if (!los) { los = true; for (const f of flocken) f.y = -Math.random() * h * 1.05; }          // der erste Schnee kommt von oben herein
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, canvas.width, canvas.height);

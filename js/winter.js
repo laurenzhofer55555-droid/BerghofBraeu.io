@@ -1,12 +1,11 @@
 // Winterausgabe „Volle Stube“ (nur in der Saison, js/winter-zeit.js): Christbaumkugeln, die in den oberen Ecken von der Oberkante hängen (keine Äste), Schneefall, im Abschnitt „Der Berghof“
 // das Spachtel-Gemälde (statt der Zeichnung des Berghofs).
 // (Die Berghof-Zeichnung als Nachtbild mit leuchtenden Fenstern steht jetzt auf Impressum und Datenschutz: css/nacht.css, ohne Skript.)
-// Aufgebaut wird im Leerlauf, noch während das Bier auf die Geste wartet; sichtbar wird es, sobald das Bier ausgelaufen ist (Klasse w-bier-weg, bierWegMelden):
-// dann senken sich die Kugeln und der Schnee beginnt zu fallen, während Titel und Gemälde noch einfliegen. Die Sequenz (js/sequenz.js) bleibt unangetastet (nur lesend).
+// Aufgebaut wird im Leerlauf nach dem Laden der Seite: dann senken sich die Kugeln und der Schnee beginnt zu fallen.
 // Im Fuß gibt es einen Schalter „Winterschmuck ausblenden“. Die Kugeln hängen still und schwingen nur, wenn Zeiger oder Finger sie berühren.
 // Bei „Bewegung reduzieren“ steht alles still (kein Schnee, kein Schwingen, kein Funkeln).
-import { schneeStart } from './winter-schnee.js?v=9d6cb328';
-import { gipfel } from './winter-gipfel.js?v=9d6cb328';
+import { schneeStart } from './winter-schnee.js?v=df75f722';
+import { gipfel } from './winter-gipfel.js?v=df75f722';
 
 const root = document.documentElement;
 const stillstand = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -66,7 +65,7 @@ function anstossen() {
 function schritt(jetzt) {
   const dt = Math.min(.05, (jetzt - zuletzt) / 1000 || .016); zuletzt = jetzt;
   let aktiv = false;
-  if (!document.hidden && !(root.classList.contains('seq') && !root.classList.contains('frei'))) {
+  if (!document.hidden) {
     for (const k of kugeln) {
       if (!k.th && !k.om) continue;
       k.om += (-k.w * k.w * Math.sin(k.th) - 2 * .38 * k.w * k.om) * dt;
@@ -116,29 +115,8 @@ function ecken(behaelter, anteil) {
 
 // ── Aufbau, Abbau, Schalter ──
 let aktiv = null;
-// Meldet „Bier weg“ als Klasse w-bier-weg an <html>, sobald das Bier ausgelaufen ist (nicht erst am Ende der ganzen Sequenz): ab dann kommen die Äste
-// und der Schnee, während Titel und Gemälde noch einfliegen. Bei jedem neuen Lauf (Bier erneut anzeigen) wird sie zurückgenommen.
-function bierWegMelden() {
-  let rAF = 0;
-  const pruefen = () => {
-    rAF = 0;
-    if (!(root.classList.contains('seq') && !root.classList.contains('frei')) || root.classList.contains('w-bier-weg')) return;
-    const q = window.__sequenz;
-    if (q && q.phasen && (q.P - 1) * q.phasen.T2 >= q.phasen.DRAIN * .95) { root.classList.add('w-bier-weg'); ruheBis = performance.now() + 1500; return; }
-    rAF = requestAnimationFrame(pruefen);
-  };
-  const lauf = () => {
-    const warten = root.classList.contains('seq') && !root.classList.contains('frei');
-    if (warten && !rAF && !root.classList.contains('w-bier-weg')) rAF = requestAnimationFrame(pruefen);
-    if (!warten && root.classList.contains('w-bier-weg')) root.classList.remove('w-bier-weg');       // nur wenn sie da ist: auch ein wirkungsloses remove() zählt als Änderung und löste den Beobachter endlos neu aus
-  };
-  const mo = new MutationObserver(lauf);
-  mo.observe(root, { attributes: true, attributeFilter: ['class'] });
-  lauf();
-  return () => { mo.disconnect(); cancelAnimationFrame(rAF); root.classList.remove('w-bier-weg'); };
-}
 function einschalten() {
-  let abgebrochen = false, stopSchnee = () => {}, zeichnung = null, schluss = null, deko = null, gruppeBreite = 0, timer = 0, ende = () => {}, leerlauf = 0, wacht = () => {};
+  let abgebrochen = false, stopSchnee = () => {}, zeichnung = null, schluss = null, deko = null, gruppeBreite = 0, timer = 0, ende = () => {}, leerlauf = 0;
   const los = () => {
     if (abgebrochen) return;
     root.classList.add('winter');
@@ -151,6 +129,7 @@ function einschalten() {
     const bauen = () => {
       if (deko) { pendelnEntfernen(deko); deko.textContent = ''; ecken(deko, .22); }
       gruppeBreite = innerWidth;
+      ruheBis = performance.now() + 2000;      // beim Erscheinen schwingt nichts, auch wenn der Mauszeiger zufällig dort steht
     };
     bauen();
     const umbruch = () => {
@@ -160,11 +139,10 @@ function einschalten() {
     addEventListener('resize', umbruch);
     ende = () => removeEventListener('resize', umbruch);
   };
-  // im Leerlauf aufbauen (das Bier wartet auf die Geste): die Teile sind per CSS verborgen, bis das Bier weg ist; so ruckelt nichts beim Auslaufen
-  wacht = bierWegMelden();
+  // im Leerlauf aufbauen, damit der erste Bildaufbau nicht ruckelt
   leerlauf = window.requestIdleCallback ? requestIdleCallback(los, { timeout: 1500 }) : setTimeout(los, 500);
   return () => {
-    abgebrochen = true; wacht();
+    abgebrochen = true;
     if (window.cancelIdleCallback) cancelIdleCallback(leerlauf); else clearTimeout(leerlauf);
     clearTimeout(timer); ende(); stopSchnee();
     if (deko) { pendelnEntfernen(deko); deko.remove(); }
@@ -175,7 +153,7 @@ function einschalten() {
 }
 
 function schalter() {
-  const fuss = document.querySelector('.site-footer__intro');
+  const fuss = document.querySelector('.site-footer');
   if (!fuss) return;
   const a = el('a', 'w-schalter'); a.href = '#'; a.setAttribute('role', 'button');
   const text = () => { a.textContent = aktiv ? 'Winterschmuck ausblenden' : 'Winterschmuck einblenden'; };
@@ -186,12 +164,12 @@ function schalter() {
     text();
   });
   text();
-  const zeile = el('p', 'site-footer__intro w-schalter-zeile'); zeile.appendChild(a);
-  fuss.after(zeile);
+  const zeile = el('p', 'site-footer__schalter w-schalter-zeile'); zeile.appendChild(a);
+  fuss.appendChild(zeile);
 }
 
 export function start({ an }) {
-  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=9d6cb328', import.meta.url).href;
+  const css = el('link'); css.rel = 'stylesheet'; css.href = new URL('../css/winter.css?v=df75f722', import.meta.url).href;
   const fertig = new Promise((res) => { css.onload = css.onerror = res; setTimeout(res, 3000); });
   document.head.appendChild(css);
   fertig.then(() => {
