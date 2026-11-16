@@ -1,10 +1,10 @@
 // Starter: statische Seite ohne Intro. Altersabfrage, Linien, Geschichte, Herde und (in der Saison) die Winterausgabe.
 
-import './altersabfrage.js?v=d95a26e7';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=d95a26e7';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=d95a26e7';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=d95a26e7';             // Schafe der Herde laden (nach dem Laden der Seite)
-import { winterZeit } from './winter-zeit.js?v=d95a26e7';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
+import './altersabfrage.js?v=e8cb0847';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=e8cb0847';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=e8cb0847';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=e8cb0847';             // Schafe der Herde laden (nach dem Laden der Seite)
+import { winterZeit } from './winter-zeit.js?v=e8cb0847';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -63,5 +63,5 @@ window.addEventListener('resize', () => { if (Math.abs(window.innerWidth - start
 // Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts.
 const winter = winterZeit();
 if (winter.saison) {
-  import('./winter.js?v=d95a26e7').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
+  import('./winter.js?v=e8cb0847').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
 }

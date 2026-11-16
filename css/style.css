@@ -465,16 +465,14 @@ strong, b { font-weight: 600; }
 .hero__lead::first-letter { font-family: inherit; font-weight: inherit; font-size: inherit; line-height: inherit; color: inherit; padding: 0; }
 .painting figcaption { font-size: var(--t-label); }
 @media (min-width: 768px) {
-  .hero__more { margin-top: calc(var(--title-f) * -.18); }
-  .painting { order: -1; z-index: 2; width: min(80%, max(520px, calc((100svh - var(--hero-top) - var(--title-f) * .7 - 300px) * 1.5))); }
-  .painting__bild > img { border-radius: 24px; box-shadow: 0 26px 50px -22px rgba(34, 48, 31, .5); }
+  .hero__more { margin-top: var(--g2); }
+  .painting { order: -1; z-index: 2; width: min(80%, max(400px, calc((100svh - var(--hero-top) - var(--title-f) * .92 - 311px) * 1.5))); }
+  .painting__bild > img { box-shadow: 0 26px 50px -22px rgba(34, 48, 31, .5); }
 }
-@media (min-width: 768px) and (max-width: 1099px) { .painting { width: min(66%, max(480px, calc((100svh - var(--hero-top) - var(--title-f) * .7 - 300px) * 1.5))); } }
+@media (min-width: 768px) and (max-width: 1099px) { .painting { width: min(66%, max(400px, calc((100svh - var(--hero-top) - var(--title-f) * .92 - 311px) * 1.5))); } }
 @media (max-width: 767px) {
   .hero { --title-f: calc((100vw - 2 * var(--gutter)) / 4); }
   .hero__title em { display: block; }
-  .painting { border-radius: 16px; }
-  .painting__bild > img { border-radius: 10px; }
   .herd .sheep { bottom: calc(76px + var(--zone) * var(--b, 0)); }      /* Platz für die festen Knöpfe unten */
 }
 h2 { font-weight: 600; font-size: clamp(44px, 8.5vw, 120px); line-height: .98; letter-spacing: .02em; text-wrap: balance; }
