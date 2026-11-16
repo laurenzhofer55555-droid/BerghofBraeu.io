@@ -106,25 +106,26 @@
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: block; }
     @font-face { font-family: 'Oswald'; src: url('vendor/fonts/oswald-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
-    :root { --cream: #F7F4EC; --green: #1F4D2B; --green-soft: #1F4D2B; --gold: #B8913A; --ink: #22301f;
+    :root { --cream: #F7F4EC; --green: #1F4D2B; --green-soft: #1F4D2B; --tap: #B8913A; --tap-dark: #7A5C1C; --line: rgba(31, 77, 43, .4); --ink: #22301f; --t-text: 16px; --t-label: 13px;
       --font-display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; --font-text: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; --font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
       --frame-inset: clamp(10px, 1.6vw, 22px); --frame-gap: calc(var(--frame-inset) + 18px); --gutter: calc(var(--frame-inset) + 24px); }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; background: var(--cream); color: var(--ink); }
-    body { font-family: var(--font-text); font-size: 16.5px; line-height: 1.65; letter-spacing: .012em; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { font-family: var(--font-text); font-size: var(--t-text); line-height: 1.65; letter-spacing: .012em; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     img, svg { max-width: 100%; height: auto; }
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     /* Start: Titel oben, darunter Einleitung und Bild; die Seite steht sofort da (kein Intro). */
     .hero {
       position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
       padding: calc(var(--hero-top) + var(--lift, 0px)) var(--gutter) 28px; text-align: center;      /* --lift: Block mittig stellen, wenn er niedriger ist als der Bildschirm (js/main.js) */
-      --hero-top: clamp(64px, 9vh, 92px); --title-f: clamp(46px, min(9.6vw, 11.5vh), 136px); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
+      --hero-top: clamp(64px, 9vh, 92px); --title-f: min(calc((100vw - 2 * var(--gutter)) / 6.4), 34vh); --g2: 24px;   /* --g2: Abstand Untertitel → Text → Gemälde (8-px-Raster: 24 / 32 / 40) */
     }
     .frame--page { z-index: 3; }
     .hero__more { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1 1 auto; min-height: 0; margin-top: var(--g2); }
+    .hero__text { z-index: 1; }
     /* Titel, Untertitel, Einleitung und Gemälde: ein zentrierter Block untereinander (Abstände --g2, 8-px-Raster); Text zentriert, höchstens 60 Zeichen je Zeile */
     .hero__cols { display: flex; flex-direction: column; align-items: center; gap: var(--g2); width: 100%; max-width: 1080px; margin: 0 auto; }
-    .hero__lead { position: relative; margin: 0 auto; max-width: 60ch; font-size: 16px; line-height: 1.62; color: var(--ink); text-wrap: pretty; }
+    .hero__lead { position: relative; margin: 0 auto; max-width: 58ch; font-size: var(--t-text); line-height: 1.62; color: var(--ink); text-wrap: pretty; }
     /* Gemälde. Handy (Variante „Editorial“): volle Inhaltsbreite, beginnt unter dem ersten Bildschirm (--fold, js/main.js), Passepartout (heller Innenrand) mit feinem goldenem Rahmen und weichem Schatten,
        größerer Leadtext mit Initiale in Tannengrün. Tablet/Desktop (Variante „Bühne“): breites Gemälde, ringsum steht eine Herde Schafe (links, rechts und vor der Unterkante), Text darüber kompakt. */
     .painting { position: relative; margin: 0; width: 100%; }
@@ -132,26 +133,27 @@
     .painting__bild > img { display: block; width: 100%; height: auto; border: 1.5px solid var(--green); }
     .painting__herde { display: none; }
     @media (max-width: 767px) {
-      .hero { --g2: 28px; }
-      .hero__lead { font-size: clamp(16px, calc(16px + (100svh - 667px) * .0108), 18px); line-height: 1.6; }      /* iPhone SE 17 px, iPhone 15 19 px: auch am kleinen Handy bleibt Platz für die Herde */
-      .hero__lead::first-letter { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.5em, calc(2.5em + (100svh - 667px) * .0032), 3.1em); line-height: .8; color: var(--green); padding-right: .04em; }
-      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--gold); border-radius: 3px;
+      .hero { --g2: 28px; --title-f: calc((100vw - 2 * var(--gutter)) / 4); }
+      .hero__title em { display: block; }
+      .hero__lead { font-size: var(--t-text); line-height: 1.6; }
+      .painting { margin-top: max(0px, calc(var(--fold, 0px) - var(--g2))); padding: 10px; background: #FBF9F3; border: 1px solid var(--line); border-radius: 3px;
         box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(31, 77, 43, .35), 0 3px 10px rgba(31, 77, 43, .10); }
       .painting__bild > img { border: 1px solid var(--green); }
     }
     @media (min-width: 768px) {
       .hero { --g2: 28px; }
-      .hero__lead { font-size: 16px; line-height: 1.6; max-width: 58ch; }
-      .painting { width: min(80%, max(520px, calc((100svh - 520px) * 1.5))); }
+      .hero__lead { font-size: var(--t-text); line-height: 1.6; max-width: 58ch; }
+      .hero__more { margin-top: calc(var(--title-f) * -.26); }
+      .painting { order: -1; z-index: 2; width: min(80%, max(520px, calc((100svh - var(--hero-top) - var(--title-f) * .7 - 285px) * 1.5))); }
       .painting__herde { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 2; pointer-events: none; }
       .painting__herde .sheep { left: calc(50% + (var(--x) - 50) * var(--sp, 1) * 1%); bottom: calc(var(--y) * 1px); height: calc(var(--k) * 8px); transform: scaleX(var(--f, 1)); transform-origin: 50% 100%; }
     }
     @supports (width: 1cqw) { @media (min-width: 768px) { .painting__herde .sheep { height: calc(var(--k) * 1cqw); } } }
-    @media (min-width: 768px) and (max-width: 1099px) { .hero__lead { font-size: 16px; } .painting { width: min(66%, max(480px, calc((100svh - 520px) * 1.5))); } .painting__herde { --sp: .78; } }
-    @media (min-width: 1024px) { .hero__lead { font-size: 1.1rem; line-height: 1.6; max-width: max(780px, 66ch); text-wrap: pretty; } }
-    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } .hero__lead { font-size: 22px; max-width: 1240px; } }
+    @media (min-width: 768px) and (max-width: 1099px) { .painting { width: min(66%, max(480px, calc((100svh - var(--hero-top) - var(--title-f) * .7 - 285px) * 1.5))); } .painting__herde { --sp: .78; } }
+    @media (min-width: 1800px) { .hero { --g2: 40px; } .hero__cols { max-width: 1400px; } }
     /* Schafe (Anordnung in css/style.css): Handy – Herde unten auf dem Hintergrund, Tablet/Desktop – vier kleine Schafe neben dem Titel (hier nur die Grundlage, damit nichts springt) */
     .herd { position: absolute; top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 100vh; height: 100svh; pointer-events: none; overflow: hidden; }   /* nur der erste Bildschirm, das Gemälde liegt am Handy darunter */
+    .tap-bar { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 45; display: flex; gap: 8px; }
     .sheep { position: absolute; left: 0; bottom: 0; width: auto; height: 0; max-width: none; }
     img[data-src] { visibility: hidden; }          /* noch nicht geladene Bilder (Schafe, Gemälde) zeigen keinen leeren Platzhalter; js/herde.js entfernt data-src, sobald die Quelle gesetzt ist */
     @media (min-width: 768px) { .herd { display: none; } }
@@ -168,29 +170,29 @@
     /* Rahmen wie auf der Seite (.frame): außen tannengrün (1,5 px), innen eine feine goldene Linie, vier goldene Rauten in den Ecken */
     .age__card { position: relative; width: min(100%, 544px); padding: 48px 48px 40px; border-radius: 6px; background: var(--cream); border: 1.5px solid var(--green);
       box-shadow: 0 18px 50px rgba(0, 0, 0, .28); animation: age-hoch .55s cubic-bezier(.2, .7, .2, 1) .08s both; }
-    .age__card::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--gold); border-radius: 3px; opacity: .8; pointer-events: none; }
-    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); pointer-events: none; }
+    .age__card::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--line); border-radius: 3px; opacity: .8; pointer-events: none; }
+    .age__corner { position: absolute; width: 9px; height: 9px; background: var(--line); transform: rotate(45deg); pointer-events: none; }
     .age__corner:nth-of-type(1) { top: 1px; left: 1px; } .age__corner:nth-of-type(2) { top: 1px; right: 1px; }
     .age__corner:nth-of-type(3) { bottom: 1px; left: 1px; } .age__corner:nth-of-type(4) { bottom: 1px; right: 1px; }
-    .age__title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; color: var(--green); }
+    .age__title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(36px, 8vw, 48px); line-height: 1.05; color: var(--green); }
     .age__title::after { content: ''; display: block; width: 150px; height: 10px; margin: 24px auto 0;   /* wie h2::after in css/style.css – von Anfang an, sonst springt die Karte */
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%231F4D2B'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%231F4D2B' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     /* Beide Antworten gleichwertig (Jugendschutz): derselbe Stil, dieselbe Größe, kein Knopf wird hervorgehoben. „Ja, ich bin 16“ links, „Nein“ rechts. */
     .age__actions { display: flex; gap: 16px; justify-content: center; margin: 32px 0 0; }
-    .age__btn { flex: 1 1 0; min-width: 0; min-height: 56px; padding: 16px 24px; border-radius: 10px; border: 1.5px solid #1F4D2B; background: #F0EBDC; color: #1F4D2B;
-      font: 600 17px/1.15 var(--font-text); letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
-    .age__btn:hover, .age__btn:focus-visible { background: #E6DFCB; }
+    .age__btn { flex: 1 1 0; min-width: 0; min-height: 56px; padding: 16px 24px; border-radius: 10px; border: 0; background: var(--tap); color: var(--ink);
+      font: 600 var(--t-text)/1.15 var(--font-text); letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
+    .age__btn:hover, .age__btn:focus-visible { background: #A98332; }
     .age__btn:focus-visible, .age a:focus-visible { outline: 2px solid #B8913A; outline-offset: 5px; box-shadow: 0 0 0 3px #F7F4EC, 0 0 0 5px #1F4D2B; border-radius: 10px; }      /* dünner goldener Rahmen, innen ein dunkelgrüner Ring: auch auf Beige mit gutem Kontrast sichtbar */
     .age a:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px #F7F4EC, 0 0 0 4px #1F4D2B; outline-offset: 4px; }
     .age__note { margin: 32px 0 0; font-size: 16px; line-height: 1.55; color: var(--green-soft); }
-    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: 14px; line-height: 1.5; color: var(--green); }
-    .age__links { margin: 24px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-soft); }
+    .age__privacy { margin: 16px auto 0; max-width: 46ch; font-size: var(--t-label); line-height: 1.5; color: var(--green); }
+    .age__links { margin: 24px 0 0; font-size: var(--t-label); line-height: 1.5; color: var(--green-soft); }
     .age__links a { color: var(--green); }
     .age__no { display: none; }
     .age-denied .age__ask { display: none; }
     .age-denied .age__hint, .age-denied .age__privacy { display: none; }
     .age-denied .age__no { display: block; }
-    .age__no p { margin: 16px 0 0; font-size: 18px; line-height: 1.55; color: var(--ink); }
+    .age__no p { margin: 16px 0 0; font-size: var(--t-text); line-height: 1.55; color: var(--ink); }
     @keyframes age-ein { from { opacity: 0; } }
     @keyframes age-hoch { from { opacity: 0; transform: translateY(18px); } }
     @keyframes age-sheet { from { opacity: 0; transform: translateY(44px); } }
@@ -215,30 +217,31 @@
       font-size: 13px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
     .site-header__brand::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--cream); opacity: var(--frame-o, 1); }
     .frame { position: absolute; inset: var(--frame-inset); border: 1.5px solid var(--green); pointer-events: none; }
-    .frame::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--gold); opacity: .8; }
-    .frame__corner { position: absolute; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
+    .frame::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--line); opacity: .8; }
+    .frame__corner { position: absolute; width: 9px; height: 9px; background: var(--line); transform: rotate(45deg); }
     .frame__corner--tl { top: 1px; left: 1px; } .frame__corner--tr { top: 1px; right: 1px; }
     .frame__corner--bl { bottom: 1px; left: 1px; } .frame__corner--br { bottom: 1px; right: 1px; }
     .hero__text { position: relative; }
     .hero__heading { margin: 0; font-weight: 400; }
-    .hero__title { display: block; font-family: var(--font-display); font-weight: 500; font-size: var(--title-f);
-      line-height: 1; letter-spacing: -.005em; color: var(--green); white-space: nowrap; }
-    .hero__title em { font-style: italic; font-weight: 400; line-height: 0; }
-    .hero__claim { display: block; font-size: 14px; line-height: 1.4; letter-spacing: .26em; text-transform: uppercase; color: var(--green-soft); }
-    .hero__claim::before { content: ''; display: block; width: clamp(160px, 18vw, 240px); height: 14px; margin: clamp(14px, 2.2vh, 22px) auto;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%23B8913A'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%23B8913A' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
+    .hero__title { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--title-f);
+      line-height: .92; letter-spacing: .02em; text-transform: uppercase; color: var(--green); white-space: nowrap; }
+    .hero__title em { font-style: normal; font-weight: inherit; line-height: inherit; }
+    .hero__heading { display: flex; flex-direction: column; align-items: center; }
+    .hero__claim { display: block; order: -1; font-size: var(--t-label); line-height: 1.4; letter-spacing: .3em; text-transform: uppercase; color: var(--green-soft); }
+    .hero__claim::before { content: ''; display: none; width: clamp(160px, 18vw, 240px); height: 14px; margin: clamp(14px, 2.2vh, 22px) auto;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 14' fill='none' stroke='%231F4D2B'%3E%3Cpath d='M0 7H96M144 7H240M106 7l4-4 4 4-4 4zM126 7l4-4 4 4-4 4z'/%3E%3Cpath d='M115 7l5-5 5 5-5 5z' fill='%231F4D2B' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; }
     .section { position: relative; z-index: 2; background: var(--cream); }
     .css-wait main { visibility: hidden; animation: css-wait 0s 3s forwards; } @keyframes css-wait { to { visibility: visible; } }
-    @media (max-width: 767px) { body { font-size: 15.5px; } .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
+    @media (max-width: 767px) { .site-header__brand { font-size: 11px; padding: 0 12px; } .hero__claim { font-size: 12px; letter-spacing: .2em; } }
   </style>
   <!-- restliches CSS lädt, ohne den ersten Bildaufbau zu blockieren: früh holen (preload), als print-Stylesheet
        einbinden, js/main.js schaltet es auf alle Medien um (kein Inline-Handler → strenge Content-Security-Policy) -->
-  <link rel="preload" href="css/style.css?v=df75f722" as="style" />
-  <link rel="stylesheet" href="css/style.css?v=df75f722" media="print" id="css-main" />
-  <noscript><link rel="stylesheet" href="css/style.css?v=df75f722" /></noscript>
+  <link rel="preload" href="css/style.css?v=2372feab" as="style" />
+  <link rel="stylesheet" href="css/style.css?v=2372feab" media="print" id="css-main" />
+  <noscript><link rel="stylesheet" href="css/style.css?v=2372feab" /></noscript>
 
   <!-- Altersabfrage, Herde, Linien und Winterausgabe (js/main.js) laden nach dem ersten Rendern -->
-  <script type="module" src="js/main.js?v=df75f722"></script>
+  <script type="module" src="js/main.js?v=2372feab"></script>
 </head>
 <body>
 
@@ -512,6 +515,12 @@
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
   </footer>
+
+  <!-- Oberste Ebene: zwei Knöpfe in der Signalfarbe, fest am unteren Rand -->
+  <nav class="tap-bar" aria-label="Schnellzugriff">
+    <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query=Berg%20112%2C%2083734%20Hausham" target="_blank" rel="noopener">Route planen</a>
+    <a class="button" href="tel:+4980251488">Anrufen</a>
+  </nav>
 
 </body>
 </html>

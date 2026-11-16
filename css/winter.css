@@ -18,7 +18,7 @@
 .w-kugel.w-flip .w-kugel__svg { animation: kugel-flip 1.1s cubic-bezier(.45, .05, .35, 1); }
 /* Osterei: zweimal ganz um den Faden gedreht (Faden und Aufhänger liegen auf der Drehachse, die Kugel bleibt also angehängt), dabei hüpft sie ein Stück hoch */
 @keyframes kugel-flip { 0% { transform: perspective(520px) translateY(0) rotateY(0); } 45% { transform: perspective(520px) translateY(-14px) rotateY(400deg); } 100% { transform: perspective(520px) translateY(0) rotateY(720deg); } }
-.w-faden { display: block; width: 1px; margin: 0 auto; background: linear-gradient(#B8913A, #7A5C1C); opacity: .9; }
+.w-faden { display: block; width: 1px; margin: 0 auto; background: var(--green); opacity: .5; }
 .w-kugel__svg { display: block; width: var(--s); height: auto; margin: -1px auto 0; max-width: none; }
 
 /* ── Schluss-Szene: Spachtel-Gemälde mit Schafen am Lagerfeuer (js/winter-gipfel.js) ── */

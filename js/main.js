@@ -1,10 +1,10 @@
 // Starter: statische Seite ohne Intro. Altersabfrage, Linien, Geschichte, Herde und (in der Saison) die Winterausgabe.
 
-import './altersabfrage.js?v=df75f722';                         // Altersabfrage 16+ (richtet sich selbst ein)
-import './etikett.js?v=df75f722';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
-import './timeline.js?v=df75f722';                              // Geschichte am Handy: aktive Station hervorheben
-import { ladeHerde } from './herde.js?v=df75f722';             // Schafe der Herde laden (nach dem Laden der Seite)
-import { winterZeit } from './winter-zeit.js?v=df75f722';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
+import './altersabfrage.js?v=2372feab';                         // Altersabfrage 16+ (richtet sich selbst ein)
+import './etikett.js?v=2372feab';                              // Goldene Linien der Zutaten: zeichnen sich beim ersten Erscheinen
+import './timeline.js?v=2372feab';                              // Geschichte am Handy: aktive Station hervorheben
+import { ladeHerde } from './herde.js?v=2372feab';             // Schafe der Herde laden (nach dem Laden der Seite)
+import { winterZeit } from './winter-zeit.js?v=2372feab';     // Wintersaison (1. November bis 6. Januar) oder ?winter=1
 
 // Restliches CSS: index.html bindet css/style.css als print-Stylesheet ein (blockiert den ersten Bildaufbau nicht),
 // hier wird es für alle Medien aktiviert. So braucht die Seite keinen Inline-Handler (strenge Content-Security-Policy).
@@ -42,13 +42,14 @@ function startMaße() {
   const H = probe.getBoundingClientRect().height;
   probe.remove();
   hero.style.setProperty('--lift', '0px');
-  const fig = hero.querySelector('.painting'), top0 = text.offsetTop;
-  const lift = fig && window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - (fig.offsetTop + fig.offsetHeight - top0)) / 2 - top0))) : 0;
+  const heroTop = hero.getBoundingClientRect().top, unten = (e) => e.getBoundingClientRect().bottom - heroTop;
+  const lead = hero.querySelector('.hero__lead'), fig = hero.querySelector('.painting'), top0 = text.offsetTop;
+  const block = Math.max(lead ? unten(lead) : 0, fig ? unten(fig) : 0);      // unterste Kante des Blocks aus Titel, Gemälde und Einleitung
+  const lift = window.innerWidth >= 768 ? Math.max(0, Math.min(200, Math.round((H - 80 - (block - top0)) / 2 - top0))) : 0;      // 80 px: feste Knöpfe unten
   hero.style.setProperty('--lift', lift + 'px');
-  const lead = hero.querySelector('.hero__lead');
   if (lead) {
     const bottom = lead.offsetTop + lead.offsetHeight;
-    hero.style.setProperty('--zone', Math.max(0, H - bottom - 16 - 28) + 'px');
+    hero.style.setProperty('--zone', Math.max(0, H - bottom - 16 - 76) + 'px');
     hero.style.setProperty('--fold', Math.max(0, H - bottom) + 'px');
   }
 }
@@ -62,5 +63,5 @@ window.addEventListener('resize', () => { if (Math.abs(window.innerWidth - start
 // Winterausgabe: nur in der Saison (oder mit ?winter=1) nachladen, sonst kostet sie nichts.
 const winter = winterZeit();
 if (winter.saison) {
-  import('./winter.js?v=df75f722').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
+  import('./winter.js?v=2372feab').then((m) => m.start(winter)).catch((e) => console.warn('Winterausgabe konnte nicht geladen werden', e));
 }
